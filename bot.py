@@ -19,6 +19,11 @@ for file in os.listdir("./cogs"):
         name = file[:-3]
         bot.load_extension(f"cogs.{name}")
 
+@bot.event
+async def on_ready():
+    print(f"Bot is online")
+    await bot.change_presence(activity=discord.Game(name="+help"))
+
 try:
     bot.run(config["token"])
 except Exception as err:
