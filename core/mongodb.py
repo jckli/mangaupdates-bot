@@ -16,10 +16,22 @@ srv = database["servers"]
 usr = database["users"]
 
 def addServer(serverName, serverID, channelID):
-    srv.insert_one({"serverid": serverID, "serverName": serverName, "channelid": channelID, "manga": []})
+    documentCount = srv.count_documents({})
+    while documentCount >= 0:
+        try:
+            srv.insert_one({"_id": documentCount, "serverid": serverID, "serverName": serverName, "channelid": channelID, "manga": []})
+            break
+        except:
+            documentCount -= 1
 
 def addUser(userName, userID):
-    usr.insert_one({"userid": userID, "userName": userName, "manga": []})
+    documentCount = usr.count_documents({})
+    while documentCount >= 0:
+        try:
+            usr.insert_one({"_id": documentCount, "userid": userID, "username": userName, "manga": []})
+            break
+        except:
+            documentCount -= 1
 
 def removeServer(serverID):
     srv.delete_one({"serverid": serverID})
@@ -32,6 +44,13 @@ def updateChannel(idName, channelID):
 
 def checkServerExist(idName):
     result = srv.find_one({"serverid": idName})
+    if result != None:
+        return True
+    else:
+        return False
+
+def checkUserExist(idName):
+    result = usr.find_one({"userid": idName})
     if result != None:
         return True
     else:
@@ -60,10 +79,9 @@ def mangaWanted(title, mode):
     else:
         return False
 
-def test(title):
-    sheeesh = []
-    for document in srv.find():
-        print(document[2])
+def test():
+    documentCount = usr.count_documents({})
+    print(documentCount)
 
 #        if result != None:
 #            sheeesh.append(result.serverid)
