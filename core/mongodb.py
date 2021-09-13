@@ -70,14 +70,26 @@ def removeManga(idName, title, mode):
 
 def mangaWanted(title, mode):
     if mode == "user":
-        result = srv.find_one({"manga": {"$elemMatch": {"title": title}}})
+        idList = []
+        result = usr.find({"manga.title": title}, {"_id": 0, "userid": 1})
+        for i in result:
+            idList.append(i["userid"])
+        if idList != []:
+            return idList
+        else:
+            return None
     elif mode == "server":
-        result = srv.find_one({"manga": {"$elemMatch": {"title": title}}})
-
-    if result != None:
-        return True
-    else:
-        return False
+        class list:
+            serverList = []
+            channelList = []
+        result = srv.find({"manga.title": title}, {"_id": 0, "serverid": 1, "channelid": 1})
+        for i in result:
+            list.serverList.append(i["serverid"])
+            list.channelList.append(i["channelid"])
+        if list.serverList != []:
+            return list
+        else:
+            return None
 
 def test():
     documentCount = usr.count_documents({})

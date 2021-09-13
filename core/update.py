@@ -1,5 +1,7 @@
 import feedparser
 import re
+import requests
+from bs4 import BeautifulSoup as bs
 
 def getLatest():
     # Parses the rss feed from mangaupdates
@@ -27,5 +29,15 @@ def getLatest():
         else:
             title = title[0:]
         link = entry["links"][0]["href"]
-        mangas.append({"title": title, "chapter": chapter, "scanGroup": scanGroup, "link": link})
+        
+        # Get image from mangaupdates
+        websiteResult = requests.get(link)
+        htmlData = websiteResult.text
+        soup = bs(htmlData, 'html.parser') 
+        for img in soup.find_all('img'):
+            if img['src'].startswith("https://www.mangaupdates.com/image/"):
+                image = img['src']
+                break
+
+        mangas.append({"title": title, "chapter": chapter, "scanGroup": scanGroup, "link": link, "image": image})
     return mangas
