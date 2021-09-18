@@ -18,6 +18,10 @@ class Information(commands.Cog):
     async def ping(self, ctx):
         await ctx.send(f"🏓 Pong! My ping is {round(self.bot.latency * 1000)}ms")
 
+    @commands.command(name="invite")
+    async def invite(self, ctx):
+        await ctx.send(f"**Invite me to your server!**\nhttps://discord.com/oauth2/authorize?client_id=880694914365685781&scope=bot&permissions=2147961856")
+
     @commands.command(description="Shows the bot uptime.")
     async def botinfo(self, ctx):
         # Get all users in all servers the bot is in.
