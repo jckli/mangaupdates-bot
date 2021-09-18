@@ -29,15 +29,16 @@ def getLatest():
         else:
             title = title[0:]
         link = entry["links"][0]["href"]
-        
-        # Get image from mangaupdates
-        websiteResult = requests.get(link)
-        htmlData = websiteResult.text
-        soup = bs(htmlData, 'html.parser') 
-        for img in soup.find_all('img'):
-            if img['src'].startswith("https://www.mangaupdates.com/image/"):
-                image = img['src']
-                break
 
-        mangas.append({"title": title, "chapter": chapter, "scanGroup": scanGroup, "link": link, "image": image})
+        mangas.append({"title": title, "chapter": chapter, "scanGroup": scanGroup, "link": link})
     return mangas
+
+# Get image from mangaupdates
+def getImage(link):
+    websiteResult = requests.get(link, headers={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246"})
+    htmlData = websiteResult.text
+    soup = bs(htmlData, 'html.parser') 
+    for img in soup.find_all('img'):
+        if img['src'].startswith("https://www.mangaupdates.com/image/"):
+            image = img['src']
+    return image

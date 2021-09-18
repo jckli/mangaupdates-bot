@@ -6,6 +6,7 @@ import threading
 import asyncio
 import nest_asyncio
 import threading
+import time
 
 from core import update
 from core import mongodb
@@ -13,10 +14,26 @@ from core import mongodb
 class Manga(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-    
-        async def notify(title, chapter, group, link, image):
+
+        # todo: setup failsafe by saving last data to somewhere to check again if bot dies and needs to restart
+        def checkForUpdates():
+            old = update.getLatest()
+            value = True
+            while value == True:
+                new = update.getLatest()
+                print("Checking for new updates!")
+                if new != old:
+                    print("New update found!")
+                    newMangas = [manga for manga in new if manga not in old]
+                    for manga in newMangas:
+                        asyncio.run_coroutine_threadsafe(notify(manga["title"], manga["chapter"], manga["group"], manga["link"]), bot.loop)
+                time.sleep(60)
+                old = new
+            
+        async def notify(title, chapter, group, link):
             serverWant = mongodb.mangaWanted(title, "server")
             userWant = mongodb.mangaWanted(title, "user")
+            image = update.getImage(link)
             embed = discord.Embed(title=f"New {title} chapter released!", description=f"There is a new {title} chapter released", color=0x3083e3)
             embed.add_field(name="Chapter", value=chapter, inline=True)
             embed.add_field(name="Group", value=group, inline=True)
@@ -35,19 +52,9 @@ class Manga(commands.Cog):
             else:
                 print("New manga not wanted lol")
 
-        def checkForUpdates():
-            old = update.getLatest()
-            while True:
-                new = update.getLatest()
-                if new != old:
-                    newMangas = [manga for manga in new if manga not in old]
-                    for manga in newMangas:
-                        asyncio.run_coroutine_threadsafe(notify(manga["title"], manga["chapter"], manga["group"], manga["link"], manga["image"]), bot.loop)
-                    old = new
-
         nest_asyncio.apply()
-        db_thread = threading.Thread(target=checkForUpdates)
-        db_thread.start()
+        checkThread = threading.Thread(target=checkForUpdates)
+        checkThread.start()
 
     @commands.command()
     async def setup(self, ctx):
@@ -101,6 +108,31 @@ class Manga(commands.Cog):
                 else:
                     completeError = discord.Embed(title="Error", color=0xff4f4f, description="Something went wrong.")
                     await ctx.send(embed=completeError, delete_after=5.0)
+
+    @commands.command()
+    async def addmanga(self, ctx):
+        # todo: add a check for if the user is setup
+        await ctx.message.delete()
+        timeoutError = discord.Embed(title="Error", description="You didn't respond in time!", color=0xff4f4f)
+        addMangaEmbed = discord.Embed(title="Add Manga", color=0x3083e3, description="What manga do you want to add?")
+        sentEmbed = await ctx.send(embed=addMangaEmbed)
+        try:
+            manga = await self.bot.wait_for('message', check=lambda x: x.author.id == ctx.author.id, timeout=15)
+        except asyncio.TimeoutError:
+            await sentEmbed.delete()
+            await ctx.send(embed=timeoutError, delete_after=5.0)
+        else:
+            await sentEmbed.delete()
+            await manga.delete()
+            if mongodb.checkMangaExist(manga) == True:
+                mangaExist = discord.Embed(title="Add Manga", color=0x3083e3, description="This manga is already added.")
+                await ctx.send(embed=mangaExist, delete_after=10.0)
+            elif mongodb.checkMangaExist(manga) == False:
+                mangaInfo = await self.bot.fetch_manga(manga)
+                mangaImage = mangaInfo.image_url
+                mangaLink = mangaInfo.url
+                mongodb.addManga(manga, mangaImage, mangaLink)
+                mangaAdded = discord.Embed(title="Add Manga", color=0x3083e3, description="Manga added.")
 
 def setup(bot):
     bot.add_cog(Manga(bot))
