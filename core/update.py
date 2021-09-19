@@ -28,8 +28,10 @@ def getLatest():
             title = title[0: len(title) - len(chapter) - 1]
         else:
             title = title[0:]
-        link = entry["links"][0]["href"]
-
+        try:
+            link = entry["links"][0]["href"]
+        except:
+            link = None
         mangas.append({"title": title, "chapter": chapter, "scanGroup": scanGroup, "link": link})
     return mangas
 
