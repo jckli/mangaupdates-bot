@@ -105,6 +105,24 @@ def checkMangaAlreadyWithinDb(id, title, mode):
                 return True
         return False
 
+def getMangaList(id, mode):
+    manga = []
+    if mode == "user":
+        result = usr.find_one({"userid": id}, {"manga": 1})
+        for i in result["manga"]:
+            manga.append(i["title"])
+        if manga != []:
+            return manga
+        else:
+            return None
+    elif mode == "server":
+        result = srv.find_one({"serverid": id}, {"manga": 1})
+        for i in result["manga"]:
+            manga.append(i["title"])
+        if manga != []:
+            return manga
+        else:
+            return None
 
 def test():
     documentCount = usr.count_documents({})
