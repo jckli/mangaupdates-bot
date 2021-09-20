@@ -41,7 +41,10 @@ class Information(commands.Cog):
 
     @commands.command(name="invite")
     async def invite(self, ctx):
-        await ctx.send(f"**Invite me to your server!**\nhttps://discord.com/oauth2/authorize?client_id=880694914365685781&scope=bot&permissions=2147961856")
+        embed = discord.Embed(title="Invite Link", color=0x3083e3, description="Invite me to your own servers!")
+        embed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar_url)
+        embed.add_field(name="Link", value="https://discord.com/oauth2/authorize?client_id=880694914365685781&scope=bot&permissions=268856384")
+        await ctx.send(embed=embed)
 
     @commands.command(description="Shows the bot uptime.")
     async def botinfo(self, ctx):
