@@ -5,14 +5,35 @@ import time
 import datetime
 from datetime import datetime
 from datetime import timedelta
+import json
 
 from core import mongodb
 
 startTime = time.time()
 
+# Load config
+with open("config.json", "r") as f:
+    config = json.load(f)
+
 class Information(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+
+    @commands.command(name="help")
+    async def help(self, ctx):
+        embed = discord.Embed(title="MangaUpdates Help", color=0x3083e3)
+        embed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar_url)
+        embed.add_field(name="+help", value="Displays this message", inline=False)
+        embed.add_field(name="+ping", value="Pong! Displays the ping.", inline=False)
+        embed.add_field(name="+invite", value="Displays bot invite link", inline=False)
+        embed.add_field(name="+source", value="Displays bot's GitHub repository", inline=False)
+        embed.add_field(name="+stats", value="Displays bot's statistics", inline=False)
+        embed.add_field(name="+setup", value="Setup your user/server for manga updates.", inline=False)
+        embed.add_field(name="+addmanga", value="Adds manga to your list to be tracked. (Optional: `user` or `server` after command for easy usage)", inline=False)
+        embed.add_field(name="+removemanga", value="Removes manga from your list that were tracked. (Optional: `user` or `server` after command for easy usage)", inline=False)
+        embed.add_field(name="+mangalist", value="Lists all manga that are being tracked. (Optional: `user` or `server` after command for easy usage)", inline=False)
+        await ctx.send(embed=embed)
+        
 
     @commands.command(name="ping")
     async def ping(self, ctx):
@@ -24,27 +45,35 @@ class Information(commands.Cog):
 
     @commands.command(description="Shows the bot uptime.")
     async def botinfo(self, ctx):
-        # Get all users in all servers the bot is in.
-        activeServers = self.bot.guilds
-        botUsers = 0
-        for i in activeServers:
-            botUsers += i.member_count
-        # Get the current uptime.
-        currentTime = time.time()
-        differenceUptime = int(round(currentTime - startTime))
-        uptime = str(timedelta(seconds = differenceUptime))
-        # Make the embed for the message.
-        botinfo = discord.Embed(
-            title="Bot info",
-            color=0x3083e3,
-            timestamp=datetime.now(),
-            description=f"**Server Count:** {len(self.bot.guilds)}\n**Bot Users:** {botUsers}\n**Bot Uptime:** {uptime}"
-        )
-        botinfo.set_footer(
-            text=f'Requested by {ctx.message.author.name}',
-            icon_url=ctx.author.avatar_url
-        )
-        await ctx.send(embed=botinfo)
+        if ctx.message.author.id == config["ownerid"]:
+            # Get all users in all servers the bot is in.
+            activeServers = self.bot.guilds
+            botUsers = 0
+            for i in activeServers:
+                botUsers += i.member_count
+            # Get the current uptime.
+            currentTime = time.time()
+            differenceUptime = int(round(currentTime - startTime))
+            uptime = str(timedelta(seconds = differenceUptime))
+            # Make the embed for the message.
+            botinfo = discord.Embed(
+                title="Bot info",
+                color=0x3083e3,
+                timestamp=datetime.now(),
+                description=f"**Server Count:** {len(self.bot.guilds)}\n**Bot Users:** {botUsers}\n**Bot Uptime:** {uptime}"
+            )
+            botinfo.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar_url)
+            await ctx.send(embed=botinfo)
+        else:
+            permissionError = discord.Embed(title="Error", color=0xff4f4f, description="You found a hidden command! Too bad only the bot owner can use this.")
+            await ctx.send(embed=permissionError, delete_after=5.0)
+
+    @commands.command(name="source")
+    async def source(self, ctx):
+        embed = discord.Embed(title="Source Code", color=0x3083e3, description="MangaUpdate's source code can be found on GitHub. Any issues with the bot can be raised there.")
+        embed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar_url)
+        embed.add_field(name="Link", value="https://github.com/ohashizu/mangaupdates-bot")
+        await ctx.send(embed=embed)
 
 def setup(bot):
     bot.add_cog(Information(bot))

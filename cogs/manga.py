@@ -273,12 +273,14 @@ class Manga(commands.Cog):
             mangaList = mongodb.getMangaList(givenid, mode)
             if mangaList == None:
                 noMangaError = discord.Embed(title=f"{name}'s Manga List", color=0x3083e3, description="You have added no manga to your list.")
+                noMangaError.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar_url)
                 await ctx.send(embed=noMangaError, delete_after=5.0)
             else:
                 description = ""
                 for manga in mangaList:
                     description += f"• {manga}\n"
                 mangaListEmbed = discord.Embed(title=f"{name}'s Manga List", color=0x3083e3, description=description)
+                mangaListEmbed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar_url)
                 mangaListEmbed.set_thumbnail(url = iconUrl)
                 await ctx.send(embed=mangaListEmbed)
         except:
