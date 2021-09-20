@@ -4,7 +4,6 @@ from discord.ext import commands
 import threading
 import asyncio
 import nest_asyncio
-import threading
 import time
 
 from core import update

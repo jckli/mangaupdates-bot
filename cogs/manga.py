@@ -259,7 +259,7 @@ class Manga(commands.Cog):
             if userExist == True:
                 mangaList = mongodb.getMangaList(userid, "user")
                 i = 1
-                description = ""
+                description = "Type the number of the manga you want to remove.\n"
                 for manga in mangaList:
                     description += f"{i}. {manga}\n"
                     i += 1
@@ -293,7 +293,7 @@ class Manga(commands.Cog):
                 if serverExist == True:
                     mangaList = mongodb.getMangaList(serverid, "server")
                     i = 1
-                    description = ""
+                    description = "Type the number of the manga you want to remove.\n"
                     for manga in mangaList:
                         description += f"{i}. {manga}\n"
                         i += 1
