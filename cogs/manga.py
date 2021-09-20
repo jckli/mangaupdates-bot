@@ -261,31 +261,43 @@ class Manga(commands.Cog):
         if modeEntry == True:
             await sentEmbedMode.delete()
             await modeObject.delete()
-        try:
+        if mode == "user":
+            givenid = ctx.message.author.id
+            name = ctx.message.author
+            iconUrl = ctx.message.author.avatar_url
+        elif mode == "server":
+            givenid = ctx.message.guild.id
+            name = ctx.message.guild.name
+            iconUrl = ctx.message.guild.icon_url
+        if mode == "user" or mode == "server":
             if mode == "user":
-                givenid = ctx.message.author.id
-                name = ctx.message.author
-                iconUrl = ctx.message.author.avatar_url
-            if mode == "server":
-                givenid = ctx.message.guild.id
-                name = ctx.message.guild.name
-                iconUrl = ctx.message.guild.icon_url
-            mangaList = mongodb.getMangaList(givenid, mode)
-            if mangaList == None:
-                noMangaError = discord.Embed(title=f"{name}'s Manga List", color=0x3083e3, description="You have added no manga to your list.")
-                noMangaError.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar_url)
-                await ctx.send(embed=noMangaError, delete_after=5.0)
-            else:
-                description = ""
-                for manga in mangaList:
-                    description += f"• {manga}\n"
-                mangaListEmbed = discord.Embed(title=f"{name}'s Manga List", color=0x3083e3, description=description)
-                mangaListEmbed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar_url)
-                mangaListEmbed.set_thumbnail(url = iconUrl)
-                await ctx.send(embed=mangaListEmbed)
-        except:
-            completeError = discord.Embed(title="Error", color=0xff4f4f, description="Something went wrong. Create an issue here for support: https://github.com/ohashizu/mangaupdates-bot")
-            await ctx.send(embed=completeError, delete_after=5.0)
+                exist = mongodb.checkUserExist(givenid)
+            elif mode == "server":
+                exist = mongodb.checkServerExist(givenid)
+            if exist == True:
+                try:
+                    mangaList = mongodb.getMangaList(givenid, mode)
+                    if mangaList == None:
+                        noMangaError = discord.Embed(title=f"{name}'s Manga List", color=0x3083e3, description="You have added no manga to your list.")
+                        noMangaError.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar_url)
+                        await ctx.send(embed=noMangaError, delete_after=5.0)
+                    else:
+                        description = ""
+                        for manga in mangaList:
+                            description += f"• {manga}\n"
+                        mangaListEmbed = discord.Embed(title=f"{name}'s Manga List", color=0x3083e3, description=description)
+                        mangaListEmbed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar_url)
+                        mangaListEmbed.set_thumbnail(url = iconUrl)
+                        await ctx.send(embed=mangaListEmbed)
+                except:
+                    completeError = discord.Embed(title="Error", color=0xff4f4f, description="Something went wrong. Create an issue here for support: https://github.com/ohashizu/mangaupdates-bot")
+                    await ctx.send(embed=completeError, delete_after=5.0)
+            elif exist == False:
+                setupError = discord.Embed(title="Error", color=0xff4f4f, description="Sorry! Please run the `+setup` command first and add some manga using the `+addmanga` command.")
+                await ctx.send(embed=setupError, delete_after=5.0)
+        else:
+            modeError = discord.Embed(title="Error", color=0xff4f4f, description="You did not type in either `user` or `server`.")
+            await ctx.send(embed=modeError, delete_after=5.0)
 
 def setup(bot):
     bot.add_cog(Manga(bot))
