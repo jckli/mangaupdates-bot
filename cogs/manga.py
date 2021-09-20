@@ -67,7 +67,7 @@ class Manga(commands.Cog):
 
 # Search it (https://github.com/alisww/py-manga), link capability, command ailias of +addmanga server or +addmanga user
     @commands.command()
-    async def addmanga(self, ctx, *, arg):
+    async def addmanga(self, ctx, *, arg=None):
         await ctx.message.delete()
         userid = ctx.message.author.id
         serverid = ctx.message.guild.id
