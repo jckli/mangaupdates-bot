@@ -69,7 +69,6 @@ class Manga(commands.Cog):
                 modeError = discord.Embed(title="Error", color=0xff4f4f, description="You did not type in either `user` or `server`.")
                 await ctx.send(embed=modeError, delete_after=5.0)
 
-# Search it (https://github.com/alisww/py-manga), link capability, command ailias of +addmanga server or +addmanga user
     @commands.command()
     async def addmanga(self, ctx, *, arg=None):
         await ctx.message.delete()
@@ -258,27 +257,31 @@ class Manga(commands.Cog):
         userExist = mongodb.checkUserExist(userid)
         if mode == "user":
             if userExist == True:
-                remMangaEmbed = discord.Embed(title="Remove Manga", color=0x3083e3, description="What manga do you want to remove? (Please type exact title name with correct punctuation)")
-                sentEmbedRemManga = await ctx.send(embed=remMangaEmbed)
+                mangaList = mongodb.getMangaList(userid, "user")
+                i = 1
+                description = ""
+                for manga in mangaList:
+                    description += f"{i}. {manga}\n"
+                    i += 1
+                removeEmbed = discord.Embed(title="Remove Manga", color=0x3083e3, description=description)
+                sentEmbedRemove = await ctx.send(embed=removeEmbed)
                 try:
-                    manga = await self.bot.wait_for('message', check=lambda x: x.author.id == ctx.author.id, timeout=15)
+                    remove = await self.bot.wait_for('message', check=lambda x: x.author.id == ctx.author.id, timeout=15)
                 except asyncio.TimeoutError:
-                    await sentEmbedRemManga.delete()
+                    await sentEmbedRemove.delete()
                     await ctx.send(embed=timeoutError, delete_after=5.0)
                 else:
-                    await sentEmbedRemManga.delete()
-                    await manga.delete()
-                    mangaInDb = mongodb.checkMangaAlreadyWithinDb(userid, manga.content, "user")
-                    if mangaInDb == True:
-                        mongodb.removeManga(userid, manga.content, "user")
+                    await sentEmbedRemove.delete()
+                    await remove.delete()
+                    if remove.content.isnumeric() is True and int(remove.content) in range(1, i):
+                        mangaTitle = mangaList[int(remove.content)-1]
+                        mongodb.removeManga(userid, mangaTitle, "user")
                         mangaRemoved = discord.Embed(title="Remove Manga", color=0x3083e3, description="Manga succesfully removed.")
                         await ctx.send(embed=mangaRemoved, delete_after=10.0)
-                    elif mangaInDb == False:
-                        mangaNotExist = discord.Embed(title="Remove Manga", color=0x3083e3, description="This manga is not in your list.")
-                        await ctx.send(embed=mangaNotExist, delete_after=10.0)
                     else:
-                        completeError = discord.Embed(title="Error", color=0xff4f4f, description="Something went wrong. Create an issue here for support: https://github.com/ohashizu/mangaupdates-bot")
-                        await ctx.send(embed=completeError, delete_after=5.0)
+                        countError = discord.Embed(title="Error", color=0xff4f4f, description="You didn't select a number from `1` to `{}`".format(i-1))
+                        await ctx.send(embed=countError, delete_after=5.0)
+                        return
             elif userExist == False:
                 setupError = discord.Embed(title="Error", color=0xff4f4f, description="Sorry! Please run the `+setup` command first and add some manga using the `+addmanga` command.")
                 await ctx.send(embed=setupError, delete_after=5.0)
@@ -288,27 +291,31 @@ class Manga(commands.Cog):
         elif mode == "server":
             if ctx.author.guild_permissions.administrator == True:
                 if serverExist == True:
-                    remMangaEmbed = discord.Embed(title="Remove Manga", color=0x3083e3, description="What manga do you want to remove? (Please type exact title name with correct punctuation)")
-                    sentEmbedRemManga = await ctx.send(embed=remMangaEmbed)
+                    mangaList = mongodb.getMangaList(serverid, "server")
+                    i = 1
+                    description = ""
+                    for manga in mangaList:
+                        description += f"{i}. {manga}\n"
+                        i += 1
+                    removeEmbed = discord.Embed(title="Remove Manga", color=0x3083e3, description=description)
+                    sentEmbedRemove = await ctx.send(embed=removeEmbed)
                     try:
-                        manga = await self.bot.wait_for('message', check=lambda x: x.author.id == ctx.author.id, timeout=15)
+                        remove = await self.bot.wait_for('message', check=lambda x: x.author.id == ctx.author.id, timeout=15)
                     except asyncio.TimeoutError:
-                        await sentEmbedRemManga.delete()
+                        await sentEmbedRemove.delete()
                         await ctx.send(embed=timeoutError, delete_after=5.0)
                     else:
-                        await sentEmbedRemManga.delete()
-                        await manga.delete()
-                        mangaInDb = mongodb.checkMangaAlreadyWithinDb(serverid, manga.content, "server")
-                        if mangaInDb == True:
-                            mongodb.removeManga(serverid, manga.content, "server")
+                        await sentEmbedRemove.delete()
+                        await remove.delete()
+                        if remove.content.isnumeric() is True and int(remove.content) in range(1, i):
+                            mangaTitle = mangaList[int(remove.content)-1]
+                            mongodb.removeManga(serverid, mangaTitle, "server")
                             mangaRemoved = discord.Embed(title="Remove Manga", color=0x3083e3, description="Manga succesfully removed.")
                             await ctx.send(embed=mangaRemoved, delete_after=10.0)
-                        elif mangaInDb == False:
-                            mangaNotExist = discord.Embed(title="Remove Manga", color=0x3083e3, description="This manga is not in the server's list.")
-                            await ctx.send(embed=mangaNotExist, delete_after=10.0)
                         else:
-                            completeError = discord.Embed(title="Error", color=0xff4f4f, description="Something went wrong. Create an issue here for support: https://github.com/ohashizu/mangaupdates-bot")
-                            await ctx.send(embed=completeError, delete_after=5.0)
+                            countError = discord.Embed(title="Error", color=0xff4f4f, description="You didn't select a number from `1` to `{}`".format(i-1))
+                            await ctx.send(embed=countError, delete_after=5.0)
+                            return
                 elif serverExist == False:
                     setupError = discord.Embed(title="Error", color=0xff4f4f, description="Sorry! Please run the `+setup` command first and add some manga using the `+addmanga` command.")
                     await ctx.send(embed=setupError, delete_after=5.0)
