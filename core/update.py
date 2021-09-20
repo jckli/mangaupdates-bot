@@ -39,8 +39,16 @@ def getLatest():
 def getImage(link):
     websiteResult = requests.get(link, headers={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246"})
     htmlData = websiteResult.text
-    soup = bs(htmlData, 'html.parser') 
-    for img in soup.find_all('img'):
-        if img['src'].startswith("https://www.mangaupdates.com/image/"):
-            image = img['src']
+    soup = bs(htmlData, "html.parser") 
+    for img in soup.find_all("img"):
+        if img["src"].startswith("https://www.mangaupdates.com/image/"):
+            image = img["src"]
     return image
+
+def getTitle(link):
+    websiteResult = requests.get(link, headers={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246"})
+    htmlData = websiteResult.text
+    soup = bs(htmlData, "html.parser")
+    text = soup.find("span", {"class": "releasestitle tabletitle"})
+    title = text.get_text()
+    return title

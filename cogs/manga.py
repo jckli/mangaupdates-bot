@@ -1,9 +1,13 @@
+from core.update import getTitle
 import discord
 from discord.ext import commands
 
 import asyncio
+import pymanga
+import validators
 
 from core import mongodb
+from core import update
 
 class Manga(commands.Cog):
     def __init__(self, bot):
@@ -92,7 +96,7 @@ class Manga(commands.Cog):
         userExist = mongodb.checkUserExist(userid)
         if mode == "user":
             if userExist == True:
-                addMangaEmbed = discord.Embed(title="Add Manga", color=0x3083e3, description="What manga do you want to add? (Please type exact title name with correct punctuation)")
+                addMangaEmbed = discord.Embed(title="Add Manga", color=0x3083e3, description="What manga do you want to add? (Can also use mangaupdates.com link)")
                 sentEmbedAddManga = await ctx.send(embed=addMangaEmbed)
                 try:
                     manga = await self.bot.wait_for('message', check=lambda x: x.author.id == ctx.author.id, timeout=15)
@@ -102,13 +106,51 @@ class Manga(commands.Cog):
                 else:
                     await sentEmbedAddManga.delete()
                     await manga.delete()
-                    mangaInDb = mongodb.checkMangaAlreadyWithinDb(userid, manga.content, "user")
+                    if validators.url(manga.content) == True:
+                        mangaTitle = update.getTitle(manga.content)
+                    elif validators.url(manga.content) != True:
+                        searchRaw = pymanga.api.search(manga.content)
+                        description = "Type the number of the manga you want to add.\n"
+                        searchNames = []
+                        if searchRaw["series"] == []:
+                            resultError = discord.Embed(title="Error", color=0xff4f4f, description="No mangas were found.")
+                            await ctx.send(embed=resultError, delete_after=5.0)
+                        elif searchRaw["series"] != []:
+                            i = 1
+                            for result in searchRaw["series"]:
+                                name = result["name"]
+                                year = result["year"]
+                                rating = result["rating"]
+                                description += f"{i}. {name} ({year}, Rating: {rating})\n"
+                                searchNames.append(name)
+                                i += 1
+                            searchEmbed = discord.Embed(title="Search Results", color=0x3083e3, description=description)
+                            sentEmbedSearch = await ctx.send(embed=searchEmbed)
+                            try:
+                                search = await self.bot.wait_for('message', check=lambda x: x.author.id == ctx.author.id, timeout=15)
+                            except asyncio.TimeoutError:
+                                await sentEmbedSearch.delete()
+                                await ctx.send(embed=timeoutError, delete_after=5.0)
+                            else:
+                                await sentEmbedSearch.delete()
+                                await search.delete()
+                                if search.content.isnumeric() is True and int(search.content) in range(1, 11):
+                                    mangaTitle = searchNames[int(search.content)-1]
+                                else:
+                                    countError = discord.Embed(title="Error", color=0xff4f4f, description="You didn't select a number from `1` to `10`")
+                                    await ctx.send(embed=countError, delete_after=5.0)
+                                    return
+                        else:
+                            completeError = discord.Embed(title="Error", color=0xff4f4f, description="Something went wrong. Create an issue here for support: https://github.com/ohashizu/mangaupdates-bot")
+                            await ctx.send(embed=completeError, delete_after=5.0)
+                            return
+                    mangaInDb = mongodb.checkMangaAlreadyWithinDb(userid, mangaTitle, "user")
                     if mangaInDb == True:
                         mangaExist = discord.Embed(title="Add Manga", color=0x3083e3, description="This manga is already added to your list.")
                         await ctx.send(embed=mangaExist, delete_after=10.0)
                         return
                     elif mangaInDb == False:
-                        mongodb.addManga(userid, manga.content, "user")
+                        mongodb.addManga(userid, mangaTitle, "user")
                         mangaAdded = discord.Embed(title="Add Manga", color=0x3083e3, description="Manga succesfully added.")
                         await ctx.send(embed=mangaAdded, delete_after=10.0)
                         return
@@ -121,7 +163,7 @@ class Manga(commands.Cog):
         elif mode == "server":
             if ctx.author.guild_permissions.administrator == True:
                 if serverExist == True:
-                    addMangaEmbed = discord.Embed(title="Add Manga", color=0x3083e3, description="What manga do you want to add? (Please type exact title name with correct punctuation)")
+                    addMangaEmbed = discord.Embed(title="Add Manga", color=0x3083e3, description="What manga do you want to add? (Can also use mangaupdates.com link)")
                     sentEmbedAddManga = await ctx.send(embed=addMangaEmbed)
                     try:
                         manga = await self.bot.wait_for('message', check=lambda x: x.author.id == ctx.author.id, timeout=15)
@@ -131,12 +173,50 @@ class Manga(commands.Cog):
                     else:
                         await sentEmbedAddManga.delete()
                         await manga.delete()
-                        mangaInDb = mongodb.checkMangaAlreadyWithinDb(serverid, manga.content, "server")
+                        if validators.url(manga.content) == True:
+                            mangaTitle = update.getTitle(manga.content)
+                        elif validators.url(manga.content) != True:
+                            searchRaw = pymanga.api.search(manga.content)
+                            description = "Type the number of the manga you want to add.\n"
+                            searchNames = []
+                            if searchRaw["series"] == []:
+                                resultError = discord.Embed(title="Error", color=0xff4f4f, description="No mangas were found.")
+                                await ctx.send(embed=resultError, delete_after=5.0)
+                            elif searchRaw["series"] != []:
+                                i = 1
+                                for result in searchRaw["series"]:
+                                    name = result["name"]
+                                    year = result["year"]
+                                    rating = result["rating"]
+                                    description += f"{i}. {name} ({year}, Rating: {rating})\n"
+                                    searchNames.append(name)
+                                    i += 1
+                                searchEmbed = discord.Embed(title="Search Results", color=0x3083e3, description=description)
+                                sentEmbedSearch = await ctx.send(embed=searchEmbed)
+                                try:
+                                    search = await self.bot.wait_for('message', check=lambda x: x.author.id == ctx.author.id, timeout=15)
+                                except asyncio.TimeoutError:
+                                    await sentEmbedSearch.delete()
+                                    await ctx.send(embed=timeoutError, delete_after=5.0)
+                                else:
+                                    await sentEmbedSearch.delete()
+                                    await search.delete()
+                                    if search.content.isnumeric() is True and int(search.content) in range(1, 11):
+                                        mangaTitle = searchNames[int(search.content)-1]
+                                    else:
+                                        countError = discord.Embed(title="Error", color=0xff4f4f, description="You didn't select a number from `1` to `10`")
+                                        await ctx.send(embed=countError, delete_after=5.0)
+                                        return
+                            else:
+                                completeError = discord.Embed(title="Error", color=0xff4f4f, description="Something went wrong. Create an issue here for support: https://github.com/ohashizu/mangaupdates-bot")
+                                await ctx.send(embed=completeError, delete_after=5.0)
+                                return
+                        mangaInDb = mongodb.checkMangaAlreadyWithinDb(serverid, mangaTitle, "server")
                         if mangaInDb == True:
                             mangaExist = discord.Embed(title="Add Manga", color=0x3083e3, description="This manga is already added to the server's list.")
                             await ctx.send(embed=mangaExist, delete_after=10.0)
                         elif mangaInDb == False:
-                            mongodb.addManga(serverid, manga.content, "server")
+                            mongodb.addManga(serverid, mangaTitle, "server")
                             mangaAdded = discord.Embed(title="Add Manga", color=0x3083e3, description="Manga succesfully added.")
                             await ctx.send(embed=mangaAdded, delete_after=10.0)
                 elif serverExist == False:
