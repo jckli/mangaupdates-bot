@@ -1,7 +1,7 @@
 # MangaUpdates Bot
 A Discord bot that can be used to keep track of your favorite mangas using MongoDB and mangaupdates.com.
 
-> **Note**: This bot is still in development. It is not ready to be used yet.
+> **Note**: This bot is still in development. Many more features are coming in the near future.
 
 ## Features
 
