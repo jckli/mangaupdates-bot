@@ -32,7 +32,7 @@ def getLatest():
             link = entry["links"][0]["href"]
         except:
             link = None
-        mangas.append({"title": title, "chapter": chapter, "scanGroup": scanGroup, "link": link})
+        mangas.append({"title": title.rstrip(), "chapter": chapter, "scanGroup": scanGroup, "link": link})
     return mangas
 
 # Get image from mangaupdates
