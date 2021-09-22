@@ -21,3 +21,19 @@ I wanted to create something that would track all my mangas/manhwas/doujins on a
 ## Commands
 
 You can see all commands within the bot with the `+help` command.
+
++help - Returns all commands.
+
++ping - Pong! Displays the ping.
+
++invite - Displays bot invite link.
+
++source - Displays bot's GitHub repository.
+
++setup - Setup your user/server for manga updates.
+
++addmanga - Adds manga to your list to be tracked. (Optional: `user` or `server` after command for easy usage)
+
++removemanga - Removes manga from your list that were tracked. (Optional: `user` or `server` after command for easy usage)
+
++mangalist - Lists all manga that are being tracked. (Optional: `user` or `server` after command for easy usage)
