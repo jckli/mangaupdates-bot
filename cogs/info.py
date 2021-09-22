@@ -27,7 +27,6 @@ class Information(commands.Cog):
         embed.add_field(name="+ping", value="Pong! Displays the ping.", inline=False)
         embed.add_field(name="+invite", value="Displays bot invite link", inline=False)
         embed.add_field(name="+source", value="Displays bot's GitHub repository", inline=False)
-        embed.add_field(name="+stats", value="Displays bot's statistics", inline=False)
         embed.add_field(name="+setup", value="Setup your user/server for manga updates.", inline=False)
         embed.add_field(name="+addmanga", value="Adds manga to your list to be tracked. (Optional: `user` or `server` after command for easy usage)", inline=False)
         embed.add_field(name="+removemanga", value="Removes manga from your list that were tracked. (Optional: `user` or `server` after command for easy usage)", inline=False)
