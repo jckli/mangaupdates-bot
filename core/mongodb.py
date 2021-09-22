@@ -108,7 +108,7 @@ def checkMangaAlreadyWithinDb(id, title, mode):
         for manga in allMangas:
             result = srv.find_one({"serverid": id}, {"manga": 1})
             for i in result["manga"]:
-                if i["title"] == title:
+                if i["title"] == manga:
                     return True
         return False
 

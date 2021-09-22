@@ -86,7 +86,7 @@ class UpdateSending(commands.Cog):
                         embed.set_image(url=image)
                     await channelObject.send(embed=embed)
             else:
-                print("New manga not wanted.")
+                print(f"New manga not wanted. ({title})")
 
         nest_asyncio.apply()
         checkThread = threading.Thread(target=checkForUpdates)
