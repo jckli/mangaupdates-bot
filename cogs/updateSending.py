@@ -5,6 +5,7 @@ import threading
 import asyncio
 import nest_asyncio
 import time
+from datetime import datetime
 
 from core import update
 from core import mongodb
@@ -19,7 +20,7 @@ class UpdateSending(commands.Cog):
             value = True
             while value == True:
                 new = update.getLatest()
-                print("Checking for new updates!")
+                print("Checking for new updates! " + (str(datetime.now().strftime("%H:%M:%S"))))
                 if new != old:
                     print("New update found!")
                     newMangas = [manga for manga in new if manga not in old]
@@ -29,26 +30,63 @@ class UpdateSending(commands.Cog):
                 old = new
             
         async def notify(title, chapter, group, link):
-            serverWant = mongodb.mangaWanted(title, "server")
-            userWant = mongodb.mangaWanted(title, "user")
-            image = update.getImage(link)
-            embed = discord.Embed(title=f"New {title} chapter released!", description=f"There is a new {title} chapter released", color=0x3083e3)
-            embed.add_field(name="Chapter", value=chapter, inline=True)
-            embed.add_field(name="Group", value=group, inline=True)
-            embed.add_field(name="Link", value=link, inline=False)
-            embed.set_image(url=image)
-            if userWant != None:
-                for user in userWant:
-                    userObject = await self.bot.fetch_user(user)
+            if link != None:
+                titleReal = update.getTitle(link)
+                allTitles = update.getAllTitles(link, titleReal)
+                image = update.getImage(link)
+            elif link == None:
+                allTitles = [title]
+                image = None
+
+            serverNeed = False
+            userNeed = False
+            userList = []
+            serverList = []
+            for title in allTitles:
+                serverWant = mongodb.mangaWanted(title, "server")
+                userWant = mongodb.mangaWanted(title, "user")
+                if userWant != None:
+                    userNeed = True
+                    for user in userWant:
+                        userList.append({
+                            "id": user,
+                            "title": title
+                        })
+                if serverWant != None:
+                    serverNeed = True
+                    i = 0
+                    for channel in serverWant.channelList:
+                        serverList.append({
+                            "serverid": serverWant.serverList[i],
+                            "channelid": channel,
+                            "title": title
+                        })
+                        i += 1
+
+            if userNeed == True:
+                for user in userList:
+                    userObject = await self.bot.fetch_user(user["id"])
+                    mangaTitle = user["title"]
+                    embed = discord.Embed(title=f"New {mangaTitle} chapter released!", description=f"There is a new {mangaTitle} chapter.", color=0x3083e3)
+                    embed.add_field(name="Chapter", value=chapter, inline=True)
+                    embed.add_field(name="Group", value=group, inline=True)
+                    embed.add_field(name="Link", value=link, inline=False)
+                    if image != None:
+                        embed.set_image(url=image)
                     await userObject.send(embed=embed)
-                    break
-            if serverWant.serverList != None:
-                for channel in serverWant.channelList:
-                    channelObject = self.bot.get_channel(channel)
+            if serverNeed == True:
+                for server in serverList:
+                    channelObject = self.bot.get_channel(server["channelid"])
+                    mangaTitle = server["title"]
+                    embed = discord.Embed(title=f"New {mangaTitle} chapter released!", description=f"There is a new {mangaTitle} chapter.", color=0x3083e3)
+                    embed.add_field(name="Chapter", value=chapter, inline=True)
+                    embed.add_field(name="Group", value=group, inline=True)
+                    embed.add_field(name="Link", value=link, inline=False)
+                    if image != None:
+                        embed.set_image(url=image)
                     await channelObject.send(embed=embed)
-                    break
             else:
-                print("New manga not wanted lol")
+                print("New manga not wanted.")
 
         nest_asyncio.apply()
         checkThread = threading.Thread(target=checkForUpdates)

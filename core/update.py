@@ -32,6 +32,10 @@ def getLatest():
             link = entry["links"][0]["href"]
         except:
             link = None
+
+        if link != None:
+            title = getTitle(link)
+
         mangas.append({"title": title.rstrip(), "chapter": chapter, "scanGroup": scanGroup, "link": link})
     return mangas
 
@@ -52,3 +56,36 @@ def getTitle(link):
     text = soup.find("span", {"class": "releasestitle tabletitle"})
     title = text.get_text()
     return title
+
+def getAllTitles(link, title):
+    websiteResult = requests.get(link, headers={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246"})
+    htmlData = websiteResult.text
+    soup = bs(htmlData, "html.parser")
+    table = soup.findAll('div')
+    i = 0
+    for div in table:
+        if str(div) == '<div class="sCat"><b>Associated Names</b></div>':
+            namesRaw = table[i+1]
+            namesRaw = str(namesRaw).replace('<div class="sContent">', "")
+            namesRaw = namesRaw.replace('</div>', "")
+            namesRaw = namesRaw.replace('<br/>', "")
+            namesRaw = namesRaw.replace('</br>', "")
+            namesRaw = namesRaw.replace('<br>', ",")
+            names = namesRaw.split(",")
+            names.append(title)
+            for name in names:
+                if name == "\n":
+                    names.remove(name)
+            return names
+        i += 1
+
+def getLink(title):
+    websiteResult = requests.post("https://mangaupdates.com/search.html", params={"search": title}, headers={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246"})
+    htmlData = websiteResult.text
+    soup = bs(htmlData, "html.parser")
+    table = soup.find_all('a', {"alt": "Series Info"})
+    for manga in table:
+        if title in str(manga):
+            link = str(manga).replace('<a alt="Series Info" href="', "")
+            link = link.replace(f'"><i>{title}</i></a>', "")
+            return link

@@ -5,6 +5,8 @@ from pymongo import collection
 import json
 import os
 
+from core import update
+
 with open("config.json", "r") as f:
     config = json.load(f)
 
@@ -92,17 +94,22 @@ def mangaWanted(title, mode):
             return None
 
 def checkMangaAlreadyWithinDb(id, title, mode):
+    link = update.getLink(title)
+    mainName = update.getTitle(link)
+    allMangas = update.getAllTitles(link, mainName)
     if mode == "user":
-        result = usr.find_one({"userid": id}, {"manga": 1})
-        for i in result["manga"]:
-            if i["title"] == title:
-                return True
+        for manga in allMangas:
+            result = usr.find_one({"userid": id}, {"manga": 1})
+            for i in result["manga"]:
+                if i["title"] == manga:
+                    return True
         return False
     elif mode == "server":
-        result = srv.find_one({"serverid": id}, {"manga": 1})
-        for i in result["manga"]:
-            if i["title"] == title:
-                return True
+        for manga in allMangas:
+            result = srv.find_one({"serverid": id}, {"manga": 1})
+            for i in result["manga"]:
+                if i["title"] == title:
+                    return True
         return False
 
 def getMangaList(id, mode):
