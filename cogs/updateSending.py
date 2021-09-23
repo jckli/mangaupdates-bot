@@ -17,8 +17,7 @@ class UpdateSending(commands.Cog):
         # todo: setup failsafe by saving last data to somewhere to check again if bot dies and needs to restart
         def checkForUpdates():
             old = update.getLatest()
-            value = True
-            while value == True:
+            while True:
                 new = update.getLatest()
                 print("Checking for new updates! " + (str(datetime.now().strftime("%H:%M:%S"))))
                 if new != old:
@@ -32,7 +31,9 @@ class UpdateSending(commands.Cog):
         async def notify(title, chapter, group, link):
             if link != None:
                 titleReal = update.getTitle(link)
+                time.sleep(7)
                 allTitles = update.getAllTitles(link, titleReal)
+                time.sleep(7)
                 image = update.getImage(link)
             elif link == None:
                 allTitles = [title]
