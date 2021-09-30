@@ -4,14 +4,17 @@ from pymongo import collection
 
 import json
 import os
+import certifi
 
 from core import update
 
 with open("config.json", "r") as f:
     config = json.load(f)
 
+ca = certifi.where()
+
 dbPassword = config["dbPassword"]
-mongo = MongoClient(f"mongodb+srv://baka:{dbPassword}@akane.dsytm.mongodb.net/Kana?retryWrites=true&w=majority")
+mongo = MongoClient(f"mongodb+srv://baka:{dbPassword}@akane.dsytm.mongodb.net/Kana?retryWrites=true&w=majority", tlsCAFile=ca)
 
 database = mongo["Kana"]
 srv = database["servers"]
@@ -94,22 +97,17 @@ def mangaWanted(title, mode):
             return None
 
 def checkMangaAlreadyWithinDb(id, title, mode):
-    link = update.getLink(title)
-    mainName = update.getTitle(link)
-    allMangas = update.getAllTitles(link, mainName)
     if mode == "user":
-        for manga in allMangas:
-            result = usr.find_one({"userid": id}, {"manga": 1})
-            for i in result["manga"]:
-                if i["title"] == manga:
-                    return True
+        result = usr.find_one({"userid": id}, {"manga": 1})
+        for i in result["manga"]:
+            if i["title"] == title:
+                return True
         return False
     elif mode == "server":
-        for manga in allMangas:
-            result = srv.find_one({"serverid": id}, {"manga": 1})
-            for i in result["manga"]:
-                if i["title"] == manga:
-                    return True
+        result = srv.find_one({"serverid": id}, {"manga": 1})
+        for i in result["manga"]:
+            if i["title"] == title:
+                return True
         return False
 
 def getMangaList(id, mode):

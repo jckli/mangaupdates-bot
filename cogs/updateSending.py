@@ -30,9 +30,7 @@ class UpdateSending(commands.Cog):
             
         async def notify(title, chapter, group, link):
             if link != None:
-                titleReal = update.getTitle(link)
-                time.sleep(7)
-                allTitles = update.getAllTitles(link, titleReal)
+                allTitles = update.getAllTitles(link)
                 time.sleep(7)
                 image = update.getImage(link)
             elif link == None:

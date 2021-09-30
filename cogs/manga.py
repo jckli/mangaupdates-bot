@@ -5,6 +5,7 @@ from discord.ext import commands
 import asyncio
 import pymanga
 import validators
+import time
 
 from core import mongodb
 from core import update
@@ -143,6 +144,7 @@ class Manga(commands.Cog):
                             completeError = discord.Embed(title="Error", color=0xff4f4f, description="Something went wrong. Create an issue here for support: https://github.com/ohashizu/mangaupdates-bot")
                             await ctx.send(embed=completeError, delete_after=5.0)
                             return
+                    time.sleep(7)
                     mangaInDb = mongodb.checkMangaAlreadyWithinDb(userid, mangaTitle, "user")
                     if mangaInDb == True:
                         mangaExist = discord.Embed(title="Add Manga", color=0x3083e3, description="This manga is already added to your list.")
@@ -210,6 +212,7 @@ class Manga(commands.Cog):
                                 completeError = discord.Embed(title="Error", color=0xff4f4f, description="Something went wrong. Create an issue here for support: https://github.com/ohashizu/mangaupdates-bot")
                                 await ctx.send(embed=completeError, delete_after=5.0)
                                 return
+                        time.sleep(7)
                         mangaInDb = mongodb.checkMangaAlreadyWithinDb(serverid, mangaTitle, "server")
                         if mangaInDb == True:
                             mangaExist = discord.Embed(title="Add Manga", color=0x3083e3, description="This manga is already added to the server's list.")
