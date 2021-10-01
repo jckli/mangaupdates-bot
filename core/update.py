@@ -92,5 +92,5 @@ def getLink(title):
     for manga in table:
         if title in str(manga):
             link = str(manga).replace('<a alt="Series Info" href="', "")
-            link = link.replace(f'"><i>{title}</i></a>', "")
+            link = link.partition('">')[0]
             return link
