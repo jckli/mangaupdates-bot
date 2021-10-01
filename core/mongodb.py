@@ -61,11 +61,12 @@ def checkUserExist(idName):
     else:
         return False
 
-def addManga(idName, title, mode):
+def addManga(idName, title, link, mode):
+    mangaid = link.partition("https://www.mangaupdates.com/series.html?id=")[2]
     if mode == "user":
-        usr.update_one({"userid": idName}, {"$push": {"manga": {"title": title}}})
+        usr.update_one({"userid": idName}, {"$push": {"manga": {"title": title, "id": mangaid}}})
     elif mode == "server":
-        srv.update_one({"serverid": idName}, {"$push": {"manga": {"title": title}}})
+        srv.update_one({"serverid": idName}, {"$push": {"manga": {"title": title, "id": mangaid}}})
     
 def removeManga(idName, title, mode):
     if mode == "user":
@@ -96,17 +97,18 @@ def mangaWanted(title, mode):
         else:
             return None
 
-def checkMangaAlreadyWithinDb(id, title, mode):
+def checkMangaAlreadyWithinDb(id, link, mode):
+    mangaid = link.partition("https://www.mangaupdates.com/series.html?id=")[2]
     if mode == "user":
         result = usr.find_one({"userid": id}, {"manga": 1})
         for i in result["manga"]:
-            if i["title"] == title:
+            if i["id"] == mangaid:
                 return True
         return False
     elif mode == "server":
         result = srv.find_one({"serverid": id}, {"manga": 1})
         for i in result["manga"]:
-            if i["title"] == title:
+            if i["id"] == mangaid:
                 return True
         return False
 
