@@ -33,18 +33,15 @@ def getLatest():
         except:
             link = None
 
-        if link != None:
-            title = getTitle(link)
-
         mangas.append({"title": title.rstrip(), "chapter": chapter, "scanGroup": scanGroup, "link": link})
     return mangas
 
+# s = requests.Session()
+
 # Get image from mangaupdates
 def getImage(link):
-    websiteResult = requests.get(link, headers={
-        "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36",
-        "Connection":"close"
-        })
+    with requests.Session() as s:
+        websiteResult = s.get(link, headers={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246"})
     htmlData = websiteResult.text
     soup = bs(htmlData, "html.parser") 
     for img in soup.find_all("img"):
@@ -53,24 +50,22 @@ def getImage(link):
     return image
 
 def getTitle(link):
-    websiteResult = requests.get(link, headers={
-        "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36",
-        "Connection":"close"
-        })
+    with requests.Session() as s:
+        websiteResult = s.get(link, headers={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246"})
     htmlData = websiteResult.text
     soup = bs(htmlData, "html.parser")
     text = soup.find("span", {"class": "releasestitle tabletitle"})
     title = text.get_text()
     return title
 
-def getAllTitles(link, title):
-    websiteResult = requests.get(link, headers={
-        "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36",
-        "Connection":"close"
-        })
+def getAllTitles(link):
+    with requests.Session() as s:
+        websiteResult = s.get(link, headers={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246"})
     htmlData = websiteResult.text
     soup = bs(htmlData, "html.parser")
     table = soup.findAll('div')
+    mainTitle = soup.find("span", {"class": "releasestitle tabletitle"})
+    title = mainTitle.get_text()
     i = 0
     for div in table:
         if str(div) == '<div class="sCat"><b>Associated Names</b></div>':
@@ -89,10 +84,8 @@ def getAllTitles(link, title):
         i += 1
 
 def getLink(title):
-    websiteResult = requests.post("https://mangaupdates.com/search.html", params={"search": title}, headers={
-        "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36",
-        "Connection":"close"
-        })
+    with requests.Session() as s:
+        websiteResult = s.post("https://mangaupdates.com/search.html", params={"search": title}, headers={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246"})
     htmlData = websiteResult.text
     soup = bs(htmlData, "html.parser")
     table = soup.find_all('a', {"alt": "Series Info"})
