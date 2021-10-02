@@ -166,7 +166,7 @@ class Manga(commands.Cog):
                             completeError = discord.Embed(title="Error", color=0xff4f4f, description="Something went wrong. Create an issue here for support: https://github.com/ohashizu/mangaupdates-bot")
                             await ctx.send(embed=completeError, delete_after=5.0)
                             return
-                        mangaInDb = mongodb.checkMangaAlreadyWithinDb(userid, link, "user")
+                        mangaInDb = mongodb.checkMangaAlreadyWithinDb(serverid, link, "server")
                         if mangaInDb == True:
                             mangaExist = discord.Embed(title="Add Manga", color=0x3083e3, description="This manga is already added to the server's list.")
                             await ctx.send(embed=mangaExist, delete_after=10.0)
