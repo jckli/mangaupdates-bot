@@ -7,8 +7,6 @@ from datetime import datetime
 from datetime import timedelta
 import json
 
-from core import mongodb
-
 startTime = time.time()
 
 # Load config
@@ -31,6 +29,7 @@ class Information(commands.Cog):
         embed.add_field(name="+addmanga", value="Adds manga to your list to be tracked. (Optional: `user` or `server` after command for easy usage)", inline=False)
         embed.add_field(name="+removemanga", value="Removes manga from your list that were tracked. (Optional: `user` or `server` after command for easy usage)", inline=False)
         embed.add_field(name="+mangalist", value="Lists all manga that are being tracked. (Optional: `user` or `server` after command for easy usage)", inline=False)
+        embed.add_field(name="+clearmanga", value="Removes all manga from your current manga list. (Optional: `user` or `server` after command for easy usage)", inline=False)
         await ctx.send(embed=embed)
         
 
