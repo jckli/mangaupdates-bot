@@ -1,4 +1,3 @@
-from core.update import getTitle
 import discord
 from discord.ext import commands
 
@@ -323,7 +322,8 @@ class Manga(commands.Cog):
                     if mangaList == None:
                         noMangaError = discord.Embed(title=f"{name}'s Manga List", color=0x3083e3, description="You have added no manga to your list.")
                         noMangaError.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar_url)
-                        await ctx.send(embed=noMangaError, delete_after=5.0)
+                        noMangaError.set_thumbnail(url = iconUrl)
+                        await ctx.send(embed=noMangaError)
                     else:
                         description = ""
                         for manga in mangaList:
@@ -337,6 +337,60 @@ class Manga(commands.Cog):
                     await ctx.send(embed=completeError, delete_after=5.0)
             elif exist == False:
                 setupError = discord.Embed(title="Error", color=0xff4f4f, description="Sorry! Please run the `+setup` command first and add some manga using the `+addmanga` command.")
+                await ctx.send(embed=setupError, delete_after=5.0)
+        else:
+            modeError = discord.Embed(title="Error", color=0xff4f4f, description="You did not type in either `user` or `server`.")
+            await ctx.send(embed=modeError, delete_after=5.0)
+
+    @commands.command()
+    async def clearmanga(self, ctx, *, arg=None):
+        await ctx.message.delete()
+        mode = arg
+        timeoutError = discord.Embed(title="Error", description="You didn't respond in time!", color=0xff4f4f)
+        modeEntry = False
+        if (mode == None) or (mode != "server" and mode != "user"):
+            modeEntry = True
+            modeEmbed = discord.Embed(title="Manga List", color=0x3083e3, description="Do you want to clear your manga list or this server's manga list (Type user or server)")
+            sentEmbedMode = await ctx.send(embed=modeEmbed)
+            try:
+                modeObject = await self.bot.wait_for('message', check=lambda x: x.author.id == ctx.author.id, timeout=15)
+                mode = modeObject.content
+            except asyncio.TimeoutError:
+                await sentEmbedMode.delete()
+                await ctx.send(embed=timeoutError, delete_after=5.0)
+                return
+        if modeEntry == True:
+            await sentEmbedMode.delete()
+            await modeObject.delete()
+        if mode == "user":
+            givenid = ctx.message.author.id
+            name = ctx.message.author
+        elif mode == "server":
+            givenid = ctx.message.guild.id
+            name = ctx.message.guild.name
+        if mode == "user" or mode == "server":
+            if mode == "user":
+                exist = mongodb.checkUserExist(givenid)
+            elif mode == "server":
+                exist = mongodb.checkServerExist(givenid)
+            if exist == True:
+                try:
+                    mangaList = mongodb.getMangaList(givenid, mode)
+                    if mangaList == None:
+                        noMangaError = discord.Embed(title=f"Cannot Clear {name}'s Manga list", color=0x3083e3, description="You have added no manga to your list.")
+                        noMangaError.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar_url)
+                        await ctx.send(embed=noMangaError, delete_after=5.0)
+                    else:
+                        for manga in mangaList:
+                            mongodb.removeManga(givenid, manga, mode)
+                        mangaListEmbed = discord.Embed(title="Cleared", color=0x3083e3, description=f"Succesfully cleared {name}'s manga list.")
+                        mangaListEmbed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar_url)
+                        await ctx.send(embed=mangaListEmbed, delete_after=5.0)
+                except:
+                    completeError = discord.Embed(title="Error", color=0xff4f4f, description="Something went wrong. Create an issue here for support: https://github.com/ohashizu/mangaupdates-bot")
+                    await ctx.send(embed=completeError, delete_after=5.0)
+            elif exist == False:
+                setupError = discord.Embed(title="Error", color=0xff4f4f, description="Sorry! Please run the `+setup` command first and have some manga before clearing the list.")
                 await ctx.send(embed=setupError, delete_after=5.0)
         else:
             modeError = discord.Embed(title="Error", color=0xff4f4f, description="You did not type in either `user` or `server`.")

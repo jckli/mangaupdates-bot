@@ -1,9 +1,6 @@
-import pymongo
 from pymongo import MongoClient
-from pymongo import collection
 
 import json
-import os
 import certifi
 
 from core import update
