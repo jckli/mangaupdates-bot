@@ -84,6 +84,8 @@ def getAllTitles(link):
         i += 1
 
 def getLink(title):
+    if "&" in title:
+        title = title.replace("&", "&amp;")
     with requests.Session() as s:
         websiteResult = s.post("https://mangaupdates.com/search.html", params={"search": title}, headers={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246"})
     htmlData = websiteResult.text
