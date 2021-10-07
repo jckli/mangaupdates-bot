@@ -9,7 +9,7 @@ class General(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command()
+    @commands.command(name="setup")
     async def setup(self, ctx):
         await ctx.message.delete()
         timeoutError = discord.Embed(title="Error", description="You didn't respond in time!", color=0xff4f4f)
