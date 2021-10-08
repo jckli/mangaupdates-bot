@@ -66,7 +66,8 @@ class UpdateSending(commands.Cog):
                 for user in userList:
                     userObject = await self.bot.fetch_user(user["id"])
                     mangaTitle = user["title"]
-                    embed = discord.Embed(title=f"New {mangaTitle} chapter released!", description=f"There is a new {mangaTitle} chapter.", color=0x3083e3)
+                    embed = discord.Embed(title=f"New {mangaTitle} chapter released!", description=f"There is a new `{mangaTitle}` chapter.", color=0x3083e3)
+                    embed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
                     embed.add_field(name="Chapter", value=chapter, inline=True)
                     embed.add_field(name="Group", value=group, inline=True)
                     embed.add_field(name="Link", value=link, inline=False)
@@ -77,7 +78,8 @@ class UpdateSending(commands.Cog):
                 for server in serverList:
                     channelObject = self.bot.get_channel(server["channelid"])
                     mangaTitle = server["title"]
-                    embed = discord.Embed(title=f"New {mangaTitle} chapter released!", description=f"There is a new {mangaTitle} chapter.", color=0x3083e3)
+                    embed = discord.Embed(title=f"New {mangaTitle} chapter released!", description=f"There is a new `{mangaTitle}` chapter.", color=0x3083e3)
+                    embed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
                     embed.add_field(name="Chapter", value=chapter, inline=True)
                     embed.add_field(name="Group", value=group, inline=True)
                     embed.add_field(name="Link", value=link, inline=False)

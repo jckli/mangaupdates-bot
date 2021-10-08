@@ -440,11 +440,11 @@ class Manga(commands.Cog):
                 if mode == "user":
                     givenid = ctx.message.author.id
                     name = ctx.message.author
-                    iconUrl = ctx.message.author.avatar_url
+                    iconUrl = ctx.message.author.avatar.url
                 elif mode == "server":
                     givenid = ctx.message.guild.id
                     name = ctx.message.guild.name
-                    iconUrl = ctx.message.guild.icon_url
+                    iconUrl = ctx.message.guild.icon.url
                 if mode == "user" or mode == "server":
                     if mode == "user":
                         exist = mongodb.checkUserExist(givenid)
@@ -455,7 +455,7 @@ class Manga(commands.Cog):
                             mangaList = mongodb.getMangaList(givenid, mode)
                             if mangaList == None:
                                 noMangaError = discord.Embed(title=f"{name}'s Manga List", color=0x3083e3, description="You have added no manga to your list.")
-                                noMangaError.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar_url)
+                                noMangaError.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
                                 noMangaError.set_thumbnail(url = iconUrl)
                                 await ctx.send(embed=noMangaError)
                             else:
@@ -463,7 +463,7 @@ class Manga(commands.Cog):
                                 for manga in mangaList:
                                     description += f"• {manga}\n"
                                 mangaListEmbed = discord.Embed(title=f"{name}'s Manga List", color=0x3083e3, description=description)
-                                mangaListEmbed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar_url)
+                                mangaListEmbed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
                                 mangaListEmbed.set_thumbnail(url = iconUrl)
                                 await ctx.send(embed=mangaListEmbed)
                         except:
@@ -481,14 +481,14 @@ class Manga(commands.Cog):
         else:
             userid = ctx.message.author.id
             name = ctx.message.author
-            iconUrl = ctx.message.author.avatar_url
+            iconUrl = ctx.message.author.avatar.url
             exist = mongodb.checkUserExist(userid)
             if exist == True:
                 try:
                     mangaList = mongodb.getMangaList(userid, "user")
                     if mangaList == None:
                         noMangaError = discord.Embed(title=f"{name}'s Manga List", color=0x3083e3, description="You have added no manga to your list.")
-                        noMangaError.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar_url)
+                        noMangaError.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
                         noMangaError.set_thumbnail(url = iconUrl)
                         await ctx.send(embed=noMangaError)
                     else:
@@ -496,7 +496,7 @@ class Manga(commands.Cog):
                         for manga in mangaList:
                             description += f"• {manga}\n"
                         mangaListEmbed = discord.Embed(title=f"{name}'s Manga List", color=0x3083e3, description=description)
-                        mangaListEmbed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar_url)
+                        mangaListEmbed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
                         mangaListEmbed.set_thumbnail(url = iconUrl)
                         await ctx.send(embed=mangaListEmbed)
                 except:
@@ -553,13 +553,13 @@ class Manga(commands.Cog):
                             mangaList = mongodb.getMangaList(givenid, mode)
                             if mangaList == None:
                                 noMangaError = discord.Embed(title=f"Cannot Clear {name}'s Manga list", color=0x3083e3, description="You have added no manga to your list.")
-                                noMangaError.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar_url)
+                                noMangaError.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
                                 await ctx.send(embed=noMangaError, delete_after=5.0)
                             else:
                                 for manga in mangaList:
                                     mongodb.removeManga(givenid, manga, mode)
                                 mangaListEmbed = discord.Embed(title="Cleared", color=0x3083e3, description=f"Succesfully cleared {name}'s manga list.")
-                                mangaListEmbed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar_url)
+                                mangaListEmbed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
                                 await ctx.send(embed=mangaListEmbed, delete_after=5.0)
                         except:
                             completeError = discord.Embed(title="Error", color=0xff4f4f, description="Something went wrong. Create an issue here for support: https://github.com/ohashizu/mangaupdates-bot")
@@ -582,13 +582,13 @@ class Manga(commands.Cog):
                     mangaList = mongodb.getMangaList(userid, "user")
                     if mangaList == None:
                         noMangaError = discord.Embed(title=f"Cannot Clear {name}'s Manga list", color=0x3083e3, description="You have added no manga to your list.")
-                        noMangaError.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar_url)
+                        noMangaError.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
                         await ctx.send(embed=noMangaError)
                     else:
                         for manga in mangaList:
                             mongodb.removeManga(userid, manga, "user")
                         mangaListEmbed = discord.Embed(title="Cleared", color=0x3083e3, description=f"Succesfully cleared {name}'s manga list.")
-                        mangaListEmbed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar_url)
+                        mangaListEmbed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
                         await ctx.send(embed=mangaListEmbed)
                 except:
                     completeError = discord.Embed(title="Error", color=0xff4f4f, description="Something went wrong. Create an issue here for support: https://github.com/ohashizu/mangaupdates-bot")

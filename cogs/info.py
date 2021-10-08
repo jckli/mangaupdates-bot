@@ -20,7 +20,7 @@ class Information(commands.Cog):
     @commands.command(name="help")
     async def help(self, ctx):
         embed = discord.Embed(title="MangaUpdates Help", color=0x3083e3)
-        embed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar_url)
+        embed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
         embed.add_field(name="+help", value="Displays this message", inline=False)
         embed.add_field(name="+ping", value="Pong! Displays the ping.", inline=False)
         embed.add_field(name="+invite", value="Displays bot invite link", inline=False)
@@ -40,7 +40,7 @@ class Information(commands.Cog):
     @commands.command(name="invite")
     async def invite(self, ctx):
         embed = discord.Embed(title="Invite Link", color=0x3083e3, description="Invite me to your own servers!")
-        embed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar_url)
+        embed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
         embed.add_field(name="Link", value="https://discord.com/oauth2/authorize?client_id=880694914365685781&scope=bot&permissions=268856384")
         await ctx.send(embed=embed)
 
@@ -63,7 +63,7 @@ class Information(commands.Cog):
                 timestamp=datetime.now(),
                 description=f"**Server Count:** {len(self.bot.guilds)}\n**Bot Users:** {botUsers}\n**Bot Uptime:** {uptime}"
             )
-            botinfo.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar_url)
+            botinfo.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
             await ctx.send(embed=botinfo)
         else:
             permissionError = discord.Embed(title="Error", color=0xff4f4f, description="You found a hidden command! Too bad only the bot owner can use this.")
@@ -72,7 +72,7 @@ class Information(commands.Cog):
     @commands.command(name="source")
     async def source(self, ctx):
         embed = discord.Embed(title="Source Code", color=0x3083e3, description="MangaUpdate's source code can be found on GitHub. Any issues with the bot can be raised there.")
-        embed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar_url)
+        embed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
         embed.add_field(name="Link", value="https://github.com/ohashizu/mangaupdates-bot")
         await ctx.send(embed=embed)
 
