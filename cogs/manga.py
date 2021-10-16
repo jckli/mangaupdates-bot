@@ -440,11 +440,14 @@ class Manga(commands.Cog):
                 if mode == "user":
                     givenid = ctx.message.author.id
                     name = ctx.message.author
-                    iconUrl = ctx.message.author.avatar.url
+                    iconUrl = ctx.message.author.display_avatar
                 elif mode == "server":
                     givenid = ctx.message.guild.id
                     name = ctx.message.guild.name
-                    iconUrl = ctx.message.guild.icon.url
+                    if ctx.message.guild.icon != None:
+                        iconUrl = ctx.message.guild.icon.url
+                    else:
+                        iconUrl = "https://cdn.discordapp.com/embed/avatars/0.png"
                 if mode == "user" or mode == "server":
                     if mode == "user":
                         exist = mongodb.checkUserExist(givenid)
@@ -481,7 +484,7 @@ class Manga(commands.Cog):
         else:
             userid = ctx.message.author.id
             name = ctx.message.author
-            iconUrl = ctx.message.author.avatar.url
+            iconUrl = ctx.message.author.display_avatar
             exist = mongodb.checkUserExist(userid)
             if exist == True:
                 try:
