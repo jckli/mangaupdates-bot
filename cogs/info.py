@@ -30,7 +30,8 @@ class Information(commands.Cog):
         embed.add_field(name="+removemanga", value="Removes manga from your list that were tracked. (Optional: `user` or `server` after command for easy usage)", inline=False)
         embed.add_field(name="+mangalist", value="Lists all manga that are being tracked. (Optional: `user` or `server` after command for easy usage)", inline=False)
         embed.add_field(name="+clearmanga", value="Removes all manga from your current manga list. (Optional: `user` or `server` after command for easy usage)", inline=False)
-        embed.add_field(name="+deleteaccount", value="Deletes your account and your manga list. Use this to re-set the channel the bot sends updates to.", inline=False)
+        embed.add_field(name="+setchannel", value="Changes the server's channel that manga chapter updates are sent to.", inline=False)
+        embed.add_field(name="+deleteaccount", value="Deletes your account and your manga list.", inline=False)
         await ctx.send(embed=embed)
         
 

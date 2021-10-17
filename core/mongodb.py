@@ -44,6 +44,10 @@ def removeUser(userID):
 def updateChannel(idName, channelID):
     srv.update_one({"serverid": idName}, {"$set": {"channelid": channelID}})
 
+def findChannel(idName):
+    result = srv.find_one({"serverid": idName})
+    return result["channelid"]
+
 def checkServerExist(idName):
     result = srv.find_one({"serverid": idName})
     if result != None:
