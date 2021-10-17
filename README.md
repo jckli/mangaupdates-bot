@@ -37,3 +37,9 @@ You can see all commands within the bot with the `+help` command.
 +removemanga - Removes manga from your list that were tracked. (Optional: `user` or `server` after command for easy usage)
 
 +mangalist - Lists all manga that are being tracked. (Optional: `user` or `server` after command for easy usage)
+
++clearmanga - Removes all manga from your current manga list. (Optional: `user` or `server` after command for easy usage)
+
++setchannel - Changes the server's channel that manga chapter updates are sent to.
+
++deleteaccount - Deletes your account and your manga list.
