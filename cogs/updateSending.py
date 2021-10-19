@@ -42,8 +42,8 @@ class UpdateSending(commands.Cog):
             userList = []
             serverList = []
             for title in allTitles:
-                serverWant = mongodb.mangaWanted(title, "server")
-                userWant = mongodb.mangaWanted(title, "user")
+                serverWant = mongodb.mangaWanted(title, group, "server")
+                userWant = mongodb.mangaWanted(title, group, "user")
                 if userWant != None:
                     userNeed = True
                     for user in userWant:
@@ -61,7 +61,7 @@ class UpdateSending(commands.Cog):
                             "title": title
                         })
                         i += 1
-
+                        
             if userNeed == True:
                 for user in userList:
                     userObject = await self.bot.fetch_user(user["id"])

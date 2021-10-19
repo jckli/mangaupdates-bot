@@ -76,9 +76,12 @@ def removeManga(idName, title, mode):
         srv.update_one({"serverid": idName}, {"$pull": {"manga": {"title": title}}})
 
 def mangaWanted(title, group, mode):
+    if "&" in group:
+        group = group.split("&")
+        group = [x.strip(' ') for x in group]
     if mode == "user":
         idList = []
-        result = usr.find({"manga.title": title}, {"_id": 0, "userid": 1, "manga.groupName": 1})
+        result = usr.find({"manga.title": title}, {"_id": 0, "userid": 1, "manga": 1})
         for i in result:
             for m in i["manga"]:
                 if m["title"] == title:
