@@ -9,6 +9,21 @@ import time
 
 from core import mongodb, update
 
+class Mode(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=15.0)
+        self.value = None
+
+    @discord.ui.button(label=f'User (DMs)', style=discord.ButtonStyle.grey)
+    async def confirm(self, button: discord.ui.Button, interaction: discord.Interaction):
+        self.value = "user"
+        self.stop()
+
+    @discord.ui.button(label=f'Server', style=discord.ButtonStyle.grey)
+    async def cancel(self, button: discord.ui.Button, interaction: discord.Interaction):
+        self.value = "server"
+        self.stop()
+
 class Manga(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -595,13 +610,185 @@ class Manga(commands.Cog):
                         await ctx.send(embed=mangaListEmbed)
                 except:
                     completeError = discord.Embed(title="Error", color=0xff4f4f, description="Something went wrong. Create an issue here for support: https://github.com/ohashizu/mangaupdates-bot")
-                    await ctx.send(embed=completeError, delete_after=5.0)
+                    await ctx.send(embed=completeError)
             elif exist == False:
                 setupError = discord.Embed(title="Error", color=0xff4f4f, description="Sorry! Please run the `+setup` command first and have some manga before clearing the list.")
-                await ctx.send(embed=setupError, delete_after=5.0)
+                await ctx.send(embed=setupError)
+            else:
+                completeError = discord.Embed(title="Error", color=0xff4f4f, description="Something went wrong. Create an issue here for support: https://github.com/ohashizu/mangaupdates-bot")
+                await ctx.send(embed=completeError)
+
+    @commands.command(name="setgroup")
+    async def setgroup(self, ctx, *, arg=None):
+        timeoutError = discord.Embed(title="Error", description="You didn't respond in time!", color=0xff4f4f)
+        if isinstance(ctx.channel, discord.DMChannel) == False:
+            guild = ctx.message.guild
+            if guild.me.guild_permissions.manage_messages == False:
+                permissionError = discord.Embed(title="Error", color=0xff4f4f, description="I don't have permission to run this command. Please grant me the: `Manage Messages` permission.")
+                await ctx.send(embed=permissionError, delete_after=10.0)
+                return
+            else:
+                modeView = Mode()
+                await ctx.message.delete()
+                mode = arg
+                modeEntry = False
+                if (mode == None) or (mode != "server" and mode != "user"):
+                    modeEntry = True
+                    modeEmbed = discord.Embed(title="Set Scanlator Group", color=0x3083e3, description="Do you want to set your manga's scan groups or the server's scan groups?")
+                    sentEmbedMode = await ctx.send(embed=modeEmbed, view=modeView)
+                    await modeView.wait()
+                    if modeView.value is None:
+                        await sentEmbedMode.delete()
+                        await ctx.send(embed=timeoutError, delete_after=5.0)
+                        return
+                    else:
+                        mode = modeView.value
+                if modeEntry == True:
+                    await sentEmbedMode.delete()
+                if mode == "user":
+                    givenid = ctx.message.author.id
+                    exist = mongodb.checkUserExist(givenid)
+                elif mode == "server":
+                    givenid = ctx.message.guild.id
+                    exist = mongodb.checkServerExist(givenid)
+                if exist == True:
+                    try:
+                        mangaList = mongodb.getMangaList(givenid, mode)
+                    except:
+                        completeError = discord.Embed(title="Error", color=0xff4f4f, description="Something went wrong. Create an issue here for support: https://github.com/ohashizu/mangaupdates-bot")
+                        await ctx.send(embed=completeError, delete_after=5.0)
+                    if mangaList == None:
+                        noMangaError = discord.Embed(title="Error", color=0x3083e3, description="You have added no manga to your list. Please add manga using `+addmanga`.")
+                        await ctx.send(embed=noMangaError, delete_after=5.0)
+                        return
+                    else:
+                        description = "What manga do you want to set the scanlator group for?\n"
+                        i = 1
+                        for manga in mangaList:
+                            description += f"{i}. {manga}\n"
+                            i += 1
+                        mangaEmbed = discord.Embed(title="Set Scanlator Group", color=0x3083e3, description=description)
+                        sentMangaEmbed = await ctx.send(embed=mangaEmbed)
+                        try:
+                            manga = await self.bot.wait_for('message', check=lambda x: x.author.id == ctx.author.id, timeout=15)
+                        except asyncio.TimeoutError:
+                            await sentMangaEmbed.delete()
+                            await ctx.send(embed=timeoutError, delete_after=5.0)
+                        else:
+                            await sentMangaEmbed.delete()
+                            await manga.delete()
+                            if manga.content.isnumeric() is True and int(manga.content) in range(1, i):
+                                mangaTitle = mangaList[int(manga.content)-1]
+                                try:
+                                    link = "https://www.mangaupdates.com/series.html?id=" + mongodb.getMangaID(mangaList[int(manga.content)-1], mode)
+                                    groupList = update.getGroups(link)
+                                except:
+                                    completeError = discord.Embed(title="Error", color=0xff4f4f, description="Something went wrong. Create an issue here for support: https://github.com/ohashizu/mangaupdates-bot")
+                                    await ctx.send(embed=completeError, delete_after=5.0)
+                                description = f"What scanlator group do you want to set for `{mangaTitle}`?\n"
+                                k = 1
+                                for group in groupList:
+                                    groupName = group["groupName"]
+                                    description += f"{k}. {groupName}\n"
+                                    k += 1
+                                groupEmbed = discord.Embed(title="Set Scanlator Group", color=0x3083e3, description=description)
+                                sentGroupEmbed = await ctx.send(embed=groupEmbed)
+                                try:
+                                    group = await self.bot.wait_for('message', check=lambda x: x.author.id == ctx.author.id, timeout=15)
+                                except asyncio.TimeoutError:
+                                    await sentGroupEmbed.delete()
+                                    await ctx.send(embed=timeoutError, delete_after=5.0)
+                                else:
+                                    await sentGroupEmbed.delete()
+                                    await group.delete()
+                                    if group.content.isnumeric() is True and int(group.content) in range(1, k):
+                                        group = groupList[int(group.content)-1]
+                                        groupName = group["groupName"]
+                                        groupid = group["groupid"]
+                                        mongodb.setScanGroup(givenid, mangaTitle, groupName, groupid, mode)
+                                        completeEmbed = discord.Embed(title="Success", color=0x3083e3, description=f"Scanlator group for `{mangaTitle}` has been set to `{groupName}`.")
+                                        await ctx.send(embed=completeEmbed, delete_after=10.0)
+                                    else:
+                                        countError = discord.Embed(title="Error", color=0xff4f4f, description=f"You didn't select a number from `1` to `{k-1}`")
+                                        await ctx.send(embed=countError, delete_after=5.0)
+                                        return
+                            else:
+                                countError = discord.Embed(title="Error", color=0xff4f4f, description=f"You didn't select a number from `1` to `{i-1}`")
+                                await ctx.send(embed=countError, delete_after=5.0)
+                                return
+                elif exist == False:
+                    setupError = discord.Embed(title="Error", color=0xff4f4f, description="Sorry! Please run the `+setup` command first and have some manga before clearing the list.")
+                    await ctx.send(embed=setupError, delete_after=5.0)
+                else:
+                    completeError = discord.Embed(title="Error", color=0xff4f4f, description="Something went wrong. Create an issue here for support: https://github.com/ohashizu/mangaupdates-bot")
+                    await ctx.send(embed=completeError, delete_after=5.0)
+        else:
+            givenid = ctx.message.author.id
+            exist = mongodb.checkUserExist(givenid)
+            if exist == True:
+                try:
+                    mangaList = mongodb.getMangaList(givenid, "user")
+                except:
+                    completeError = discord.Embed(title="Error", color=0xff4f4f, description="Something went wrong. Create an issue here for support: https://github.com/ohashizu/mangaupdates-bot")
+                    await ctx.send(embed=completeError, delete_after=5.0)
+                if mangaList == None:
+                    noMangaError = discord.Embed(title="Error", color=0x3083e3, description="You have added no manga to your list. Please add manga using `+addmanga`.")
+                    await ctx.send(embed=noMangaError)
+                    return
+                else:
+                    description = "What manga do you want to set the scanlator group for?\n"
+                    i = 1
+                    for manga in mangaList:
+                        description += f"{i}. {manga}\n"
+                        i += 1
+                    mangaEmbed = discord.Embed(title="Set Scanlator Group", color=0x3083e3, description=description)
+                    sentMangaEmbed = await ctx.send(embed=mangaEmbed)
+                    try:
+                        manga = await self.bot.wait_for('message', check=lambda x: x.author.id == ctx.author.id, timeout=15)
+                    except asyncio.TimeoutError:
+                        await ctx.send(embed=timeoutError, delete_after=5.0)
+                    else:
+                        if manga.content.isnumeric() is True and int(manga.content) in range(1, i):
+                            mangaTitle = mangaList[int(manga.content)-1]
+                            try:
+                                link = "https://www.mangaupdates.com/series.html?id=" + mongodb.getMangaID(mangaList[int(manga.content)-1], "user")
+                                groupList = update.getGroups(link)
+                            except:
+                                completeError = discord.Embed(title="Error", color=0xff4f4f, description="Something went wrong. Create an issue here for support: https://github.com/ohashizu/mangaupdates-bot")
+                                await ctx.send(embed=completeError, delete_after=5.0)
+                            description = f"What scanlator group do you want to set for `{mangaTitle}`?\n"
+                            k = 1
+                            for group in groupList:
+                                groupName = group["groupName"]
+                                description += f"{k}. {groupName}\n"
+                                k += 1
+                            groupEmbed = discord.Embed(title="Set Scanlator Group", color=0x3083e3, description=description)
+                            sentGroupEmbed = await ctx.send(embed=groupEmbed)
+                            try:
+                                group = await self.bot.wait_for('message', check=lambda x: x.author.id == ctx.author.id, timeout=15)
+                            except asyncio.TimeoutError:
+                                await ctx.send(embed=timeoutError, delete_after=5.0)
+                            else:
+                                if group.content.isnumeric() is True and int(group.content) in range(1, k):
+                                    group = groupList[int(group.content)-1]
+                                    groupName = group["groupName"]
+                                    groupid = group["groupid"]
+                                    mongodb.setScanGroup(givenid, mangaTitle, groupName, groupid, "user")
+                                    completeEmbed = discord.Embed(title="Success", color=0x3083e3, description=f"Scanlator group for `{mangaTitle}` has been set to `{groupName}`.")
+                                    await ctx.send(embed=completeEmbed)
+                                else:
+                                    countError = discord.Embed(title="Error", color=0xff4f4f, description=f"You didn't select a number from `1` to `{k-1}`")
+                                    await ctx.send(embed=countError, delete_after=5.0)
+                                    return
+                        else:
+                            countError = discord.Embed(title="Error", color=0xff4f4f, description=f"You didn't select a number from `1` to `{i-1}`")
+                            await ctx.send(embed=countError, delete_after=5.0)
+                            return
+            elif exist == False:
+                    setupError = discord.Embed(title="Error", color=0xff4f4f, description="Sorry! Please run the `+setup` command first and have some manga before clearing the list.")
+                    await ctx.send(embed=setupError, delete_after=5.0)
             else:
                 completeError = discord.Embed(title="Error", color=0xff4f4f, description="Something went wrong. Create an issue here for support: https://github.com/ohashizu/mangaupdates-bot")
                 await ctx.send(embed=completeError, delete_after=5.0)
-
 def setup(bot):
     bot.add_cog(Manga(bot))

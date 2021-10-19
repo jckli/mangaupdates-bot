@@ -32,8 +32,8 @@ class Information(commands.Cog):
         embed.add_field(name="+clearmanga", value="Removes all manga from your current manga list. (Optional: `user` or `server` after command for easy usage)", inline=False)
         embed.add_field(name="+setchannel", value="Changes the server's channel that manga chapter updates are sent to.", inline=False)
         embed.add_field(name="+deleteaccount", value="Deletes your account and your manga list.", inline=False)
+        embed.add_field(name="+setgroup", value="Sets a manga's scan group. Only that scan group's chapter updates for that manga will be sent.", inline=False)
         await ctx.send(embed=embed)
-        
 
     @commands.command(name="ping")
     async def ping(self, ctx):

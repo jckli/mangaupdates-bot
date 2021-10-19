@@ -75,12 +75,22 @@ def removeManga(idName, title, mode):
     elif mode == "server":
         srv.update_one({"serverid": idName}, {"$pull": {"manga": {"title": title}}})
 
-def mangaWanted(title, mode):
+def mangaWanted(title, group, mode):
+    if "&" in group:
+        group = group.split("&")
+        group = [x.strip(' ') for x in group]
     if mode == "user":
         idList = []
-        result = usr.find({"manga.title": title}, {"_id": 0, "userid": 1})
+        result = usr.find({"manga.title": title}, {"_id": 0, "userid": 1, "manga": 1})
         for i in result:
-            idList.append(i["userid"])
+            for m in i["manga"]:
+                if m["title"] == title:
+                    if "groupName" in m:
+                        if m["groupName"] in group:
+                            idList.append(i["userid"])
+                    elif "groupName" not in m:
+                        idList.append(i["userid"])
+                    break
         if idList != []:
             return idList
         else:
@@ -89,10 +99,18 @@ def mangaWanted(title, mode):
         class list:
             serverList = []
             channelList = []
-        result = srv.find({"manga.title": title}, {"_id": 0, "serverid": 1, "channelid": 1})
+        result = srv.find({"manga.title": title}, {"_id": 0, "serverid": 1, "channelid": 1, "manga": 1})
         for i in result:
-            list.serverList.append(i["serverid"])
-            list.channelList.append(i["channelid"])
+            for m in i["manga"]:
+                if m["title"] == title:
+                    if "groupName" in m:
+                        if m["groupName"] in group:
+                            list.serverList.append(i["serverid"])
+                            list.channelList.append(i["channelid"])
+                    elif "groupName" not in m:
+                        list.serverList.append(i["serverid"])
+                        list.channelList.append(i["channelid"])
+                    break
         if list.serverList != []:
             return list
         else:
@@ -131,6 +149,27 @@ def getMangaList(id, mode):
             return manga
         else:
             return None
+        
+def getMangaID(title, mode):
+    if mode == "user":
+        result = usr.find_one({"manga.title": title}, {"manga": 1})
+    elif mode == "server":
+        result = srv.find_one({"manga.title": title}, {"manga": 1})
+    for i in result["manga"]:
+        if i["title"] == title:
+            return i["id"]
+
+def setScanGroup(id, title, group, groupid, mode):
+    if mode == "user":
+        usr.update_one({"userid": id, "manga.title": title}, {"$set": {"manga.$.groupName": group, "manga.$.groupid": groupid}})
+    elif mode == "server":
+        srv.update_one({"serverid": id, "manga.title": title}, {"$set": {"manga.$.groupName": group, "manga.$.groupid": groupid}})
+    
+def removeScanGroup(id, title, mode):
+    if mode == "user":
+        usr.update_one({"userid": id, "manga.title": title}, {"$unset": {"manga.$.groupName": "", "manga.$.groupid": ""}})
+    elif mode == "server":
+        srv.update_one({"serverid": id, "manga.title": title}, {"$unset": {"manga.$.groupName": "", "manga.$.groupid": ""}})
 
 def test():
     documentCount = usr.count_documents({})

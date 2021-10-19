@@ -1,6 +1,7 @@
 import feedparser
 import re
 import requests
+import os
 from bs4 import BeautifulSoup as bs
 
 def getLatest():
@@ -96,3 +97,30 @@ def getLink(title):
             link = str(manga).replace('<a alt="Series Info" href="', "")
             link = link.partition('">')[0]
             return link
+
+def getGroups(link):
+    with requests.Session() as s:
+        websiteResult = s.get(link, headers={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246"})
+    htmlData = websiteResult.text
+    soup = bs(htmlData, "html.parser")
+    table = soup.findAll('div')
+    i = 0
+    for div in table:
+        if str(div) == '<div class="sCat"><b>Groups Scanlating</b></div>':
+            groupsRaw = table[i+1]
+            groupsRaw = str(groupsRaw).replace('<div class="sContent">', "")
+            groupsRaw = re.sub('<script type="text/javascript">(.*)</script>', "", groupsRaw, flags=re.DOTALL)
+            groupsRaw = groupsRaw.replace('<a href="javascript:dispgroups()" id="div_groups_link"><u><b>M</b>ore...</u></a>', "")
+            groupsRaw = groupsRaw.replace('<div id="div_groups_more" style="display:none">', "")
+            groupsRaw = groupsRaw.replace('</div>', "")
+            groupsRaw = groupsRaw.replace('<a href="javascript:dispLessgroups()"><u><b>L</b>ess...</u></a>', "")
+            groupsRaw = groupsRaw.replace('<br/>', "\n")
+            groupsRaw = os.linesep.join([s for s in groupsRaw.splitlines() if s])
+            groupsList = groupsRaw.splitlines()
+            groups = []
+            for rawGroups in groupsList:
+                search = re.search('<a href="(.*?)" title="Group Info"><u>(.*?)</u></a>', rawGroups)
+                groupid = search.group(1).partition("https://www.mangaupdates.com/groups.html?id=")[2]
+                groups.append({"groupName": search.group(2), "groupid": groupid})
+            return groups
+        i += 1
