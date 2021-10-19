@@ -83,7 +83,7 @@ def mangaWanted(title, group, mode):
             for m in i["manga"]:
                 if m["title"] == title:
                     if "groupName" in m:
-                        if m["groupName"] == group:
+                        if m["groupName"] in group:
                             idList.append(i["userid"])
                     elif "groupName" not in m:
                         idList.append(i["userid"])
@@ -101,7 +101,7 @@ def mangaWanted(title, group, mode):
             for m in i["manga"]:
                 if m["title"] == title:
                     if "groupName" in m:
-                        if m["groupName"] == group:
+                        if m["groupName"] in group:
                             list.serverList.append(i["serverid"])
                             list.channelList.append(i["channelid"])
                     elif "groupName" not in m:
