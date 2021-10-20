@@ -43,3 +43,5 @@ You can see all commands within the bot with the `+help` command.
 +setchannel - Changes the server's channel that manga chapter updates are sent to.
 
 +deleteaccount - Deletes your account and your manga list.
+
++setgroup - Sets a manga's scan group. Only that scan group's chapter updates for that manga will be sent.
