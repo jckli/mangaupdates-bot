@@ -3,14 +3,19 @@ A Discord bot that can be used to keep track of your favorite mangas using Mongo
 
 > **Note**: This bot is still in development. Many more features are coming in the near future.
 
-## Invite
+## Links
 
 You can invite the MangaUpdates bot [here](https://discord.com/oauth2/authorize?client_id=880694914365685781&scope=bot&permissions=268856384).
+Create an issue here (preferable) or join the support server [here](https://discord.gg/UcYspqftTF).
 
-## Features
+## Features/Why this bot?
 
 - Send manga updates to you through discord DMs or in a server channel.
 - Import MyAnimeList manga list to be tracked (In development).
+- Specific scan group selection
+- Supports most mangas, manhwas, doujins (utilizing mangaupdates.com)
+- Easy setup
+- Consistently updated, with many more features planned
 
 ## Why?
 
