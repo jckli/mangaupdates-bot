@@ -6,6 +6,7 @@ A Discord bot that can be used to keep track of your favorite mangas using Mongo
 ## Links
 
 You can invite the MangaUpdates bot [here](https://discord.com/oauth2/authorize?client_id=880694914365685781&scope=bot&permissions=268856384).
+
 Create an issue here (preferable) or join the support server [here](https://discord.gg/UcYspqftTF).
 
 ## Features/Why this bot?
