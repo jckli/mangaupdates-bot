@@ -305,6 +305,10 @@ class Manga(commands.Cog):
             if mode == "user":
                 if userExist == True:
                     mangaList = mongodb.getMangaList(userid, "user")
+                    if mangaList == None:
+                        noManga = discord.Embed(title="Error", color=0xff4f4f, description="You have no manga added to your list. Please add some manga first.")
+                        await ctx.send(embed=noManga)
+                        return
                     i = 1
                     description = "Type the number of the manga you want to remove.\n"
                     for manga in mangaList:
@@ -340,6 +344,10 @@ class Manga(commands.Cog):
                 if ctx.author.guild_permissions.administrator == True:
                     if serverExist == True:
                         mangaList = mongodb.getMangaList(serverid, "server")
+                        if mangaList == None:
+                            noManga = discord.Embed(title="Error", color=0xff4f4f, description="You have no manga added to your list. Please add some manga first.")
+                            await ctx.send(embed=noManga)
+                            return
                         i = 1
                         description = "Type the number of the manga you want to remove.\n"
                         for manga in mangaList:
@@ -370,7 +378,7 @@ class Manga(commands.Cog):
                         completeError = discord.Embed(title="Error", color=0xff4f4f, description="Something went wrong. Create an issue here for support: https://github.com/ohashizu/mangaupdates-bot")
                         await ctx.send(embed=completeError, delete_after=5.0)
                 else:
-                    permissionError = discord.Embed(title="Error", color=0xff4f4f, description="You don't have permission to add manga. You need `Administrator` permission to use this.")
+                    permissionError = discord.Embed(title="Error", color=0xff4f4f, description="You don't have permission to remove manga. You need `Administrator` permission to use this.")
                     await ctx.send(embed=permissionError, delete_after=5.0)
         else:
             if userExist == True:
