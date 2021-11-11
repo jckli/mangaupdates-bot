@@ -3,6 +3,8 @@ import re
 import requests
 import os
 from bs4 import BeautifulSoup as bs
+import aiohttp
+import asyncio
 
 def getLatest():
     # Parses the rss feed from mangaupdates
@@ -37,7 +39,7 @@ def getLatest():
         mangas.append({"title": title.rstrip(), "chapter": chapter, "scanGroup": scanGroup, "link": link})
     return mangas
 
-# s = requests.Session()
+s = requests.Session()
 
 # Get image from mangaupdates
 def getImage(link):
@@ -48,6 +50,7 @@ def getImage(link):
     for img in soup.find_all("img"):
         if img["src"].startswith("https://www.mangaupdates.com/image/"):
             image = img["src"]
+            break
     return image
 
 def getTitle(link):

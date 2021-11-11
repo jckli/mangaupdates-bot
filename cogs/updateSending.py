@@ -31,7 +31,7 @@ class UpdateSending(commands.Cog):
         async def notify(title, chapter, group, link):
             if link != None:
                 allTitles = update.getAllTitles(link)
-                time.sleep(7)
+                await asyncio.sleep(7)
                 image = update.getImage(link)
             elif link == None:
                 allTitles = [title]
