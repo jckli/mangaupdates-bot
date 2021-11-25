@@ -42,27 +42,41 @@ def getLatest():
 
 s = requests.Session()
 
-# need latest chapter, finished/unfinished, type
+# need latest chapter
 def getAllData(link):
     with requests.Session() as s:
         websiteResult = s.get(link, headers={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246"})
     htmlData = websiteResult.text
     soup = bs(htmlData, "html.parser")
 
-    # Get image
-    for img in soup.find_all("img"):
-        if img["src"].startswith("https://www.mangaupdates.com/image/"):
-            image = img["src"]
-            break
-
     # Get title
     text = soup.find("span", {"class": "releasestitle tabletitle"})
     title = text.get_text()
+
+    # Get type
+    table = soup.find_all("div", {"class": "sContent"})
+    contents = table[1]
+    type = contents.get_text().replace("\n", "")
 
     # Get year
     table = soup.find_all("div", {"class": "sContent"})
     contents = table[20]
     year = contents.get_text().replace("\n", "")
+
+    # Get finished/unfinished status
+    table = soup.find_all("div", {"class": "sContent"})
+    contents = table[7]
+    statusRaw = contents.get_text().replace("\n", "")
+    if statusRaw == "No":
+        status = "Ongoing"
+    else:
+        status = "Completed"
+
+    # Get image
+    for img in soup.find_all("img"):
+        if img["src"].startswith("https://www.mangaupdates.com/image/"):
+            image = img["src"]
+            break
 
     # Get description
     table = soup.find('div', {"class": "col-6 p-2 text"})
@@ -148,7 +162,7 @@ def getAllData(link):
     rating = {"average": average, "bayesianRating": bayesianRating}
 
     # Return
-    return {"title": title, "year": year, "description": description, "image": image, "associatedNames": associatedNames, "authors": authors, "artists": artists, "rating": rating}
+    return {"title": title, "type": type, "status": status, "year": year, "image": image, "description": description, "associatedNames": associatedNames, "authors": authors, "artists": artists, "rating": rating}
 
 def getImage(link):
     with requests.Session() as s:
@@ -326,3 +340,26 @@ def getYear(link):
     contents = table[20]
     year = contents.get_text().replace("\n", "")
     return year
+
+def getType(link):
+    with requests.Session() as s:
+        websiteResult = s.get(link, headers={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246"})
+    htmlData = websiteResult.text
+    soup = bs(htmlData, "html.parser")
+    table = soup.find_all("div", {"class": "sContent"})
+    contents = table[1]
+    type = contents.get_text().replace("\n", "")
+    return type
+
+def getStatus(link):
+    with requests.Session() as s:
+        websiteResult = s.get(link, headers={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246"})
+    htmlData = websiteResult.text
+    soup = bs(htmlData, "html.parser")
+    table = soup.find_all("div", {"class": "sContent"})
+    contents = table[7]
+    status = contents.get_text().replace("\n", "")
+    if status == "No":
+        return "Completed"
+    else:
+        return "Ongoing"
