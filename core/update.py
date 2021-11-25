@@ -98,6 +98,9 @@ def getAllData(link):
             break
         i += 1
 
+    # Return
+    return {"title": title, "description": description, "image": image, "associatedNames": associatedNames}
+
 def getImage(link):
     with requests.Session() as s:
         websiteResult = s.get(link, headers={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246"})

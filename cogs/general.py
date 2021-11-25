@@ -50,7 +50,7 @@ class General(commands.Cog):
             modeEntry = False
             if (mode == None) or (mode != "server" and mode != "user"):
                 modeEntry = True
-                modeEmbed = discord.Embed(title="Set Scanlator Group", color=0x3083e3, description="Do you want manga updates sent to your DMs or a server?")
+                modeEmbed = discord.Embed(title="Setup", color=0x3083e3, description="Do you want manga updates sent to your DMs or a server?")
                 sentEmbedMode = await ctx.send(embed=modeEmbed, view=modeView)
                 await modeView.wait()
                 if modeView.value is None:
@@ -172,6 +172,8 @@ class General(commands.Cog):
                     await ctx.send(embed=completeEmbed)
                 else:
                     await sentEmbedConfirm.delete()
+                    cancelEmbed = discord.Embed(title=f"Canceled", color=0x3083e3, description="Successfully canceled.")
+                    await ctx.send(embed=cancelEmbed)
                     return
             elif check == False:
                 completeError = discord.Embed(title="Error", color=0xff4f4f, description="You are not setup yet. Run the command `+setup` to setup.")
