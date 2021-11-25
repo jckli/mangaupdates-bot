@@ -42,7 +42,7 @@ def getLatest():
 
 s = requests.Session()
 
-# need author, artists, rating, latest chapter, finished/unfinished, type, year
+# need latest chapter, finished/unfinished, type
 def getAllData(link):
     with requests.Session() as s:
         websiteResult = s.get(link, headers={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246"})
@@ -58,6 +58,11 @@ def getAllData(link):
     # Get title
     text = soup.find("span", {"class": "releasestitle tabletitle"})
     title = text.get_text()
+
+    # Get year
+    table = soup.find_all("div", {"class": "sContent"})
+    contents = table[20]
+    year = contents.get_text().replace("\n", "")
 
     # Get description
     table = soup.find('div', {"class": "col-6 p-2 text"})
@@ -135,8 +140,15 @@ def getAllData(link):
                 artistid = link.partition("https://www.mangaupdates.com/authors.html?id=")[2]
                 artists.append({"name": artist, "id": artistid})
 
+    # Get rating
+    table = soup.find_all("div", {"class": "sContent"})
+    contents = table[11].contents
+    average = re.search('Average: (.*?) ', str(contents[0])).group(1)
+    bayesianRating = re.search('<b>(.*?)</b>', str(contents[5])).group(1)
+    rating = {"average": average, "bayesianRating": bayesianRating}
+
     # Return
-    return {"title": title, "description": description, "image": image, "associatedNames": associatedNames, "authors": authors, "artists": artists}
+    return {"title": title, "year": year, "description": description, "image": image, "associatedNames": associatedNames, "authors": authors, "artists": artists, "rating": rating}
 
 def getImage(link):
     with requests.Session() as s:
@@ -292,3 +304,25 @@ def getArtists(link):
                 artistid = link.partition("https://www.mangaupdates.com/authors.html?id=")[2]
                 artists.append({"name": artist, "id": artistid})
     return artists
+
+def getRating(link):
+    with requests.Session() as s:
+        websiteResult = s.get(link, headers={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246"})
+    htmlData = websiteResult.text
+    soup = bs(htmlData, "html.parser")
+    table = soup.find_all("div", {"class": "sContent"})
+    contents = table[11].contents
+    average = re.search('Average: (.*?) ', str(contents[0])).group(1)
+    bayesianRating = re.search('<b>(.*?)</b>', str(contents[5])).group(1)
+    rating = {"average": average, "bayesianRating": bayesianRating}
+    return rating
+
+def getYear(link):
+    with requests.Session() as s:
+        websiteResult = s.get(link, headers={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246"})
+    htmlData = websiteResult.text
+    soup = bs(htmlData, "html.parser")
+    table = soup.find_all("div", {"class": "sContent"})
+    contents = table[20]
+    year = contents.get_text().replace("\n", "")
+    return year
