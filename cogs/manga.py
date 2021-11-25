@@ -56,6 +56,93 @@ class Manga(commands.Cog):
         else:
             pass
     """
+
+    @commands.command(name="search")
+    async def search(self, ctx, *, arg=None):
+        timeoutError = discord.Embed(title="Error", description="You didn't respond in time!", color=0xff4f4f)
+        query = arg
+        if query == None:
+            searchMangaEmbed = discord.Embed(title="Search Manga", color=0x3083e3, description="What manga do you want to see information about? (Can also use mangaupdates.com link)")
+            sentEmbedSearch = await ctx.send(embed=searchMangaEmbed)
+            try:
+                query = await self.bot.wait_for('message', check=lambda x: x.author.id == ctx.author.id, timeout=15)
+                query = query.content
+            except asyncio.TimeoutError:
+                await sentEmbedSearch.delete()
+                await ctx.send(embed=timeoutError, delete_after=5.0)
+                return
+        if validators.url(query) == True:
+            link = query
+        elif validators.url(query) != True:
+            searchRaw = pymanga.api.search(query)
+            description = "Type the number of the manga you want to see information for.\n"
+            searchNames = []
+            if searchRaw["series"] == []:
+                resultError = discord.Embed(title="Error", color=0xff4f4f, description="No mangas were found.")
+                await ctx.send(embed=resultError)
+                return
+            elif searchRaw["series"] != []:
+                i = 1
+                for result in searchRaw["series"]:
+                    name = result["name"]
+                    year = result["year"]
+                    rating = result["rating"]
+                    description += f"{i}. {name} ({year}, Rating: {rating})\n"
+                    searchNames.append(name)
+                    i += 1
+                searchEmbed = discord.Embed(title="Search Results", color=0x3083e3, description=description)
+                sentEmbedSearch = await ctx.send(embed=searchEmbed)
+                try:
+                    search = await self.bot.wait_for('message', check=lambda x: x.author.id == ctx.author.id, timeout=15)
+                except asyncio.TimeoutError:
+                    await sentEmbedSearch.delete()
+                    await ctx.send(embed=timeoutError, delete_after=5.0)
+                    return
+                else:
+                    if search.content.isnumeric() is True and int(search.content) in range(1, 11):
+                        mangaid = searchRaw["series"][int(search.content)-1]["id"]
+                        rating = searchRaw["series"][int(search.content)-1]["rating"]
+                        link = f"https://www.mangaupdates.com/series.html?id={mangaid}"
+                    else:
+                        countError = discord.Embed(title="Error", color=0xff4f4f, description="You didn't select a number from `1` to `10`")
+                        await ctx.send(embed=countError, delete_after=5.0)
+                        return
+            else:
+                completeError = discord.Embed(title="Error", color=0xff4f4f, description="Something went wrong. Create an issue here for support: https://github.com/ohashizu/mangaupdates-bot")
+                await ctx.send(embed=completeError, delete_after=5.0)
+                return
+        else:
+            completeError = discord.Embed(title="Error", color=0xff4f4f, description="Something went wrong. Create an issue here for support: https://github.com/ohashizu/mangaupdates-bot")
+            await ctx.send(embed=completeError, delete_after=5.0)
+            return
+        mangaData = update.getAllData(link)
+        secMangaData = pymanga.series(mangaid)
+        authorsList = []
+        for i in secMangaData["authors"]:
+            authorsList.append(i["name"])
+        authors = ", ".join(authorsList)
+        artistsList = []
+        for i in secMangaData["artists"]:
+            artistsList.append(i["name"])
+        artists = ", ".join(artistsList)
+        latestChapter = 0
+        for i in secMangaData["latest_releases"]:
+            if latestChapter < int(i["chapter"]):
+                latestChapter = int(i["chapter"])
+        title = mangaData["title"]
+        description = mangaData["description"]
+        result = discord.Embed(title=title, url=link, color=0x3083e3, description=description)
+        result.set_image(url=mangaData["image"])
+        result.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
+        result.set_footer(text=f"Requested by {ctx.author.name}", icon_url=ctx.message.author.display_avatar)
+        result.add_field(name="Year", value=secMangaData["year"], inline=True)
+        result.add_field(name="Type", value=secMangaData["type"], inline=True)
+        result.add_field(name="Latest Chapter", value=latestChapter, inline=True)
+        result.add_field(name="Author(s)", value=authors, inline=True)
+        result.add_field(name="Artist(s)", value=artists, inline=True)
+        result.add_field(name="Rating", value=rating, inline=True)
+        await ctx.send(embed=result)
+
     @commands.command(name="addmanga")
     async def addmanga(self, ctx, *, arg=None):
         confirmView = Confirm()

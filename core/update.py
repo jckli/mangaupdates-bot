@@ -61,6 +61,8 @@ def getAllData(link):
     # Get description
     table = soup.find('div', {"class": "col-6 p-2 text"})
     div = table.find('div', {"style": "text-align:justify"})
+    if div.find('div', {"style": "display:none"}) != None:
+        div = div.find('div', {"style": "display:none"})
     for element in div(text=lambda it: isinstance(it, Comment)):
         element.extract()
     for a in div.find_all("a"):
@@ -97,6 +99,7 @@ def getAllData(link):
             associatedNames = names
             break
         i += 1
+    
 
     # Return
     return {"title": title, "description": description, "image": image, "associatedNames": associatedNames}
@@ -194,6 +197,8 @@ def getDescription(link):
     soup = bs(htmlData, "html.parser")
     table = soup.find('div', {"class": "col-6 p-2 text"})
     div = table.find('div', {"style": "text-align:justify"})
+    if div.find('div', {"style": "display:none"}) != None:
+        div = div.find('div', {"style": "display:none"})
     for element in div(text=lambda it: isinstance(it, Comment)):
         element.extract()
     for a in div.find_all("a"):
