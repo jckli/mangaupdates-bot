@@ -42,6 +42,7 @@ def getLatest():
 
 s = requests.Session()
 
+# need author, artists, rating, latest chapter, finished/unfinished, type, year
 def getAllData(link):
     with requests.Session() as s:
         websiteResult = s.get(link, headers={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246"})
@@ -99,10 +100,43 @@ def getAllData(link):
             associatedNames = names
             break
         i += 1
-    
+
+    # Get authors
+    table = soup.find_all("div", {"class": "sContent"})
+    authors = []
+    mainDiv = table[18]
+    for i in mainDiv.contents:
+        if '\xa0[' in str(i):
+            author = i.replace('\xa0[',"")
+            authors.append({"name": author, "id": None})
+    div = mainDiv.find_all("a")
+    for i in div:
+        if "<u>Add</u>" not in str(i):
+            if "<u>Anthology</u>" not in str(i):
+                author = i.get_text()
+                link = i.get("href")
+                authorid = link.partition("https://www.mangaupdates.com/authors.html?id=")[2]
+                authors.append({"name": author, "id": authorid})
+
+    # Get artists
+    table = soup.find_all("div", {"class": "sContent"})
+    artists = []
+    mainDiv = table[19]
+    for i in mainDiv.contents:
+        if '\xa0[' in str(i):
+            artist = i.replace('\xa0[',"")
+            artists.append({"name": artist, "id": None})
+    div = mainDiv.find_all("a")
+    for i in div:
+        if "<u>Add</u>" not in str(i):
+            if "<u>Anthology</u>" not in str(i):
+                artist = i.get_text()
+                link = i.get("href")
+                artistid = link.partition("https://www.mangaupdates.com/authors.html?id=")[2]
+                artists.append({"name": artist, "id": artistid})
 
     # Return
-    return {"title": title, "description": description, "image": image, "associatedNames": associatedNames}
+    return {"title": title, "description": description, "image": image, "associatedNames": associatedNames, "authors": authors, "artists": artists}
 
 def getImage(link):
     with requests.Session() as s:
@@ -214,3 +248,47 @@ def getDescription(link):
     result = "".join(newList)
     result = result.replace("\n", "")
     return result
+
+def getAuthors(link):
+    with requests.Session() as s:
+        websiteResult = s.get(link, headers={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246"})
+    htmlData = websiteResult.text
+    soup = bs(htmlData, "html.parser")
+    table = soup.find_all("div", {"class": "sContent"})
+    authors = []
+    mainDiv = table[18]
+    for i in mainDiv.contents:
+        if '\xa0[' in str(i):
+            author = i.replace('\xa0[',"")
+            authors.append({"name": author, "id": None})
+    div = mainDiv.find_all("a")
+    for i in div:
+        if "<u>Add</u>" not in str(i):
+            if "<u>Anthology</u>" not in str(i):
+                author = i.get_text()
+                link = i.get("href")
+                authorid = link.partition("https://www.mangaupdates.com/authors.html?id=")[2]
+                authors.append({"name": author, "id": authorid})
+    return authors
+
+def getArtists(link):
+    with requests.Session() as s:
+        websiteResult = s.get(link, headers={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246"})
+    htmlData = websiteResult.text
+    soup = bs(htmlData, "html.parser")
+    table = soup.find_all("div", {"class": "sContent"})
+    artists = []
+    mainDiv = table[19]
+    for i in mainDiv.contents:
+        if '\xa0[' in str(i):
+            artist = i.replace('\xa0[',"")
+            artists.append({"name": artist, "id": None})
+    div = mainDiv.find_all("a")
+    for i in div:
+        if "<u>Add</u>" not in str(i):
+            if "<u>Anthology</u>" not in str(i):
+                artist = i.get_text()
+                link = i.get("href")
+                artistid = link.partition("https://www.mangaupdates.com/authors.html?id=")[2]
+                artists.append({"name": artist, "id": artistid})
+    return artists
