@@ -3,6 +3,7 @@ import re
 import requests
 import os
 from bs4 import BeautifulSoup as bs
+from bs4 import Comment
 import aiohttp
 import asyncio
 
@@ -41,7 +42,62 @@ def getLatest():
 
 s = requests.Session()
 
-# Get image from mangaupdates
+def getAllData(link):
+    with requests.Session() as s:
+        websiteResult = s.get(link, headers={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246"})
+    htmlData = websiteResult.text
+    soup = bs(htmlData, "html.parser")
+
+    # Get image
+    for img in soup.find_all("img"):
+        if img["src"].startswith("https://www.mangaupdates.com/image/"):
+            image = img["src"]
+            break
+
+    # Get title
+    text = soup.find("span", {"class": "releasestitle tabletitle"})
+    title = text.get_text()
+
+    # Get description
+    table = soup.find('div', {"class": "col-6 p-2 text"})
+    div = table.find('div', {"style": "text-align:justify"})
+    for element in div(text=lambda it: isinstance(it, Comment)):
+        element.extract()
+    for a in div.find_all("a"):
+        a.replace_with("")
+    for b in div.find_all("b"):
+        b.replace_with("")
+    for br in div.find_all("br"):
+        br.replace_with("")
+    list = [ele for ele in div.contents if ele.strip()]
+    newList = []
+    for i in (line for line in list if not line.startswith(',')):
+        newList.append(i)
+    oldDescription = "".join(newList)
+    description = oldDescription.replace("\n", "")
+
+    # Get associated names
+    table = soup.findAll('div')
+    mainTitle = soup.find("span", {"class": "releasestitle tabletitle"})
+    title = mainTitle.get_text()
+    i = 0
+    for div in table:
+        if str(div) == '<div class="sCat"><b>Associated Names</b></div>':
+            namesRaw = table[i+1]
+            namesRaw = str(namesRaw).replace('<div class="sContent">', "")
+            namesRaw = namesRaw.replace('</div>', "")
+            namesRaw = namesRaw.replace('<br/>', "")
+            namesRaw = namesRaw.replace('</br>', "")
+            namesRaw = namesRaw.replace('<br>', ",")
+            names = namesRaw.split(",")
+            names.append(title)
+            for name in names:
+                if name == "\n":
+                    names.remove(name)
+            associatedNames = names
+            break
+        i += 1
+
 def getImage(link):
     with requests.Session() as s:
         websiteResult = s.get(link, headers={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246"})
@@ -127,3 +183,26 @@ def getGroups(link):
                 groups.append({"groupName": search.group(2), "groupid": groupid})
             return groups
         i += 1
+
+def getDescription(link):
+    with requests.Session() as s:
+        websiteResult = s.get(link, headers={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246"})
+    htmlData = websiteResult.text
+    soup = bs(htmlData, "html.parser")
+    table = soup.find('div', {"class": "col-6 p-2 text"})
+    div = table.find('div', {"style": "text-align:justify"})
+    for element in div(text=lambda it: isinstance(it, Comment)):
+        element.extract()
+    for a in div.find_all("a"):
+        a.replace_with("")
+    for b in div.find_all("b"):
+        b.replace_with("")
+    for br in div.find_all("br"):
+        br.replace_with("")
+    list = [ele for ele in div.contents if ele.strip()]
+    newList = []
+    for i in (line for line in list if not line.startswith(',')):
+        newList.append(i)
+    result = "".join(newList)
+    result = result.replace("\n", "")
+    return result
