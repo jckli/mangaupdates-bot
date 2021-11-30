@@ -42,7 +42,6 @@ def getLatest():
 
 s = requests.Session()
 
-# need latest chapter
 def getAllData(link):
     with requests.Session() as s:
         websiteResult = s.get(link, headers={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246"})
@@ -161,8 +160,72 @@ def getAllData(link):
     bayesianRating = re.search('<b>(.*?)</b>', str(contents[5])).group(1)
     rating = {"average": average, "bayesianRating": bayesianRating}
 
+    # Get latest chapters
+    # I just want to say that coding this gave me brain damage
+    table = soup.find_all("div", {"class": "sContent"})
+    contents = table[5].contents[:-2]
+    datesRaw = table[5].find_all("span")
+    groupsRaw = []
+    k = 0
+    v = []
+    c = []
+    for i in contents:
+        if "v." in str(i):
+            v.append(k+1)
+        if "c." in str(i):
+            c.append(k+1)
+            if "v." not in contents[k-2]:
+                v.append(None)
+        if "Group Info" in str(i):
+            groupsRaw.append(i)
+        if " & " in str(i):
+            groupsRaw.append(i)
+        k += 1
+    volumes = []
+    chapters = []
+    for index, i in enumerate(c):
+        if v[index] is None:
+            volumes.append(None)
+        else:
+            volumes.append(contents[v[index]].get_text())
+        chapters.append(contents[i].get_text())
+    groups = []
+    index = 0
+    for i in groupsRaw:
+        if "Group Info" in str(i):
+            group1 = re.search('<a href="(.*?)" title="Group Info">(.*?)</a>', str(i))
+            groupid = group1.group(1).partition("https://www.mangaupdates.com/groups.html?id=")[2]
+            group = {"group1": {"name": group1.group(2), "id": groupid}}
+            if index == len(groupsRaw)-1:
+                groups.append(group)
+            else:
+                if " & " in str(groupsRaw[index+1]):
+                    l = True
+                    h = 2
+                    while l == True:
+                        if index == len(groupsRaw)-1:
+                            break
+                        else:
+                            if " & " not in str(groupsRaw[index+1]):
+                                l = False
+                            else:
+                                newGroup = re.search('<a href="(.*?)" title="Group Info">(.*?)</a>', str(groupsRaw[index+2]))
+                                newgroupid = newGroup.group(1).partition("https://www.mangaupdates.com/groups.html?id=")[2]
+                                group["group"+str(h)] = {"name": newGroup.group(2), "id": newgroupid}
+                                groupsRaw.remove(groupsRaw[index+1])
+                                groupsRaw.remove(groupsRaw[index+1])
+                                h += 1
+                groups.append(group)
+        index += 1
+    dates = []
+    for index, i in enumerate(datesRaw):
+        dates.append(datesRaw[index]["title"])
+    latestChapters = []
+    for index, i in enumerate(chapters):
+        latestChapters.append({"volume": volumes[index], "chapter": chapters[index], "groups": groups[index], "date": dates[index]})
+
     # Return
-    return {"title": title, "type": type, "status": status, "year": year, "image": image, "description": description, "associatedNames": associatedNames, "authors": authors, "artists": artists, "rating": rating}
+    return {"title": title, "type": type, "status": status, "year": year, "image": image, "description": description, "associatedNames": associatedNames, "authors": authors, "artists": artists, "rating": rating, "latestChapters": latestChapters}
 
 def getImage(link):
     with requests.Session() as s:
@@ -363,3 +426,76 @@ def getStatus(link):
         return "Completed"
     else:
         return "Ongoing"
+
+# I just want to say that coding this gave me brain damage
+def getLatestChapter(link):
+    with requests.Session() as s:
+        websiteResult = s.get(link, headers={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246"})
+    htmlData = websiteResult.text
+    soup = bs(htmlData, "html.parser")
+    table = soup.find_all("div", {"class": "sContent"})
+    contents = table[5].contents[:-2]
+    datesRaw = table[5].find_all("span")
+    groupsRaw = []
+    k = 0
+    v = []
+    c = []
+    for i in contents:
+        if "v." in str(i):
+            v.append(k+1)
+        if "c." in str(i):
+            c.append(k+1)
+            if "v." not in contents[k-2]:
+                v.append(None)
+        if "Group Info" in str(i):
+            groupsRaw.append(i)
+        if " & " in str(i):
+            groupsRaw.append(i)
+        k += 1
+    volumes = []
+    chapters = []
+    for index, i in enumerate(c):
+        if v[index] is None:
+            volumes.append(None)
+        else:
+            volumes.append(contents[v[index]].get_text())
+        chapters.append(contents[i].get_text())
+
+    groups = []
+    index = 0
+    for i in groupsRaw:
+        if "Group Info" in str(i):
+            group1 = re.search('<a href="(.*?)" title="Group Info">(.*?)</a>', str(i))
+            groupid = group1.group(1).partition("https://www.mangaupdates.com/groups.html?id=")[2]
+            group = {"group1": {"name": group1.group(2), "id": groupid}}
+            if index == len(groupsRaw)-1:
+                groups.append(group)
+            else:
+                if " & " in str(groupsRaw[index+1]):
+                    l = True
+                    h = 2
+                    while l == True:
+                        if index == len(groupsRaw)-1:
+                            break
+                        else:
+                            if " & " not in str(groupsRaw[index+1]):
+                                l = False
+                            else:
+                                newGroup = re.search('<a href="(.*?)" title="Group Info">(.*?)</a>', str(groupsRaw[index+2]))
+                                newgroupid = newGroup.group(1).partition("https://www.mangaupdates.com/groups.html?id=")[2]
+                                group["group"+str(h)] = {"name": newGroup.group(2), "id": newgroupid}
+                                groupsRaw.remove(groupsRaw[index+1])
+                                groupsRaw.remove(groupsRaw[index+1])
+                                h += 1
+                groups.append(group)
+        index += 1
+
+    dates = []
+    for index, i in enumerate(datesRaw):
+        dates.append(datesRaw[index]["title"])
+
+    latestChapters = []
+    for index, i in enumerate(chapters):
+        latestChapters.append({"volume": volumes[index], "chapter": chapters[index], "groups": groups[index], "date": dates[index]})
+
+    return latestChapters
