@@ -90,6 +90,8 @@ def getAllData(link):
         b.replace_with("")
     for br in div.find_all("br"):
         br.replace_with("")
+    for i in div.find_all("i"):
+        i.replace_with("")
     list = [ele for ele in div.contents if ele.strip()]
     newList = []
     for i in (line for line in list if not line.startswith(',')):
@@ -330,6 +332,8 @@ def getDescription(link):
         b.replace_with("")
     for br in div.find_all("br"):
         br.replace_with("")
+    for i in div.find_all("i"):
+        i.replace_with("")
     list = [ele for ele in div.contents if ele.strip()]
     newList = []
     for i in (line for line in list if not line.startswith(',')):
