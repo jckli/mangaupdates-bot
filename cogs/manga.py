@@ -73,6 +73,7 @@ class Manga(commands.Cog):
                 return
         if validators.url(query) == True:
             link = query
+            mangaid = link.partition("https://www.mangaupdates.com/series.html?id=")[2]
         elif validators.url(query) != True:
             searchRaw = pymanga.api.search(query)
             description = "Type the number of the manga you want to see information for.\n"
@@ -116,27 +117,38 @@ class Manga(commands.Cog):
             await ctx.send(embed=completeError, delete_after=5.0)
             return
         mangaData = update.getAllData(link)
-        secMangaData = pymanga.series(mangaid)
         authorsList = []
-        for i in secMangaData["authors"]:
+        for i in mangaData["authors"]:
             authorsList.append(i["name"])
         authors = ", ".join(authorsList)
         artistsList = []
-        for i in secMangaData["artists"]:
+        for i in mangaData["artists"]:
             artistsList.append(i["name"])
         artists = ", ".join(artistsList)
         latestChapter = 0
-        for i in secMangaData["latest_releases"]:
-            if latestChapter < int(i["chapter"]):
-                latestChapter = int(i["chapter"])
-        title = mangaData["title"]
+        for i in mangaData["latestChapters"]:
+            z = i["chapter"]
+            endRaw = False
+            if "end" in str(z):
+                z = str(z).replace("(end)", "")
+                z = z.strip()
+                endRaw = True
+            if float(z) > latestChapter:
+                latestChapter = float(z)
+                end = endRaw
+        if ".0" in str(latestChapter):
+            latestChapter = int(latestChapter)
+        if end == True:
+            latestChapter = str(latestChapter) + " (end)"
+        title = f"{mangaData['title']} ({mangaData['status']})"
         description = mangaData["description"]
+        rating = mangaData["rating"]["bayesianRating"]
         result = discord.Embed(title=title, url=link, color=0x3083e3, description=description)
         result.set_image(url=mangaData["image"])
         result.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
         result.set_footer(text=f"Requested by {ctx.author.name}", icon_url=ctx.message.author.display_avatar)
-        result.add_field(name="Year", value=secMangaData["year"], inline=True)
-        result.add_field(name="Type", value=secMangaData["type"], inline=True)
+        result.add_field(name="Year", value=mangaData["year"], inline=True)
+        result.add_field(name="Type", value=mangaData["type"], inline=True)
         result.add_field(name="Latest Chapter", value=latestChapter, inline=True)
         result.add_field(name="Author(s)", value=authors, inline=True)
         result.add_field(name="Artist(s)", value=artists, inline=True)
