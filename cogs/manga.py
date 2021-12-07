@@ -24,6 +24,23 @@ class Mode(discord.ui.View):
         self.value = "server"
         self.stop()
 
+class Confirm(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=15.0)
+        self.value = None
+
+    sep = '\u2001'
+
+    @discord.ui.button(label=f'{sep*6}Confirm{sep*6}', style=discord.ButtonStyle.green)
+    async def confirm(self, button: discord.ui.Button, interaction: discord.Interaction):
+        self.value = True
+        self.stop()
+
+    @discord.ui.button(label=f'{sep*6}Cancel{sep*6}', style=discord.ButtonStyle.red)
+    async def cancel(self, button: discord.ui.Button, interaction: discord.Interaction):
+        self.value = False
+        self.stop()
+
 class Manga(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -39,9 +56,108 @@ class Manga(commands.Cog):
         else:
             pass
     """
-        
+
+    @commands.command(name="search")
+    async def search(self, ctx, *, arg=None):
+        timeoutError = discord.Embed(title="Error", description="You didn't respond in time!", color=0xff4f4f)
+        query = arg
+        if query == None:
+            searchMangaEmbed = discord.Embed(title="Search Manga", color=0x3083e3, description="What manga do you want to see information about? (Can also use mangaupdates.com link)")
+            sentEmbedSearch = await ctx.send(embed=searchMangaEmbed)
+            try:
+                query = await self.bot.wait_for('message', check=lambda x: x.author.id == ctx.author.id, timeout=15)
+                query = query.content
+            except asyncio.TimeoutError:
+                await sentEmbedSearch.delete()
+                await ctx.send(embed=timeoutError, delete_after=5.0)
+                return
+        if validators.url(query) == True:
+            link = query
+            mangaid = link.partition("https://www.mangaupdates.com/series.html?id=")[2]
+        elif validators.url(query) != True:
+            searchRaw = pymanga.api.search(query)
+            description = "Type the number of the manga you want to see information for.\n"
+            searchNames = []
+            if searchRaw["series"] == []:
+                resultError = discord.Embed(title="Error", color=0xff4f4f, description="No mangas were found.")
+                await ctx.send(embed=resultError)
+                return
+            elif searchRaw["series"] != []:
+                i = 1
+                for result in searchRaw["series"]:
+                    name = result["name"]
+                    year = result["year"]
+                    rating = result["rating"]
+                    description += f"{i}. {name} ({year}, Rating: {rating})\n"
+                    searchNames.append(name)
+                    i += 1
+                searchEmbed = discord.Embed(title="Search Results", color=0x3083e3, description=description)
+                sentEmbedSearch = await ctx.send(embed=searchEmbed)
+                try:
+                    search = await self.bot.wait_for('message', check=lambda x: x.author.id == ctx.author.id, timeout=15)
+                except asyncio.TimeoutError:
+                    await sentEmbedSearch.delete()
+                    await ctx.send(embed=timeoutError, delete_after=5.0)
+                    return
+                else:
+                    if search.content.isnumeric() is True and int(search.content) in range(1, 11):
+                        mangaid = searchRaw["series"][int(search.content)-1]["id"]
+                        rating = searchRaw["series"][int(search.content)-1]["rating"]
+                        link = f"https://www.mangaupdates.com/series.html?id={mangaid}"
+                    else:
+                        countError = discord.Embed(title="Error", color=0xff4f4f, description="You didn't select a number from `1` to `10`")
+                        await ctx.send(embed=countError, delete_after=5.0)
+                        return
+            else:
+                completeError = discord.Embed(title="Error", color=0xff4f4f, description="Something went wrong. Create an issue here for support: https://github.com/ohashizu/mangaupdates-bot")
+                await ctx.send(embed=completeError, delete_after=5.0)
+                return
+        else:
+            completeError = discord.Embed(title="Error", color=0xff4f4f, description="Something went wrong. Create an issue here for support: https://github.com/ohashizu/mangaupdates-bot")
+            await ctx.send(embed=completeError, delete_after=5.0)
+            return
+        mangaData = update.getAllData(link)
+        authorsList = []
+        for i in mangaData["authors"]:
+            authorsList.append(i["name"])
+        authors = ", ".join(authorsList)
+        artistsList = []
+        for i in mangaData["artists"]:
+            artistsList.append(i["name"])
+        artists = ", ".join(artistsList)
+        latestChapter = 0
+        for i in mangaData["latestChapters"]:
+            z = i["chapter"]
+            endRaw = False
+            if "end" in str(z):
+                z = str(z).replace("(end)", "")
+                z = z.strip()
+                endRaw = True
+            if float(z) > latestChapter:
+                latestChapter = float(z)
+                end = endRaw
+        if ".0" in str(latestChapter):
+            latestChapter = int(latestChapter)
+        if end == True:
+            latestChapter = str(latestChapter) + " (end)"
+        title = f"{mangaData['title']} ({mangaData['status']})"
+        description = mangaData["description"]
+        rating = mangaData["rating"]["bayesianRating"]
+        result = discord.Embed(title=title, url=link, color=0x3083e3, description=description)
+        result.set_image(url=mangaData["image"])
+        result.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
+        result.set_footer(text=f"Requested by {ctx.author.name}", icon_url=ctx.message.author.display_avatar)
+        result.add_field(name="Year", value=mangaData["year"], inline=True)
+        result.add_field(name="Type", value=mangaData["type"], inline=True)
+        result.add_field(name="Latest Chapter", value=latestChapter, inline=True)
+        result.add_field(name="Author(s)", value=authors, inline=True)
+        result.add_field(name="Artist(s)", value=artists, inline=True)
+        result.add_field(name="Rating", value=rating, inline=True)
+        await ctx.send(embed=result)
+
     @commands.command(name="addmanga")
     async def addmanga(self, ctx, *, arg=None):
+        confirmView = Confirm()
         userid = ctx.message.author.id
         userExist = mongodb.checkUserExist(userid)
         timeoutError = discord.Embed(title="Error", description="You didn't respond in time!", color=0xff4f4f)
@@ -51,7 +167,7 @@ class Manga(commands.Cog):
             modeEntry = False
             if (mode == None) or (mode != "server" and mode != "user"):
                 modeEntry = True
-                modeEmbed = discord.Embed(title="Set Scanlator Group", color=0x3083e3, description="Do you want this manga added to your list or this server's list?")
+                modeEmbed = discord.Embed(title="Add Manga", color=0x3083e3, description="Do you want this manga added to your list or this server's list?")
                 sentEmbedMode = await ctx.send(embed=modeEmbed, view=modeView)
                 await modeView.wait()
                 if modeView.value is None:
@@ -104,7 +220,26 @@ class Manga(commands.Cog):
                                 else:
                                     if search.content.isnumeric() is True and int(search.content) in range(1, 11):
                                         mangaTitle = searchNames[int(search.content)-1]
-                                        link = update.getLink(mangaTitle)
+                                        mangaid = searchRaw["series"][int(search.content)-1]["id"]
+                                        link = f"https://www.mangaupdates.com/series.html?id={mangaid}"
+                                        mangaData = update.getAllData(link)
+                                        confirmEmbed = discord.Embed(title=f"Did you mean to add `{mangaTitle}`?", color=0x3083e3, description=mangaData["description"])
+                                        confirmEmbed.set_image(url=mangaData["image"])
+                                        sentEmbedConfirm = await ctx.send(embed=confirmEmbed, view=confirmView)
+                                        await confirmView.wait()
+                                        if confirmView.value is None:
+                                            await sentEmbedConfirm.delete()
+                                            await ctx.send(embed=timeoutError, delete_after=5.0)
+                                            return
+                                        else:
+                                            if confirmView.value == False:
+                                                await sentEmbedConfirm.delete()
+                                                cancelEmbed = discord.Embed(title=f"Canceled", color=0x3083e3, description="Successfully canceled.")
+                                                await ctx.send(embed=cancelEmbed)
+                                                return
+                                            elif confirmView.value == True:
+                                                await sentEmbedConfirm.delete()
+                                                pass
                                     else:
                                         countError = discord.Embed(title="Error", color=0xff4f4f, description="You didn't select a number from `1` to `10`")
                                         await ctx.send(embed=countError, delete_after=5.0)
@@ -117,6 +252,7 @@ class Manga(commands.Cog):
                             completeError = discord.Embed(title="Error", color=0xff4f4f, description="Something went wrong. Create an issue here for support: https://github.com/ohashizu/mangaupdates-bot")
                             await ctx.send(embed=completeError, delete_after=5.0)
                             return
+                        
                         mangaInDb = mongodb.checkMangaAlreadyWithinDb(userid, link, "user")
                         if mangaInDb == True:
                             mangaExist = discord.Embed(title="Add Manga", color=0x3083e3, description="This manga is already added to your list.")
@@ -178,7 +314,26 @@ class Manga(commands.Cog):
                                     else:
                                         if search.content.isnumeric() is True and int(search.content) in range(1, 11):
                                             mangaTitle = searchNames[int(search.content)-1]
-                                            link = update.getLink(mangaTitle)
+                                            mangaid = searchRaw["series"][int(search.content)-1]["id"]
+                                            link = f"https://www.mangaupdates.com/series.html?id={mangaid}"
+                                            mangaData = update.getAllData(link)
+                                            confirmEmbed = discord.Embed(title=f"Did you mean to add `{mangaTitle}`?", color=0x3083e3, description=mangaData["description"])
+                                            confirmEmbed.set_image(url=mangaData["image"])
+                                            sentEmbedConfirm = await ctx.send(embed=confirmEmbed, view=confirmView)
+                                            await confirmView.wait()
+                                            if confirmView.value is None:
+                                                await sentEmbedConfirm.delete()
+                                                await ctx.send(embed=timeoutError, delete_after=5.0)
+                                                return
+                                            else:
+                                                if confirmView.value == False:
+                                                    await sentEmbedConfirm.delete()
+                                                    cancelEmbed = discord.Embed(title=f"Canceled", color=0x3083e3, description="Successfully canceled.")
+                                                    await ctx.send(embed=cancelEmbed)
+                                                    return
+                                                elif confirmView.value == True:
+                                                    await sentEmbedConfirm.delete()
+                                                    pass
                                         else:
                                             countError = discord.Embed(title="Error", color=0xff4f4f, description="You didn't select a number from `1` to `10`")
                                             await ctx.send(embed=countError, delete_after=5.0)
@@ -250,7 +405,26 @@ class Manga(commands.Cog):
                             else:
                                 if search.content.isnumeric() is True and int(search.content) in range(1, 11):
                                     mangaTitle = searchNames[int(search.content)-1]
-                                    link = update.getLink(mangaTitle)
+                                    mangaid = searchRaw["series"][int(search.content)-1]["id"]
+                                    link = f"https://www.mangaupdates.com/series.html?id={mangaid}"
+                                    mangaData = update.getAllData(link)
+                                    confirmEmbed = discord.Embed(title=f"Did you mean to add `{mangaTitle}`?", color=0x3083e3, description=mangaData["description"])
+                                    confirmEmbed.set_image(url=mangaData["image"])
+                                    sentEmbedConfirm = await ctx.send(embed=confirmEmbed, view=confirmView)
+                                    await confirmView.wait()
+                                    if confirmView.value is None:
+                                        await sentEmbedConfirm.delete()
+                                        await ctx.send(embed=timeoutError, delete_after=5.0)
+                                        return
+                                    else:
+                                        if confirmView.value == False:
+                                            await sentEmbedConfirm.delete()
+                                            cancelEmbed = discord.Embed(title=f"Canceled", color=0x3083e3, description="Successfully canceled.")
+                                            await ctx.send(embed=cancelEmbed)
+                                            return
+                                        elif confirmView.value == True:
+                                            await sentEmbedConfirm.delete()
+                                            pass
                                 else:
                                     countError = discord.Embed(title="Error", color=0xff4f4f, description="You didn't select a number from `1` to `10`")
                                     await ctx.send(embed=countError, delete_after=5.0)
@@ -291,7 +465,7 @@ class Manga(commands.Cog):
             modeEntry = False
             if (mode == None) or (mode != "server" and mode != "user"):
                 modeEntry = True
-                modeEmbed = discord.Embed(title="Set Scanlator Group", color=0x3083e3, description="Do you want this manga removed from your list or this server's list?")
+                modeEmbed = discord.Embed(title="Remove Manga", color=0x3083e3, description="Do you want this manga removed from your list or this server's list?")
                 sentEmbedMode = await ctx.send(embed=modeEmbed, view=modeView)
                 await modeView.wait()
                 if modeView.value is None:
@@ -422,7 +596,7 @@ class Manga(commands.Cog):
             modeEntry = False
             if (mode == None) or (mode != "server" and mode != "user"):
                 modeEntry = True
-                modeEmbed = discord.Embed(title="Set Scanlator Group", color=0x3083e3, description="Do you want to see your manga list or this server's manga list?")
+                modeEmbed = discord.Embed(title="Manga List", color=0x3083e3, description="Do you want to see your manga list or this server's manga list?")
                 sentEmbedMode = await ctx.send(embed=modeEmbed, view=modeView)
                 await modeView.wait()
                 if modeView.value is None:
@@ -518,7 +692,7 @@ class Manga(commands.Cog):
             modeEntry = False
             if (mode == None) or (mode != "server" and mode != "user"):
                 modeEntry = True
-                modeEmbed = discord.Embed(title="Set Scanlator Group", color=0x3083e3, description="Do you want to clear your manga list or this server's manga list?")
+                modeEmbed = discord.Embed(title="Clear Manga", color=0x3083e3, description="Do you want to clear your manga list or this server's manga list?")
                 sentEmbedMode = await ctx.send(embed=modeEmbed, view=modeView)
                 await modeView.wait()
                 if modeView.value is None:

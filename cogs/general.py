@@ -50,7 +50,7 @@ class General(commands.Cog):
             modeEntry = False
             if (mode == None) or (mode != "server" and mode != "user"):
                 modeEntry = True
-                modeEmbed = discord.Embed(title="Set Scanlator Group", color=0x3083e3, description="Do you want manga updates sent to your DMs or a server?")
+                modeEmbed = discord.Embed(title="Setup", color=0x3083e3, description="Do you want manga updates sent to your DMs or a server?")
                 sentEmbedMode = await ctx.send(embed=modeEmbed, view=modeView)
                 await modeView.wait()
                 if modeView.value is None:
@@ -125,53 +125,62 @@ class General(commands.Cog):
                 await ctx.send(embed=completeError, delete_after=5.0)
     
     @commands.command(name="deleteaccount")
-    async def deleteaccount(self, ctx):
+    async def deleteaccount(self, ctx, *, arg=None):
         confirmView = Confirm()
         timeoutError = discord.Embed(title="Error", description="You didn't respond in time!", color=0xff4f4f)
         if isinstance(ctx.channel, discord.DMChannel) == False:
             modeView = Mode()
-            deleteEmbed = discord.Embed(title="Delete Account", color=0x3083e3, description="Do you want to delete your user account or the server's account?")
-            sentEmbed = await ctx.send(embed=deleteEmbed, view=modeView)
-            await modeView.wait()
-            if modeView.value is None:
-                await sentEmbed.delete()
-                await ctx.send(embed=timeoutError, delete_after=5.0)
+            mode = arg
+            modeEntry = False
+            if (mode == None) or (mode != "server" and mode != "user"):
+                modeEntry = True
+                modeEmbed = discord.Embed(title="Delete Account", color=0x3083e3, description="Do you want to delete your user account or the server's account?")
+                sentEmbedMode = await ctx.send(embed=modeEmbed, view=modeView)
+                await modeView.wait()
+                if modeView.value is None:
+                    await sentEmbedMode.delete()
+                    await ctx.send(embed=timeoutError, delete_after=5.0)
+                    return
+                else:
+                    mode = modeView.value
+            if modeEntry == True:
+                await sentEmbedMode.delete()
+            if mode == "user":
+                check = mongodb.checkUserExist(ctx.message.author.id)
             else:
-                await sentEmbed.delete()
-                if modeView.value == "user":
-                    check = mongodb.checkUserExist(ctx.message.author.id)
+                if ctx.author.guild_permissions.administrator == False:
+                    permissionError = discord.Embed(title="Error", color=0xff4f4f, description="You don't have permission to delete this server's account. You need `Administrator` permission to use this.")
+                    await ctx.send(embed=permissionError, delete_after=5.0)
+                    return
+                check = mongodb.checkServerExist(ctx.message.guild.id)
+            if check == True:
+                confirmEmbed = discord.Embed(title="Delete Account", color=0x3083e3, description="Are you sure you want to delete the account? (Your manga list will be gone forever!)")
+                sentEmbedConfirm = await ctx.send(embed=confirmEmbed, view=confirmView)
+                await confirmView.wait()
+                if confirmView.value is None:
+                    await sentEmbedConfirm.delete()
+                    await ctx.send(embed=timeoutError, delete_after=5.0)
+                elif confirmView.value == True:
+                    await sentEmbedConfirm.delete()
+                    if mode == "user":
+                        userid = ctx.message.author.id
+                        mongodb.removeUser(userid)
+                    elif mode == "server":
+                        serverid = ctx.message.guild.id
+                        mongodb.removeServer(serverid)
+                    completeEmbed = discord.Embed(title="Delete Account", color=0x3083e3, description="Your account has been deleted.")
+                    await ctx.send(embed=completeEmbed)
                 else:
-                    if ctx.author.guild_permissions.administrator == False:
-                        permissionError = discord.Embed(title="Error", color=0xff4f4f, description="You don't have permission to delete this server's account. You need `Administrator` permission to use this.")
-                        await ctx.send(embed=permissionError, delete_after=5.0)
-                        return
-                    check = mongodb.checkServerExist(ctx.message.guild.id)
-                if check == True:
-                    confirmEmbed = discord.Embed(title="Delete Account", color=0x3083e3, description="Are you sure you want to delete the account? (Your manga list will be gone forever!)")
-                    sentEmbedConfirm = await ctx.send(embed=confirmEmbed, view=confirmView)
-                    await confirmView.wait()
-                    if confirmView.value is None:
-                        await sentEmbedConfirm.delete()
-                        await ctx.send(embed=timeoutError, delete_after=5.0)
-                    elif confirmView.value == True:
-                        await sentEmbedConfirm.delete()
-                        if modeView.value == "user":
-                            userid = ctx.message.author.id
-                            mongodb.removeUser(userid)
-                        elif modeView.value == "server":
-                            serverid = ctx.message.guild.id
-                            mongodb.removeServer(serverid)
-                        completeEmbed = discord.Embed(title="Delete Account", color=0x3083e3, description="Your account has been deleted.")
-                        await ctx.send(embed=completeEmbed)
-                    else:
-                        await sentEmbedConfirm.delete()
-                        return
-                elif check == False:
-                    completeError = discord.Embed(title="Error", color=0xff4f4f, description="You are not setup yet. Run the command `+setup` to setup.")
-                    await ctx.send(embed=completeError, delete_after=5.0)
-                else:
-                    completeError = discord.Embed(title="Error", color=0xff4f4f, description="Something went wrong. Create an issue here for support: https://github.com/ohashizu/mangaupdates-bot")
-                    await ctx.send(embed=completeError, delete_after=5.0)
+                    await sentEmbedConfirm.delete()
+                    cancelEmbed = discord.Embed(title=f"Canceled", color=0x3083e3, description="Successfully canceled.")
+                    await ctx.send(embed=cancelEmbed)
+                    return
+            elif check == False:
+                completeError = discord.Embed(title="Error", color=0xff4f4f, description="You are not setup yet. Run the command `+setup` to setup.")
+                await ctx.send(embed=completeError, delete_after=5.0)
+            else:
+                completeError = discord.Embed(title="Error", color=0xff4f4f, description="Something went wrong. Create an issue here for support: https://github.com/ohashizu/mangaupdates-bot")
+                await ctx.send(embed=completeError, delete_after=5.0)
         else:
             check = mongodb.checkUserExist(ctx.message.author.id)
             if check == True:
