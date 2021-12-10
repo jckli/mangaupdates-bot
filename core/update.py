@@ -56,11 +56,15 @@ def getAllData(link):
     table = soup.find_all("div", {"class": "sContent"})
     contents = table[1]
     type = contents.get_text().replace("\n", "")
+    if type == "N/A":
+        type = None
 
     # Get year
     table = soup.find_all("div", {"class": "sContent"})
     contents = table[20]
     year = contents.get_text().replace("\n", "")
+    if year == "N/A":
+        year = None
 
     # Get finished/unfinished status
     table = soup.find_all("div", {"class": "sContent"})
@@ -76,6 +80,8 @@ def getAllData(link):
         if img["src"].startswith("https://www.mangaupdates.com/image/"):
             image = img["src"]
             break
+        else:
+            image = None
 
     # Get description
     table = soup.find('div', {"class": "col-6 p-2 text"})
@@ -98,6 +104,8 @@ def getAllData(link):
         newList.append(i)
     oldDescription = "".join(newList)
     description = oldDescription.replace("\n", "")
+    if description == "N/A":
+        description = None
 
     # Get associated names
     table = soup.findAll('div')
@@ -116,6 +124,8 @@ def getAllData(link):
             names.append(title)
             for name in names:
                 if name == "\n":
+                    names.remove(name)
+                if "N/A" in name:
                     names.remove(name)
             associatedNames = names
             break
@@ -137,6 +147,8 @@ def getAllData(link):
                 link = i.get("href")
                 authorid = link.partition("https://www.mangaupdates.com/authors.html?id=")[2]
                 authors.append({"name": author, "id": authorid})
+    if authors == []:
+        authors = None
 
     # Get artists
     table = soup.find_all("div", {"class": "sContent"})
@@ -154,13 +166,18 @@ def getAllData(link):
                 link = i.get("href")
                 artistid = link.partition("https://www.mangaupdates.com/authors.html?id=")[2]
                 artists.append({"name": artist, "id": artistid})
+    if artists == []:
+        artists = None
 
     # Get rating
     table = soup.find_all("div", {"class": "sContent"})
     contents = table[11].contents
-    average = re.search('Average: (.*?) ', str(contents[0])).group(1)
-    bayesianRating = re.search('<b>(.*?)</b>', str(contents[5])).group(1)
-    rating = {"average": average, "bayesianRating": bayesianRating}
+    if "N/A" in contents[0]:
+        rating = None
+    else:
+        average = re.search('Average: (.*?) ', str(contents[0])).group(1)
+        bayesianRating = re.search('<b>(.*?)</b>', str(contents[5])).group(1)
+        rating = {"average": average, "bayesianRating": bayesianRating}
 
     # Get latest chapters
     # I just want to say that coding this gave me brain damage
@@ -225,6 +242,8 @@ def getAllData(link):
     latestChapters = []
     for index, i in enumerate(chapters):
         latestChapters.append({"volume": volumes[index], "chapter": chapters[index], "groups": groups[index], "date": dates[index]})
+    if latestChapters == []:
+        latestChapters = None
 
     # Return
     return {"title": title, "type": type, "status": status, "year": year, "image": image, "description": description, "associatedNames": associatedNames, "authors": authors, "artists": artists, "rating": rating, "latestChapters": latestChapters}
@@ -238,6 +257,8 @@ def getImage(link):
         if img["src"].startswith("https://www.mangaupdates.com/image/"):
             image = img["src"]
             break
+        else:
+            image = None
     return image
 
 def getTitle(link):
@@ -270,6 +291,8 @@ def getAllTitles(link):
             names.append(title)
             for name in names:
                 if name == "\n":
+                    names.remove(name)
+                if "N/A" in name:
                     names.remove(name)
             return names
         i += 1
@@ -393,9 +416,12 @@ def getRating(link):
     soup = bs(htmlData, "html.parser")
     table = soup.find_all("div", {"class": "sContent"})
     contents = table[11].contents
-    average = re.search('Average: (.*?) ', str(contents[0])).group(1)
-    bayesianRating = re.search('<b>(.*?)</b>', str(contents[5])).group(1)
-    rating = {"average": average, "bayesianRating": bayesianRating}
+    if "N/A" in contents[0]:
+        rating = None
+    else:
+        average = re.search('Average: (.*?) ', str(contents[0])).group(1)
+        bayesianRating = re.search('<b>(.*?)</b>', str(contents[5])).group(1)
+        rating = {"average": average, "bayesianRating": bayesianRating}
     return rating
 
 def getYear(link):
@@ -406,6 +432,8 @@ def getYear(link):
     table = soup.find_all("div", {"class": "sContent"})
     contents = table[20]
     year = contents.get_text().replace("\n", "")
+    if year == "N/A":
+        year = None
     return year
 
 def getType(link):
@@ -416,6 +444,8 @@ def getType(link):
     table = soup.find_all("div", {"class": "sContent"})
     contents = table[1]
     type = contents.get_text().replace("\n", "")
+    if type == "N/A":
+        type = None
     return type
 
 def getStatus(link):

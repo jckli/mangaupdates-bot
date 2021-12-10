@@ -117,38 +117,85 @@ class Manga(commands.Cog):
             await ctx.send(embed=completeError, delete_after=5.0)
             return
         mangaData = update.getAllData(link)
-        authorsList = []
-        for i in mangaData["authors"]:
-            authorsList.append(i["name"])
-        authors = ", ".join(authorsList)
-        artistsList = []
-        for i in mangaData["artists"]:
-            artistsList.append(i["name"])
-        artists = ", ".join(artistsList)
+        if mangaData["authors"] == None:
+            authors = "Unknown"
+        else:
+            authorsList = []
+            for i in mangaData["authors"]:
+                authorsList.append(i["name"])
+            authors = ", ".join(authorsList)
+        if mangaData["artists"] == None:
+            artists = "Unknown"
+        else:
+            artistsList = []
+            for i in mangaData["artists"]:
+                artistsList.append(i["name"])
+            artists = ", ".join(artistsList)
         latestChapter = 0
-        for i in mangaData["latestChapters"]:
-            z = i["chapter"]
-            endRaw = False
-            if "end" in str(z):
-                z = str(z).replace("(end)", "")
-                z = z.strip()
-                endRaw = True
-            if float(z) > latestChapter:
-                latestChapter = float(z)
-                end = endRaw
-        if ".0" in str(latestChapter):
-            latestChapter = int(latestChapter)
-        if end == True:
-            latestChapter = str(latestChapter) + " (end)"
-        title = f"{mangaData['title']} ({mangaData['status']})"
-        description = mangaData["description"]
-        rating = mangaData["rating"]["bayesianRating"]
+        status = None
+        if mangaData["latestChapters"] == None:
+            latestChapter = "Unknown"
+        else:
+            if mangaData["latestChapters"][0]["chapter"] == "Oneshot":
+                    latestChapter = "Oneshot"
+                    status = "Oneshot"
+            else:
+                for i in mangaData["latestChapters"]:
+                    z = i["chapter"]
+                    endRaw = False
+                    extraRaw = False
+                    if "end" in str(z):
+                        z = str(z).replace("(end)", "")
+                        z = z.strip()
+                        endRaw = True
+                    if "Extra" in str(z):
+                        z = str(z).split("+")[0]
+                        z = z.strip()
+                        extraRaw = True
+                    if "-" in str(z):
+                        zSplit = z.split("-")
+                        z = int(zSplit[1])
+                    if float(z) > latestChapter:
+                        latestChapter = float(z)
+                        if extraRaw == True:
+                            z = z+0.5
+                        end = endRaw
+                        extra = extraRaw
+                if ".0" in str(latestChapter):
+                    latestChapter = int(latestChapter)
+                if extra == True:
+                    latestChapter = str(latestChapter) + " + Extra"
+                if end == True:
+                    latestChapter = str(latestChapter) + " (end)"
+        if (mangaData["status"] == "Ongoing") and (mangaData["latestChapters"] == None):
+            status = "Not Scanlated"
+        else:
+            if status != "Oneshot":
+                status = mangaData["status"]
+        title = f"{mangaData['title']} ({status})"
+        if mangaData["description"] == None:
+            description = "No description available."
+        else:
+            description = mangaData["description"]
+        if mangaData["rating"] == None:
+            rating = "None"
+        else:
+            rating = mangaData["rating"]["bayesianRating"]
+        if mangaData["year"] == None:
+            year = "Unknown"
+        else:
+            year = mangaData["year"]
+        if mangaData["type"] == None:
+            mangaType = "Unknown"
+        else:
+            mangaType = mangaData["type"]
         result = discord.Embed(title=title, url=link, color=0x3083e3, description=description)
-        result.set_image(url=mangaData["image"])
+        if mangaData["image"] != None:
+            result.set_image(url=mangaData["image"])
         result.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
         result.set_footer(text=f"Requested by {ctx.author.name}", icon_url=ctx.message.author.display_avatar)
-        result.add_field(name="Year", value=mangaData["year"], inline=True)
-        result.add_field(name="Type", value=mangaData["type"], inline=True)
+        result.add_field(name="Year", value=year, inline=True)
+        result.add_field(name="Type", value=mangaType, inline=True)
         result.add_field(name="Latest Chapter", value=latestChapter, inline=True)
         result.add_field(name="Author(s)", value=authors, inline=True)
         result.add_field(name="Artist(s)", value=artists, inline=True)
@@ -223,8 +270,13 @@ class Manga(commands.Cog):
                                         mangaid = searchRaw["series"][int(search.content)-1]["id"]
                                         link = f"https://www.mangaupdates.com/series.html?id={mangaid}"
                                         mangaData = update.getAllData(link)
-                                        confirmEmbed = discord.Embed(title=f"Did you mean to add `{mangaTitle}`?", color=0x3083e3, description=mangaData["description"])
-                                        confirmEmbed.set_image(url=mangaData["image"])
+                                        if mangaData["description"] == None:
+                                            description = "No description available."
+                                        else:
+                                            description = mangaData["description"]
+                                        confirmEmbed = discord.Embed(title=f"Did you mean to add `{mangaTitle}`?", color=0x3083e3, description=description)
+                                        if mangaData["image"] != None:
+                                            confirmEmbed.set_image(url=mangaData["image"])
                                         sentEmbedConfirm = await ctx.send(embed=confirmEmbed, view=confirmView)
                                         await confirmView.wait()
                                         if confirmView.value is None:
