@@ -270,8 +270,13 @@ class Manga(commands.Cog):
                                         mangaid = searchRaw["series"][int(search.content)-1]["id"]
                                         link = f"https://www.mangaupdates.com/series.html?id={mangaid}"
                                         mangaData = update.getAllData(link)
-                                        confirmEmbed = discord.Embed(title=f"Did you mean to add `{mangaTitle}`?", color=0x3083e3, description=mangaData["description"])
-                                        confirmEmbed.set_image(url=mangaData["image"])
+                                        if mangaData["description"] == None:
+                                            description = "No description available."
+                                        else:
+                                            description = mangaData["description"]
+                                        confirmEmbed = discord.Embed(title=f"Did you mean to add `{mangaTitle}`?", color=0x3083e3, description=description)
+                                        if mangaData["image"] != None:
+                                            confirmEmbed.set_image(url=mangaData["image"])
                                         sentEmbedConfirm = await ctx.send(embed=confirmEmbed, view=confirmView)
                                         await confirmView.wait()
                                         if confirmView.value is None:
