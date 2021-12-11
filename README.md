@@ -14,7 +14,7 @@ This bot utilizes a MongoDB database to store all manga lists as well as mangaup
 
 > **Note**: This bot is still in development. There may still be some bugs, as well as many features that are coming in the future.
 
-## Invite
+## Links
 
 Invite the bot [here](https://discord.com/oauth2/authorize?client_id=880694914365685781&scope=bot&permissions=268856384).
 
