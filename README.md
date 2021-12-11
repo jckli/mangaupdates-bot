@@ -1,13 +1,22 @@
-# MangaUpdates Bot
-A Discord bot that can be used to keep track of your favorite mangas using MongoDB and mangaupdates.com.
+<p align="center">
+  <a href="https://discord.com/oauth2/authorize?client_id=880694914365685781&scope=bot&permissions=268856384">
+    <img src="https://github.com/ohashizu/mangaupdates-bot/blob/master/icon.png" alt="Logo" width="80" height="80">
+  </a>
+  <h3 align="center">MangaUpdates Bot</h3>
+  <p align="center">A Discord bot that can be used to keep track of your favorite mangas.</p>
+</p>
 
-> **Note**: This bot is still in development. Many more features are coming in the near future.
+## About
+
+MangaUpdates is a simple but powerful bot that sends every new manga, manhwa, or doujin chapter update to either your direct messages or a server channel. You simply search for your manga using mangaupdates.com's search and select your favorite manga for MangaUpdates to track!
+
+This bot utilizes a MongoDB database to store all manga lists as well as mangaupdates.com to query mangas and their RSS feed to track when new updates of mangas are released.
+
+> **Note**: This bot is still in development. There may still be some bugs, as well as many features that are coming in the future.
 
 ## Links
 
-You can invite the MangaUpdates bot [here](https://discord.com/oauth2/authorize?client_id=880694914365685781&scope=bot&permissions=268856384).
-
-Create an issue here (preferable) or join the support server [here](https://discord.gg/UcYspqftTF).
+Invite the bot [here](https://discord.com/oauth2/authorize?client_id=880694914365685781&scope=bot&permissions=268856384).
 
 ## Features/Why this bot?
 
@@ -16,13 +25,18 @@ Create an issue here (preferable) or join the support server [here](https://disc
 - Specific scan group selection
 - Supports most mangas, manhwas, doujins (utilizing mangaupdates.com)
 - Easy setup
+- Search information for your favorite manga
 - Consistently updated, with many more features planned
 
 ## Why?
 
-Personally, I read quite a bit of manga, manhwa, and doujins However, MyAnimeList doesn't want to track any less popular mangas as well as basically all manhwas and doujins.
+Personally, I read quite a bit of manga, manhwa, and doujins. However, MyAnimeList doesn't want to track any less popular mangas as well as basically all manhwas and doujins.
 
 I wanted to create something that would track all my mangas/manhwas/doujins on a platform that I personally use often on both desktop and mobile. Thus, I created this bot as Discord is cross-platform and I use it quite a lot to chat and has a very easy to use interface.
+
+## Issues
+
+If you have any issues, please don't be afraid to raise an issue on [GitHub](https://github.com/ohashizu/mangaupdates-bot) or join the [Support Server](https://discord.gg/UcYspqftTF).
 
 ## Commands
 
@@ -36,18 +50,20 @@ You can see all commands within the bot with the `+help` command.
 
 +source - Displays bot's GitHub repository.
 
-+setup - Setup your user/server for manga updates.
++setup `user`/`server` - Setup your user/server for manga updates.
 
-+addmanga - Adds manga to your list to be tracked. (Optional: `user` or `server` after command for easy usage)
++addmanga `user`/`server` - Adds manga to your list to be tracked.
 
-+removemanga - Removes manga from your list that were tracked. (Optional: `user` or `server` after command for easy usage)
++removemanga `user`/`server` - Removes manga from your list that were tracked.
 
-+mangalist - Lists all manga that are being tracked. (Optional: `user` or `server` after command for easy usage)
++mangalist `user`/`server` - Lists all manga that are being tracked.
 
-+clearmanga - Removes all manga from your current manga list. (Optional: `user` or `server` after command for easy usage)
++clearmanga `user`/`server` - Removes all manga from your current manga list.
 
 +setchannel - Changes the server's channel that manga chapter updates are sent to.
 
-+deleteaccount - Deletes your account and your manga list.
++deleteaccount `user`/`server` - Deletes your account and your manga list.
 
-+setgroup - Sets a manga's scan group. Only that scan group's chapter updates for that manga will be sent.
++setgroup `user`/`server` - Sets a manga's scan group. Only that scan group's chapter updates for that manga will be sent.
+
++search `manga` - Searches for information about a manga.
