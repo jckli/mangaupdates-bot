@@ -1,6 +1,7 @@
+</br>
 <p align="center">
-  <a href="https://discord.com/oauth2/authorize?client_id=880694914365685781&scope=bot&permissions=268856384">
-    <img src="https://github.com/ohashizu/mangaupdates-bot/blob/master/icon.png" alt="Logo" width="80" height="80">
+  <a href="https://discord.com/oauth2/authorize?client_id=880694914365685781&scope=bot&permissions=268856384" style:"margin-bottom: 0;">
+    <img src="https://github.com/ohashizu/mangaupdates-bot/blob/master/icon.png" alt="Logo" width="100" height="100">
   </a>
   <h3 align="center">MangaUpdates Bot</h3>
   <p align="center">A Discord bot that can be used to keep track of your favorite mangas.</p>
