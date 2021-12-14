@@ -4,6 +4,8 @@ from discord.ext import commands
 import json
 import os
 
+from core import mongodb
+
 # Load config
 with open("config.json", "r") as f:
     config = json.load(f)
@@ -23,6 +25,10 @@ for file in os.listdir("./cogs"):
 async def on_ready():
     print(f"Bot is online")
     await bot.change_presence(activity=discord.Game(name="+help"))
+
+@bot.event
+async def on_guild_remove(guild):
+    mongodb.removeServer(guild.id)
 
 try:
     bot.run(config["token"])
