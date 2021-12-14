@@ -171,6 +171,19 @@ def removeScanGroup(id, title, mode):
     elif mode == "server":
         srv.update_one({"serverid": id, "manga.title": title}, {"$unset": {"manga.$.groupName": "", "manga.$.groupid": ""}})
 
+def getAllIds(mode):
+    if mode == "user":
+        result = usr.find({}, {"userid": 1})
+    elif mode == "server":
+        result = srv.find({}, {"serverid": 1})
+    idList = []
+    for i in result:
+        if mode == "user":
+            idList.append(i["userid"])
+        elif mode == "server":
+            idList.append(i["serverid"])
+    return idList   
+
 def test():
     documentCount = usr.count_documents({})
     print(documentCount)
