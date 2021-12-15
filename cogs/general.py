@@ -1,9 +1,13 @@
 import discord
 from discord.ext import commands
 
+import json
 import asyncio
 
 from core import mongodb, update
+
+with open("config.json", "r") as f:
+    config = json.load(f)
 
 class Mode(discord.ui.View):
     def __init__(self):
@@ -244,6 +248,26 @@ class General(commands.Cog):
         else:
             dmError = discord.Embed(title="Error", color=0xff4f4f, description="This command cannot be run in DMs.")
             await ctx.send(embed=dmError)
+
+    @commands.command(name="serverdbcp")
+    async def serverdbcp(self, ctx):
+        if ctx.message.author.id == config["ownerid"]:
+            allServers = mongodb.getAllIds("server")
+            currentServers = []
+            description = ""
+            for i in self.bot.guilds:
+                currentServers.append(i.id)
+            for server in allServers:
+                if server not in currentServers:
+                    description += f"• {server}\n"
+            if description == "":
+                description = "All servers in the DB still contain the bot."
+            serversEmbed = discord.Embed(title=f"Non-Existing Servers in DB", color=0x3083e3, description=description)
+            serversEmbed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
+            await ctx.send(embed=serversEmbed)
+        else:
+            permissionError = discord.Embed(title="Error", color=0xff4f4f, description="You found a hidden command! Too bad only the bot owner can use this.")
+            await ctx.send(embed=permissionError, delete_after=5.0)
 
 def setup(bot):
     bot.add_cog(General(bot))
