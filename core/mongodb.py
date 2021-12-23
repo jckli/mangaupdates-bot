@@ -10,8 +10,9 @@ with open("config.json", "r") as f:
 
 ca = certifi.where()
 
+dbUsername = config["dbUsername"]
 dbPassword = config["dbPassword"]
-mongo = MongoClient(f"mongodb+srv://baka:{dbPassword}@akane.dsytm.mongodb.net/Kana?retryWrites=true&w=majority", tlsCAFile=ca)
+mongo = MongoClient(f"mongodb+srv://{dbUsername}:{dbPassword}@akane.dsytm.mongodb.net/Kana?retryWrites=true&w=majority", tlsCAFile=ca)
 
 database = mongo["Kana"]
 srv = database["servers"]
