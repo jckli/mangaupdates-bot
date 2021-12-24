@@ -16,15 +16,14 @@ bot = commands.Bot(
     )
 bot.remove_command("help")
 
-for file in os.listdir("./cogs"):
-    if file.endswith(".py"):
-        name = file[:-3]
-        bot.load_extension(f"cogs.{name}")
-
 @bot.event
 async def on_ready():
     print(f"Bot is online")
     await bot.change_presence(activity=discord.Game(name="+help"))
+    for file in os.listdir("./cogs"):
+        if file.endswith(".py"):
+            name = file[:-3]
+            bot.load_extension(f"cogs.{name}")
 
 @bot.event
 async def on_guild_remove(guild):
