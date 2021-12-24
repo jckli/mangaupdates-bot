@@ -10,3 +10,4 @@ beautifulsoup4
 datetime
 requests[security]
 certifi
+pycryptodome
