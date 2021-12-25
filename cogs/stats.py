@@ -14,7 +14,7 @@ class Statistics(commands.Cog):
 
     @tasks.loop(hours=1)
     async def update_stats(self):
-        servers = self.bot.users
+        servers = self.bot.guilds
         botUsers = 0
         for i in servers:
             botUsers += i.member_count
@@ -24,7 +24,7 @@ class Statistics(commands.Cog):
         topggurl = "https://top.gg/api/bots/880694914365685781/stats"
         header = {"Authorization": topggToken}
 
-        body = {"server_count": serverCount}
+        body = {"server_count": f"{serverCount}"}
         try:
             requests.post(topggurl, data=body, headers=header)
             print("Successfully posted stats to top.gg.")
@@ -35,7 +35,7 @@ class Statistics(commands.Cog):
         dblToken = config["dblToken"]
         dblurl = "https://discordbotlist.com/api/v1/bots/880694914365685781/stats"
         header = {"Authorization": dblToken}
-        body = {"guilds": serverCount, "users": botUsers}
+        body = {"guilds": f"{serverCount}", "users": f"{botUsers}"}
         try:
             requests.post(dblurl, data=body, headers=header)
             print("Successfully posted stats to dbl.com.")
