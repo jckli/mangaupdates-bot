@@ -25,7 +25,7 @@ class UpdateSending(commands.Cog):
                     newMangas = [manga for manga in new if manga not in old]
                     for manga in newMangas:
                         asyncio.run_coroutine_threadsafe(notify(manga["title"], manga["chapter"], manga["scanGroup"], manga["link"]), bot.loop)
-                time.sleep(60)
+                time.sleep(15)
                 old = new
             
         async def notify(title, chapter, group, link):
@@ -44,6 +44,8 @@ class UpdateSending(commands.Cog):
             for title in allTitles:
                 serverWant = mongodb.mangaWanted(title, group, "server")
                 userWant = mongodb.mangaWanted(title, group, "user")
+                if userWant or serverWant:
+                    print(f"Manga Wanted ({title})")
                 if userWant != None:
                     userNeed = True
                     for user in userWant:
@@ -61,8 +63,7 @@ class UpdateSending(commands.Cog):
                             "title": title
                         })
                         i += 1
-                        
-            if userNeed == True:
+            if userNeed:
                 for user in userList:
                     userObject = await self.bot.fetch_user(user["id"])
                     mangaTitle = user["title"]
@@ -74,7 +75,9 @@ class UpdateSending(commands.Cog):
                     if image != None:
                         embed.set_image(url=image)
                     await userObject.send(embed=embed)
-            if serverNeed == True:
+            else:
+                print(f"New manga not wanted. (User: {title})")
+            if serverNeed:
                 for server in serverList:
                     channelObject = self.bot.get_channel(server["channelid"])
                     mangaTitle = server["title"]
@@ -87,7 +90,7 @@ class UpdateSending(commands.Cog):
                         embed.set_image(url=image)
                     await channelObject.send(embed=embed)
             else:
-                print(f"New manga not wanted. ({title})")
+                print(f"New manga not wanted. (Server: {title})")
 
         nest_asyncio.apply()
         checkThread = threading.Thread(target=checkForUpdates)
