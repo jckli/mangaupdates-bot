@@ -13,8 +13,6 @@ MangaUpdates is a simple but powerful bot that sends every new manga, manhwa, or
 
 This bot utilizes a MongoDB database to store all manga lists as well as mangaupdates.com to query mangas and their RSS feed to track when new updates of mangas are released.
 
-> **Note**: This bot is still in development. There may still be some bugs, as well as many features that are coming in the future.
-
 ## Links
 
 Invite the bot [here](https://discord.com/oauth2/authorize?client_id=880694914365685781&scope=bot&permissions=268856384).

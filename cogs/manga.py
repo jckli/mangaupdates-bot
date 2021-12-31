@@ -144,17 +144,22 @@ class Manga(commands.Cog):
                     z = i["chapter"]
                     endRaw = False
                     extraRaw = False
+                    aRaw = False
+                    bRaw = False
+                    cRaw = False
                     if "end" in str(z):
                         z = str(z).replace("(end)", "")
                         z = z.strip()
                         endRaw = True
-                    if "Extra" in str(z):
+                    if "Extra" in str(z) and str(z) != "Extras":
                         z = str(z).split("+")[0]
                         z = z.strip()
                         extraRaw = True
                     if "-" in str(z):
                         zSplit = z.split("-")
                         z = int(zSplit[1])
+                    if str(z) == "Extras":
+                        continue
                     if float(z) > latestChapter:
                         latestChapter = float(z)
                         if extraRaw == True:
