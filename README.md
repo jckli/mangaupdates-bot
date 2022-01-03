@@ -1,7 +1,7 @@
 </br>
 <p align="center">
-  <a href="https://discord.com/oauth2/authorize?client_id=880694914365685781&scope=bot&permissions=268856384" style:"margin-bottom: 0;">
-    <img src="https://github.com/ohashizu/mangaupdates-bot/blob/master/icon.png" alt="Logo" width="100" height="100">
+  <a href="https://discord.com/oauth2/authorize?client_id=880694914365685781&scope=applications.commands%20bot&permissions=268856384" style:"margin-bottom: 0;">
+    <img src="https://github.com/jckli/mangaupdates-bot/blob/master/icon.png" alt="Logo" width="100" height="100">
   </a>
   <h3 align="center">MangaUpdates Bot</h3>
   <p align="center">A Discord bot that can be used to keep track of your favorite mangas.</p>
@@ -15,7 +15,7 @@ This bot utilizes a MongoDB database to store all manga lists as well as mangaup
 
 ## Links
 
-Invite the bot [here](https://discord.com/oauth2/authorize?client_id=880694914365685781&scope=bot&permissions=268856384).
+Invite the bot [here](https://discord.com/oauth2/authorize?client_id=880694914365685781&scope=applications.commands%20bot&permissions=268856384).
 
 ## Features/Why this bot?
 
@@ -35,7 +35,7 @@ I wanted to create something that would track all my mangas/manhwas/doujins on a
 
 ## Issues
 
-If you have any issues, please don't be afraid to raise an issue on [GitHub](https://github.com/ohashizu/mangaupdates-bot) or join the [Support Server](https://discord.gg/UcYspqftTF).
+If you have any issues, please don't be afraid to raise an issue on [GitHub](https://github.com/jckli/mangaupdates-bot) or join the [Support Server](https://discord.gg/UcYspqftTF).
 
 ## Commands
 
