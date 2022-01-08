@@ -90,7 +90,7 @@ class Information(commands.Cog):
     @commands.command(name="alert")
     async def alert(self, ctx):
         link = 'https://discord.com/oauth2/authorize?client_id=880694914365685781&scope=applications.commands%20bot&permissions=268856384'
-        description = f"Yo everyone! Recently Discord changed their API to require messages content as intents. They want every bot to move to slash commands. This means that this bot needs new permissions to use these slash commands (don't ask me why).\n\nPlease reinvite the bot with the link or else by April 30, 2022, you won't be able to use the bot. Thanks for understanding and using MangaUpdates Bot!"
+        description = f"Yo everyone! Recently Discord changed their API to require message content as intents. They want every bot to move to slash commands. This means that this bot needs new permissions to use these slash commands (don't ask me why).\n\nPlease reinvite the bot with the link or else by April 30, 2022, you won't be able to use the bot. Thanks for understanding and using MangaUpdates Bot!"
         embed = discord.Embed(title="Alert - Please read", color=0x3083e3, description=description)
         embed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
         embed.set_footer(text="If button doesn't work: https://discord.com/oauth2/authorize?client_id=880694914365685781&scope=applications.commands%20bot&permissions=268856384")
