@@ -25,7 +25,7 @@ class UpdateSending(commands.Cog):
                     newMangas = [manga for manga in new if manga not in old]
                     for manga in newMangas:
                         asyncio.run_coroutine_threadsafe(notify(manga["title"], manga["chapter"], manga["scanGroup"], manga["link"]), bot.loop)
-                time.sleep(15)
+                time.sleep(8)
                 old = new
             
         async def notify(title, chapter, group, link):
