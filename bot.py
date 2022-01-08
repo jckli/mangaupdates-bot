@@ -25,9 +25,11 @@ async def on_ready():
             name = file[:-3]
             bot.load_extension(f"cogs.{name}")
 
+'''
 @bot.event
 async def on_guild_remove(guild):
     mongodb.removeServer(guild.id)
+'''
 
 try:
     bot.run(config["token"])
