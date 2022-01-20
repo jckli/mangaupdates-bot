@@ -40,7 +40,6 @@ class Information(commands.Cog):
         embed.add_field(name="+deleteaccount `user/server`", value="Deletes your account and your manga list.", inline=False)
         embed.add_field(name="+setgroup `user/server`", value="Sets a manga's scan group. Only that scan group's chapter updates for that manga will be sent.", inline=False)
         embed.add_field(name="+search `manga`", value="Searches for information about a manga.", inline=False)
-        embed.set_footer(text="PLEASE READ (server owners): +alert")
         await ctx.send(embed=embed)
 
     @commands.command(name="ping")
@@ -81,10 +80,9 @@ class Information(commands.Cog):
 
     @commands.command(name="source")
     async def source(self, ctx):
-        embed = discord.Embed(title="Source Code", color=0x3083e3, description="MangaUpdate's source code can be found on GitHub. Any issues with the bot can be raised there.")
+        embed = discord.Embed(title="Source Code", color=0x3083e3, description="MangaUpdates' source code can be found on GitHub. Any issues with the bot can be raised there.")
         embed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
         embed.add_field(name="Link", value="https://github.com/ohashizu/mangaupdates-bot")
-        embed.set_footer(text="PLEASE READ (server owners): +alert")
         await ctx.send(embed=embed)
 
     @commands.command(name="alert")

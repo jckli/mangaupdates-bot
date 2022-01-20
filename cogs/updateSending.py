@@ -86,7 +86,6 @@ class UpdateSending(commands.Cog):
                     embed.add_field(name="Chapter", value=chapter, inline=True)
                     embed.add_field(name="Group", value=group, inline=True)
                     embed.add_field(name="Link", value=link, inline=False)
-                    embed.set_footer(text="PLEASE READ (server owners): +alert")
                     if image != None:
                         embed.set_image(url=image)
                     await channelObject.send(embed=embed)
