@@ -3,7 +3,6 @@ from discord.ext import commands
 from discord.ext.commands import BotMissingPermissions, NoPrivateMessage
 
 import asyncio
-import pymanga
 import validators
 import time
 
@@ -75,7 +74,7 @@ class Manga(commands.Cog):
             link = query
             mangaid = link.partition("https://www.mangaupdates.com/series.html?id=")[2]
         elif validators.url(query) != True:
-            searchRaw = pymanga.api.search(query)
+            searchRaw = update.searchSeries(query)
             description = "Type the number of the manga you want to see information for.\n"
             searchNames = []
             if searchRaw["series"] == []:
@@ -245,7 +244,7 @@ class Manga(commands.Cog):
                             mangaTitle = update.getTitle(manga.content)
                             link = manga.content
                         elif validators.url(manga.content) != True:
-                            searchRaw = pymanga.api.search(manga.content)
+                            searchRaw = update.searchSeries(manga.content)
                             description = "Type the number of the manga you want to add.\n"
                             searchNames = []
                             if searchRaw["series"] == []:
@@ -344,7 +343,7 @@ class Manga(commands.Cog):
                                 mangaTitle = update.getTitle(manga.content)
                                 link = manga.content
                             elif validators.url(manga.content) != True:
-                                searchRaw = pymanga.api.search(manga.content)
+                                searchRaw = update.searchSeries(manga.content)
                                 description = "Type the number of the manga you want to add.\n"
                                 searchNames = []
                                 if searchRaw["series"] == []:
@@ -435,7 +434,7 @@ class Manga(commands.Cog):
                         mangaTitle = update.getTitle(manga.content)
                         link = manga.content
                     elif validators.url(manga.content) != True:
-                        searchRaw = pymanga.api.search(manga.content)
+                        searchRaw = update.searchSeries(manga.content)
                         description = "Type the number of the manga you want to add.\n"
                         searchNames = []
                         if searchRaw["series"] == []:

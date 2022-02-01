@@ -1,5 +1,4 @@
 git+https://github.com/Rapptz/discord.py@45d498c1b76deaf3b394d17ccf56112fa691d160
-py-manga
 validators
 asyncio
 nest_asyncio
