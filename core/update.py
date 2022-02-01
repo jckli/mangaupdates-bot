@@ -60,7 +60,7 @@ def searchSeries(query):
         year = seriesRaw[series+2].text
         rating = seriesRaw[series+3].text
         allSeries.append({"name": name, "id": mangaid, "year": year, "rating": rating, "genres": genres})
-    return allSeries
+    return {"series": allSeries}
 
 def getAllData(link):
     with requests.Session() as s:
