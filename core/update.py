@@ -23,7 +23,7 @@ def getLatest():
     for entry in feed["entries"]:
         title = entry["title"]
         try:
-            chapter = re.search(r"(v.\d{1,} )?c.\d{1,}(\.\d)?(-\d{1,}(\.\d)?)?", title).group() 
+            chapter = re.search(r"(v.\d{1,} )?c.\d{1,}(\.\d)?(-\d{1,}(\.\d)?)?", title).group()
         except:
             chapter = None
         scanGroup = re.search("(?<=\[).+?(?=\])", title).group()
@@ -77,7 +77,7 @@ def getAllData(link):
 
     # Get image
     for img in soup.find_all("img"):
-        if img["src"].startswith("https://www.mangaupdates.com/image/"):
+        if img["src"].startswith("https://cdn.mangaupdates.com/image/"):
             image = img["src"]
             break
         else:
@@ -254,7 +254,7 @@ def getImage(link):
     htmlData = websiteResult.text
     soup = bs(htmlData, "html.parser") 
     for img in soup.find_all("img"):
-        if img["src"].startswith("https://www.mangaupdates.com/image/"):
+        if img["src"].startswith("https://cdn.mangaupdates.com/image/"):
             image = img["src"]
             break
         else:
