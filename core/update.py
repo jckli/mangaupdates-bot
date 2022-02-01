@@ -1,6 +1,7 @@
 import feedparser
 import re
 import requests
+import urllib.parse
 import os
 from bs4 import BeautifulSoup as bs
 from bs4 import Comment
@@ -41,6 +42,25 @@ def getLatest():
     return mangas
 
 s = requests.Session()
+
+def searchSeries(query):
+    websiteResult = requests.post("https://mangaupdates.com/search.html", params={"search": query})
+    htmlData = websiteResult.text
+    soup = bs(htmlData, "html.parser")
+    soup = soup.find("div", {"id": "main_content"})
+    soup = soup.find("div", {"class": "p-2 pt-2 pb-2 text"})
+    content = soup.find_all("div", {"class": "row"})[1]
+    seriesRaw = content.find_all("div", {"class": "text"})[:-1]
+    allSeries = []
+    for series in range(0, len(seriesRaw), 4):
+        titleRaw = seriesRaw[series].find("a", {"alt": "Series Info"})
+        name = titleRaw.text
+        mangaid = titleRaw["href"].partition("https://www.mangaupdates.com/series.html?id=")[2]
+        genres = [genre.strip() for genre in seriesRaw[series+1].text.split(",")]
+        year = seriesRaw[series+2].text
+        rating = seriesRaw[series+3].text
+        allSeries.append({"name": name, "id": mangaid, "year": year, "rating": rating, "genres": genres})
+    return allSeries
 
 def getAllData(link):
     with requests.Session() as s:
