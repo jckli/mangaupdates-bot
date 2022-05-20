@@ -6,8 +6,8 @@ name = "pypi"
 [packages]
 py-cord = "==2.0.0rc1"
 python-dotenv = "*"
-pymongo = "*"
 certifi = "*"
+pymongo = {extras = ["srv"], version = "*"}
 
 [dev-packages]
 

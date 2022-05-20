@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "942cc3ec595b4864a76b36f30b5f3fae5e3c7627e279e1724375618409aeb1f4"
+            "sha256": "fcdf174d15b8ee70f5f4c87b99448a260cc9b22d17cc64dbe3fa299c839553b8"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -133,6 +133,13 @@
             ],
             "markers": "python_version >= '3.5'",
             "version": "==2.0.12"
+        },
+        "dnspython": {
+            "hashes": [
+                "sha256:0f7569a4a6ff151958b64304071d370daa3243d15941a7beedf0c9fe5105603e",
+                "sha256:a851e51367fb93e9e1361732c1d60dab63eff98712e503ea7d92e6eccb109b4f"
+            ],
+            "version": "==2.2.1"
         },
         "frozenlist": {
             "hashes": [
@@ -281,6 +288,9 @@
             "version": "==2.0.0rc1"
         },
         "pymongo": {
+            "extras": [
+                "srv"
+            ],
             "hashes": [
                 "sha256:019a4c13ef1d9accd08de70247068671b116a0383adcd684f6365219f29f41cd",
                 "sha256:07f50a3b8a3afb086089abcd9ab562fb2a27b63fd7017ca13dfe7b663c8f3762",
