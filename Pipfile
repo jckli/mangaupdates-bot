@@ -8,6 +8,7 @@ py-cord = "==2.0.0rc1"
 python-dotenv = "*"
 certifi = "*"
 pymongo = {extras = ["srv"], version = "*"}
+feedparser = "*"
 
 [dev-packages]
 
