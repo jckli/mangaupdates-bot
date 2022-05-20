@@ -2,7 +2,7 @@ import feedparser
 import re
 
 class RSSParser:
-    def get_latest():
+    def __get_latest():
         try:
             url = "https://api.mangaupdates.com/v1/releases/rss"
             feed = feedparser.parse(url)
@@ -16,7 +16,9 @@ class RSSParser:
         return feed
 
     def parse_feed():
-        feed = RSSParser.get_latest()
+        feed = RSSParser.__get_latest()
+        if feed is None:
+            return None
         manga_list = []
         for entry in feed.entries:
             title = entry.title
