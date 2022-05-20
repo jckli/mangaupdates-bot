@@ -9,6 +9,7 @@ python-dotenv = "*"
 certifi = "*"
 pymongo = {extras = ["srv"], version = "*"}
 feedparser = "*"
+requests = "*"
 
 [dev-packages]
 
