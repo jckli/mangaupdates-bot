@@ -48,6 +48,13 @@ class Information(commands.Cog):
         embed = discord.Embed(title="Alert - Bot revamp", color=0x3083e3, description=description)
         embed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
         await ctx.respond(embed=embed, view=Link("GitHub", link))
+    
+    @slash_command(name="invite", description="Invite MangaUpdates to your own server", guild_ids=[721216108668911636])
+    async def invite(self, ctx):
+        link = "https://jackli.dev/mangaupdates"
+        embed = discord.Embed(title="Invite Link", color=0x3083e3, description="Invite me to your own servers!")
+        embed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
+        await ctx.respond(embed=embed, view=Link("Invite", link))
 
 def setup(bot):
     bot.add_cog(Information(bot))
