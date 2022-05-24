@@ -31,6 +31,10 @@ class Information(commands.Cog):
         embed.add_field(name="search `manga`", value="Searches for information about a manga.", inline=False)
         await ctx.respond(embed=embed, ephemeral=True)
 
+    @slash_command(name="ping", description="Pong!", guild_ids=[721216108668911636])
+    async def ping(self, ctx):
+        await ctx.respond(f"🏓 Pong! My ping is {round(self.bot.latency * 1000)}ms")
+
     @slash_command(name="alert", description="Displays bot alerts/announcements.", guild_ids=[721216108668911636])
     async def alert(self, ctx):
         link = "https://github.com/jckli/mangaupdates-bot"
