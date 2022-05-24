@@ -2,6 +2,11 @@ import discord
 from discord.ext import commands
 from discord.commands import Option, slash_command
 
+class Link(discord.ui.View):
+    def __init__(self, label, link):
+        super().__init__()
+        self.add_item(discord.ui.Button(label=label, url=link))
+
 class Information(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -25,6 +30,20 @@ class Information(commands.Cog):
         embed.add_field(name="setgroup `user/server`", value="Sets a manga's scan group. Only that scan group's chapter updates for that manga will be sent.", inline=False)
         embed.add_field(name="search `manga`", value="Searches for information about a manga.", inline=False)
         await ctx.respond(embed=embed, ephemeral=True)
+
+    @slash_command(name="alert", description="Displays bot alerts/announcements.", guild_ids=[721216108668911636])
+    async def alert(self, ctx):
+        link = "https://github.com/jckli/mangaupdates-bot"
+        description = """
+        Ayo! Thanks for keeping MangaUpdates Bot. I have been working on this version for a while now, and I hope you enjoy it.
+        
+        I have changed the manga updates whole system to use mangaupdates.com new API, as well as changed the commands system to use Discord's new slash commands.
+        
+        Anyways, sorry for any inconveniences when the bot wasn't working. Cheers!
+        """
+        embed = discord.Embed(title="Alert - Bot revamp", color=0x3083e3, description=description)
+        embed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
+        await ctx.respond(embed=embed, view=Link("GitHub", link))
 
 def setup(bot):
     bot.add_cog(Information(bot))
