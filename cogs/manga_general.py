@@ -11,7 +11,6 @@ ghuser = os.environ.get("GITHUB_USER")
 
 timeoutError = discord.Embed(title="Error", description="You didn't respond in time! Please rerun the command.", color=0xff4f4f)
 
-# todo: make dropdown only work once, also make the timeout stop showing if it didnt time out (think it already does but dunno)
 class SelectMangaView(discord.ui.View):
     def __init__(self, manga_list):
         super().__init__(timeout=15.0)
