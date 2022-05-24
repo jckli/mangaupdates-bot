@@ -14,6 +14,9 @@ class MangaUpdates:
     async def convert_old_id(self, old_id):
         enc = numpy.base_repr(old_id, 36).lower()
         return enc
+
+    async def convert_new_id(self, new_id):
+        return int(new_id, 36)
     
     async def search_series(self, series_name):
         searchurl = f"https://api.mangaupdates.com/v1/series/search"
