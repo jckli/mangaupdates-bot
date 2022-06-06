@@ -13,7 +13,7 @@ class Mongo:
         self.usr = db["users"]
         self.srv = db["servers"]
     
-    def add_server(self, server_name, server_id, channel_id):
+    async def add_server(self, server_name, server_id, channel_id):
         document_count = self.srv.count_documents({})
         while document_count >= 0:
             try:
@@ -22,7 +22,7 @@ class Mongo:
             except:
                 document_count -= 1
 
-    def add_user(self, user_name, user_id):
+    async def add_user(self, user_name, user_id):
         document_count = self.usr.count_documents({})
         while document_count >= 0:
             try:
@@ -31,8 +31,48 @@ class Mongo:
             except:
                 document_count -= 1
 
-    def remove_server(self, server_id):
+    async def remove_server(self, server_id):
         self.srv.delete_one({"serverid": server_id})
 
-    def remove_user(self, user_id):
+    async def remove_user(self, user_id):
         self.usr.delete_one({"userid": user_id})
+
+    async def get_server(self, server_id):
+        return self.srv.find_one({"serverid": server_id})
+
+    async def get_user(self, user_id):
+        return self.usr.find_one({"userid": user_id})
+
+    async def check_server_exist(self, server_id):
+        result = await Mongo.get_server(self, server_id)
+        if result is not None:
+            return True
+        else:
+            return False
+    
+    async def check_user_exist(self, user_id):
+        result = await Mongo.get_user(self, user_id)
+        if result is not None:
+            return True
+        else:
+            return False
+
+    async def check_manga_exist_server(self, server_id, manga_id):
+        result = self.srv.find_one({"serverid": server_id}, {"manga": 1})
+        for i in result["manga"]:
+            if i["id"] == manga_id:
+                return True
+        return False
+    
+    async def check_manga_exist_user(self, user_id, manga_id):
+        result = self.usr.find_one({"userid": user_id}, {"manga": 1})
+        for i in result["manga"]:
+            if i["id"] == manga_id:
+                return True
+        return False
+    
+    async def add_manga_server(self, server_id, manga_id, manga_name):
+        self.srv.update_one({"serverid": server_id}, {"$push": {"manga": {"title": manga_name, "id": manga_id}}})
+    
+    async def add_manga_user(self, user_id, manga_id, manga_name):
+        self.usr.update_one({"userid": user_id}, {"$push": {"manga": {"title": manga_name, "id": manga_id}}})
