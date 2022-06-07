@@ -2,10 +2,12 @@ import discord
 from discord.ext import commands
 from discord.commands import Option, slash_command
 import time
+import os
 from datetime import datetime
 from datetime import timedelta
 
 startTime = time.time()
+ghuser = os.environ.get("GITHUB_USER")
 
 class Link(discord.ui.View):
     def __init__(self, label, link):
@@ -56,7 +58,7 @@ class Information(commands.Cog):
             description=f"Thanks for using MangaUpdates bot! Any questions can be brought up in the support server. This bot is also open-source! All code can be found on GitHub (Please leave a star ⭐ if you enjoy the bot).\n\n**Server Count:** {len(self.bot.guilds)}\n**Bot Users:** {botUsers}\n**Bot Uptime:** {uptime}"
         )
         botinfo.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
-        await ctx.respond(embed=botinfo, view=InfoButtons("https://discord.gg/UcYspqftTF", "https://github.com/jckli/mangaupdates-bot"))
+        await ctx.respond(embed=botinfo, view=InfoButtons("https://discord.gg/UcYspqftTF", f"https://github.com/{ghuser}/mangaupdates-bot"))
 
     @slash_command(name="ping", description="Pong!", guild_ids=[721216108668911636])
     async def ping(self, ctx):
@@ -64,7 +66,7 @@ class Information(commands.Cog):
 
     @slash_command(name="alert", description="Displays bot alerts/announcements.", guild_ids=[721216108668911636])
     async def alert(self, ctx):
-        link = "https://github.com/jckli/mangaupdates-bot"
+        link = f"https://github.com/{ghuser}/mangaupdates-bot"
         description = """
         Ayo! Thanks for keeping MangaUpdates Bot. I have been working on this version for a while now, and I hope you enjoy it.
         
