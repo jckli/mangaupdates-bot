@@ -63,7 +63,6 @@ class SelectMangaWConfirm(discord.ui.Select):
         confirm = Confirm()
         await interaction.response.edit_message(embed=result, view=confirm)
         mangaid = self.manga_list[value]["id"]
-        print(mangaid)
         manganame = title
         self.finish = True
         await confirm.wait()
