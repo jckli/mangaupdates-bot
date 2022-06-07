@@ -1,16 +1,39 @@
 import discord
+from discord import guild_only
 from discord.ext import commands
-from discord.commands import Option, slash_command
+from discord.commands import Option, slash_command, SlashCommandGroup
 import validators
 import os
+import asyncio
+from core.mongodb import Mongo
 from core.mangaupdates import MangaUpdates
 from core.manga_util import SearchData
 
+mongo = Mongo()
 mangaupdates = MangaUpdates()
 ghuser = os.environ.get("GITHUB_USER")
 
 timeoutError = discord.Embed(title="Error", description="You didn't respond in time! Please rerun the command.", color=0xff4f4f)
 
+class Mode(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=15.0)
+        self.value = None
+        self.interaction = None
+
+    @discord.ui.button(label=f'User (DMs)', style=discord.ButtonStyle.grey)
+    async def confirm(self, button: discord.ui.Button, interaction: discord.Interaction):
+        self.value = "user"
+        self.interaction = interaction
+        self.stop()
+
+    @discord.ui.button(label=f'Server', style=discord.ButtonStyle.grey)
+    async def cancel(self, button: discord.ui.Button, interaction: discord.Interaction):
+        self.value = "server"
+        self.interaction = interaction
+        self.stop()
+
+# search command views
 class SelectMangaView(discord.ui.View):
     def __init__(self, manga_list):
         super().__init__(timeout=15.0)
@@ -110,6 +133,37 @@ class MangaGeneral(commands.Cog):
             completeError = discord.Embed(title="Error", color=0xff4f4f, description=f"Something went wrong. Create an issue here for support: https://github.com/{ghuser}/mangaupdates-bot")
             await ctx.respond(embed=completeError)
             return
+
+    setup = SlashCommandGroup("setup", "Setup commands")
+
+    @setup.command(name="server", description="Sets up your server for manga updates", guild_ids=[721216108668911636])
+    @guild_only()
+    async def server(self, ctx, channel: Option(discord.TextChannel, required=True)):
+        serverExist = await mongo.check_server_exist(ctx.guild.id)
+        if serverExist is True:
+            alrfinishSS = discord.Embed(title="Setup", color=0x3083e3, description="This server is already setup.")
+            await ctx.respond(embed=alrfinishSS, view=None)
+            return
+        if ctx.author.guild_permissions.administrator is False:
+            permissionError = discord.Embed(title="Error", color=0xff4f4f, description="You don't have permission to setup this server's account. You need `Administrator` permission to use this.")
+            await ctx.respond(embed=permissionError, view=None)
+            return
+        channelid = channel.id
+        await mongo.add_server(ctx.guild.name, ctx.guild.id, channelid)
+        embedServerF = discord.Embed(title="Setup", color=0x3083e3, description="Great! You're all set up and can add manga now.")
+        await ctx.respond(embed=embedServerF, view=None)
+
+    @setup.command(name="user", description="Sets up your user for manga updates", guild_ids=[721216108668911636])
+    async def user(self, ctx):
+        userExist = await mongo.check_user_exist(ctx.author.id)
+        if userExist is True:
+            alrfinishUS = discord.Embed(title="Setup", color=0x3083e3, description="You are already setup.")
+            await ctx.respond(embed=alrfinishUS, view=None)
+            return
+        username = f"{ctx.author.name}#{ctx.author.discriminator}"
+        await mongo.add_user(username, ctx.author.id)
+        embedUser = discord.Embed(title="Setup", color=0x3083e3, description="Great! You're all set up and can add manga now.")
+        await ctx.respond(embed=embedUser, view=None)
 
 def setup(bot):
     bot.add_cog(MangaGeneral(bot))
