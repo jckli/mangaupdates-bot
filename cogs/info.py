@@ -56,7 +56,7 @@ class Information(commands.Cog):
             description=f"Thanks for using MangaUpdates bot! Any questions can be brought up in the support server. This bot is also open-source! All code can be found on GitHub (Please leave a star ⭐ if you enjoy the bot).\n\n**Server Count:** {len(self.bot.guilds)}\n**Bot Users:** {botUsers}\n**Bot Uptime:** {uptime}"
         )
         botinfo.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
-        await ctx.respond(embed=botinfo, view=InfoButtons("https://discord.gg/Fr2BhuCkET", "https://github.com/jckli/mangaupdates-bot"))
+        await ctx.respond(embed=botinfo, view=InfoButtons("https://discord.gg/UcYspqftTF", "https://github.com/jckli/mangaupdates-bot"))
 
     @slash_command(name="ping", description="Pong!", guild_ids=[721216108668911636])
     async def ping(self, ctx):
