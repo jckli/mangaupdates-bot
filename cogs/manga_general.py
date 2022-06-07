@@ -1,5 +1,4 @@
 import discord
-from discord import guild_only
 from discord.ext import commands
 from discord.commands import Option, slash_command, SlashCommandGroup
 import validators
@@ -136,8 +135,7 @@ class MangaGeneral(commands.Cog):
 
     setup = SlashCommandGroup("setup", "Setup commands")
 
-    @setup.command(name="server", description="Sets up your server for manga updates", guild_ids=[721216108668911636])
-    @guild_only()
+    @setup.command(name="server", description="Sets up your server for manga updates", guild_only=True, guild_ids=[721216108668911636])
     async def server(self, ctx, channel: Option(discord.TextChannel, required=True)):
         serverExist = await mongo.check_server_exist(ctx.guild.id)
         if serverExist is True:
