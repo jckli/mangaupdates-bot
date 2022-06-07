@@ -76,3 +76,23 @@ class Mongo:
     
     async def add_manga_user(self, user_id, manga_id, manga_name):
         self.usr.update_one({"userid": user_id}, {"$push": {"manga": {"title": manga_name, "id": manga_id}}})
+
+    async def get_manga_list_server(self, server_id):
+        manga = []
+        result = self.srv.find_one({"serverid": server_id}, {"manga": 1})
+        for i in result["manga"]:
+            manga.append(i["title"])
+        if manga != []:
+            return manga
+        else:
+            return None
+    
+    async def get_manga_list_user(self, user_id):
+        manga = []
+        result = self.usr.find_one({"userid": user_id}, {"manga": 1})
+        for i in result["manga"]:
+            manga.append(i["title"])
+        if manga != []:
+            return manga
+        else:
+            return None
