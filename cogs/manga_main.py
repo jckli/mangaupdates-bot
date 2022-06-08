@@ -299,6 +299,48 @@ class MangaMain(commands.Cog):
             return
         else:
             return
+
+    @manga.command(name="list", description="Lists all manga in your list", guild_ids=[721216108668911636])
+    async def list(self, ctx):
+        if isinstance(ctx.channel, discord.DMChannel) is False:
+            modeEmbed = discord.Embed(title="Add Manga", color=0x3083e3, description="Do you want to see your manga list or this server's manga list?")
+            mode = Mode()
+            await ctx.respond(embed=modeEmbed, view=mode)
+            await mode.wait()
+            if mode.value is None:
+                await mode.interaction.response.edit_message(embed=timeoutError, view=None)
+            else:
+                modeval = mode.value
+        setupError = discord.Embed(title="Error", color=0xff4f4f, description="Sorry! Please run the `+setup` command first.")
+        if modeval == "user":
+            userExist = await mongo.check_user_exist(ctx.author.id)
+            if userExist is False:
+                await mode.interaction.response.edit_message(embed=setupError, view=None)
+                return
+            name = ctx.author.name
+            icon = ctx.author.display_avatar
+            mangaList = await mongo.get_manga_list_user(ctx.author.id)
+        elif modeval == "server":
+            serverExist = await mongo.check_server_exist(ctx.guild.id)
+            if serverExist is False:
+                await mode.interaction.response.edit_message(embed=setupError, view=None)
+                return
+            name = ctx.guild.name
+            if ctx.guild.icon is not None:
+                    icon = ctx.guild.icon.url
+            else:
+                icon = "https://cdn.discordapp.com/embed/avatars/0.png"
+            mangaList = await mongo.get_manga_list_server(ctx.guild.id)
+        description = ""
+        if mangaList is None:
+            description="You have no manga added to your list."
+        else:
+            for manga in mangaList:
+                description += f"• {manga['title']}\n"
+        mangaListEmbed = discord.Embed(title=f"{name}'s Manga List", color=0x3083e3, description=description)
+        mangaListEmbed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
+        mangaListEmbed.set_thumbnail(url=icon)
+        await mode.interaction.response.edit_message(embed=mangaListEmbed, view=None)
         
 def setup(bot):
     bot.add_cog(MangaMain(bot))
