@@ -5,11 +5,14 @@ name = "pypi"
 
 [packages]
 py-cord = "==2.0.0rc1"
-python-dotenv = "*"
-certifi = "*"
+requests = "*"
+numpy = "*"
 pymongo = {extras = ["srv"], version = "*"}
 feedparser = "*"
-requests = "*"
+python-dotenv = "*"
+validators = "*"
+beautifulsoup4 = "*"
+nest-asyncio = "*"
 
 [dev-packages]
 
