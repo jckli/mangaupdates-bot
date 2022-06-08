@@ -3,7 +3,6 @@ from discord.ext import commands
 from discord.commands import Option, slash_command, SlashCommandGroup
 import validators
 import os
-import asyncio
 from core.mongodb import Mongo
 from core.mangaupdates import MangaUpdates
 from core.manga_util import SearchData

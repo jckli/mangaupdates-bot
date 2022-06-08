@@ -1,6 +1,5 @@
 import discord
 from discord.ext import commands
-from discord.commands import Option
 from dotenv import load_dotenv
 import os
 from core.mongodb import Mongo
