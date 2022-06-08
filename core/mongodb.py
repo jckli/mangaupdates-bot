@@ -91,8 +91,14 @@ class Mongo:
         manga = []
         result = self.usr.find_one({"userid": user_id}, {"manga": 1})
         for i in result["manga"]:
-            manga.append(i["title"])
+            manga.append({"id": i["id"], "title": i["title"]})
         if manga != []:
             return manga
         else:
             return None
+
+    async def remove_manga_server(self, server_id, manga_id):
+        self.srv.update_one({"serverid": server_id}, {"$pull": {"manga": {"id": manga_id}}})
+    
+    async def remove_manga_user(self, user_id, manga_id):
+        self.usr.update_one({"userid": user_id}, {"$pull": {"manga": {"id": manga_id}}})
