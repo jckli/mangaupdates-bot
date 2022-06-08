@@ -36,9 +36,11 @@ class Information(commands.Cog):
             """)
         embed.add_field(name="__Manga__", 
             value="""
-                **search `manga`**: Searches for information about a manga series.
                 **setup**: Sets up your server/user for manga updates.
+                **search `manga`**: Searches for information about a manga series.
+                **manga list**: Displays your list of tracked manga.
                 **manga add `manga`**: Adds a manga to your list to be tracked.
+                **manga remove `manga`**: Removes a manga from your list.
             """, inline=False)
         await ctx.respond(embed=embed, ephemeral=True)
 
