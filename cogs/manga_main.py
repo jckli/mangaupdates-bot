@@ -32,6 +32,25 @@ class Mode(discord.ui.View):
         self.interaction = interaction
         self.stop()
 
+class Confirm(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=15.0)
+        self.value = None
+        self.interaction = None
+
+    @discord.ui.button(label="Confirm", style=discord.ButtonStyle.green)
+    async def confirm(self, button: discord.ui.Button, interaction: discord.Interaction):
+        self.value = True
+        self.interaction = interaction
+        self.stop()
+
+    @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red)
+    async def cancel(self, button: discord.ui.Button, interaction: discord.Interaction):
+        self.value = False
+        self.interaction = interaction
+        self.stop()
+
+# manga add views
 class SelectMangaView(discord.ui.View):
     def __init__(self, manga_list, mode):
         super().__init__(timeout=15.0)
@@ -89,23 +108,55 @@ class SelectMangaWConfirm(discord.ui.Select):
                 mangaAdded = discord.Embed(title="Add Manga", color=0x3083e3, description="Manga succesfully added.")
                 await confirm.interaction.response.edit_message(embed=mangaAdded, view=None)
 
-class Confirm(discord.ui.View):
-    def __init__(self):
+# manga remove views
+class SelectMangaRemoveView(discord.ui.View):
+    def __init__(self, manga_list, mode):
         super().__init__(timeout=15.0)
-        self.value = None
-        self.interaction = None
+        self.select_manga = SelectMangaRemove(manga_list=manga_list, mode=mode)
+        self.add_item(self.select_manga)
 
-    @discord.ui.button(label="Confirm", style=discord.ButtonStyle.green)
-    async def confirm(self, button: discord.ui.Button, interaction: discord.Interaction):
-        self.value = True
-        self.interaction = interaction
-        self.stop()
+class SelectMangaRemove(discord.ui.Select):
+    def __init__(self, manga_list, mode):
+        manga_desc = []
+        for manga in manga_list:
+            manga_desc.append(discord.SelectOption(label=manga["dropdownTitle"]))
+        super().__init__(
+            placeholder="Choose a manga series...",
+            min_values=1,
+            max_values=1,
+            options=manga_desc
+        )
+        self.manga_list = manga_list
+        self.finish = None
+        self.modeval = mode
 
-    @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red)
-    async def cancel(self, button: discord.ui.Button, interaction: discord.Interaction):
-        self.value = False
-        self.interaction = interaction
-        self.stop()
+    async def callback(self, interaction: discord.Interaction):
+        value = int(self.values[0][:2].replace(".", "")) - 1
+        title = self.manga_list[value]["title"]
+        search_data = await mangaupdates.series_info(self.manga_list[value]["id"])
+        fulldescription = search_data["description"]
+        image = search_data["image"]["url"]["original"]
+        result = discord.Embed(title=f"Are you sure you want to remove `{title}`?", color=0x3083e3, description=util.format_mu_description(fulldescription))
+        result.set_image(url=image)
+        confirm = Confirm()
+        await interaction.response.edit_message(embed=result, view=confirm)
+        mangaid = self.manga_list[value]["id"]
+        self.finish = True
+        await confirm.wait()
+        if confirm.value is None:
+            await interaction.message.edit(embed=timeoutError, view=None)
+            return
+        elif confirm.value is False:
+            cancelEmbed = discord.Embed(title=f"Canceled", color=0x3083e3, description="Successfully canceled.")
+            await confirm.interaction.response.edit_message(embed=cancelEmbed, view=None)
+            return
+        else:
+            if self.modeval == "user":
+                await mongo.remove_manga_user(confirm.interaction.user.id, mangaid)
+            elif self.modeval == "server":
+                await mongo.remove_manga_server(confirm.interaction.guild.id, mangaid)
+            mangaRemoved = discord.Embed(title="Add Manga", color=0x3083e3, description="Manga succesfully removed.")
+            await confirm.interaction.response.edit_message(embed=mangaRemoved, view=None)
 
 class MangaMain(commands.Cog):
     def __init__(self, bot):
@@ -165,7 +216,7 @@ class MangaMain(commands.Cog):
                 await mode.interaction.response.edit_message(embed=mangaAdded, view=None)
         elif validators.url(manga) is not True:
             search_results = []
-            description = "Type the number of the manga you want to see information for.\n"
+            description = "Select the manga you want to add to your list.\n"
             search_data = await mangaupdates.search_series(manga)
             if search_data["results"] == []:
                 resultError = discord.Embed(title="Error", color=0xff4f4f, description="No mangas were found.")
@@ -193,6 +244,61 @@ class MangaMain(commands.Cog):
         else:
             completeError = discord.Embed(title="Error", color=0xff4f4f, description=f"Something went wrong. Create an issue here for support: https://github.com/{ghuser}/mangaupdates-bot")
             await mode.interaction.response.edit_message(embed=completeError)
-
+        
+    @manga.command(name="remove", description="Removes a manga series from your list", guild_ids=[721216108668911636])
+    async def remove(self, ctx):
+        if isinstance(ctx.channel, discord.DMChannel) is False:
+            modeEmbed = discord.Embed(title="Add Manga", color=0x3083e3, description="Do you want to remove a manga from your list or this server's list?")
+            mode = Mode()
+            await ctx.respond(embed=modeEmbed, view=mode)
+            await mode.wait()
+            if mode.value is None:
+                await mode.interaction.response.edit_message(embed=timeoutError, view=None)
+            else:
+                modeval = mode.value
+        else:
+            modeval = "user"
+        setupError = discord.Embed(title="Error", color=0xff4f4f, description="Sorry! Please run the `+setup` command first.")
+        noManga = discord.Embed(title="Error", color=0xff4f4f, description="You have no manga added to your list. Please add some manga first.")
+        if modeval == "user":
+            userExist = await mongo.check_user_exist(ctx.author.id)
+            if userExist is False:
+                await mode.interaction.response.edit_message(embed=setupError, view=None)
+                return
+            mangaList = await mongo.get_manga_list_user(ctx.author.id)
+            if mangaList is None:
+                await mode.interaction.response.edit_message(embed=noManga, view=None)
+                return
+        elif modeval == "server":
+            if ctx.author.guild_permissions.administrator is False:
+                permissionError = discord.Embed(title="Error", color=0xff4f4f, description="You don't have permission to remove manga. You need `Administrator` permission to use this.")
+                await mode.interaction.response.edit_message(embed=permissionError, view=None)
+                return
+            else:
+                serverExist = await mongo.check_server_exist(ctx.guild.id)
+                if serverExist is False:
+                    await mode.interaction.response.edit_message(embed=setupError, view=None)
+                    return
+                mangaList = await mongo.get_manga_list_server(ctx.guild.id)
+                if mangaList is None:
+                    await mode.interaction.response.edit_message(embed=noManga, view=None)
+                    return
+        i = 1
+        description = "Select the manga you want to remove.\n"
+        manga_list = []
+        for manga in mangaList:
+            description += f"{i}. {manga['title']}\n"
+            manga_list.append({"id": manga["id"], "dropdownTitle": f"{i}. {manga['title']}", "title": manga["title"]})
+            i += 1
+        removeEmbed = discord.Embed(title="Remove Manga", color=0x3083e3, description=description)
+        manga_drop = SelectMangaRemoveView(manga_list=manga_list, mode=modeval)
+        await mode.interaction.response.edit_message(embed=removeEmbed, view=manga_drop)
+        await manga_drop.wait()
+        if manga_drop.select_manga.finish is None:
+            await mode.interaction.message.edit(embed=timeoutError, view=None)
+            return
+        else:
+            return
+        
 def setup(bot):
     bot.add_cog(MangaMain(bot))
