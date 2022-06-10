@@ -1,8 +1,6 @@
 import discord
 from discord.ext import commands, tasks
-from discord.commands import slash_command
 import asyncio
-import nest_asyncio
 from datetime import datetime
 from core.mongodb import Mongo
 from core.rss import RSSParser
