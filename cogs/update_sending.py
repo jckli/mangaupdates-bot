@@ -38,20 +38,17 @@ class UpdateSending(commands.Cog):
         self.old = await rss.parse_feed()
         await self.bot.wait_until_ready()
 
-    async def notify(title, chapter, scan_group, link):
-        if link is not None:
+    async def notify(self, title, chapter, scan_group, link):
+        if link:
             link = link.partition("https://www.mangaupdates.com/series/")[2]
             mangaid = link.partition("/")[0]
             mangaid = await mangaupdates.convert_new_id(mangaid)
-            data = mangaupdates.series_info(mangaid)
-            associatedTitles = [manga["title"] for manga in data["associated"]]
-            allTitles = [data["title"]] + associatedTitles
+            data = await mangaupdates.series_info(mangaid)
             image = data["image"]["url"]["original"]
-        elif link is None:
-            allTitles = [title]
+        else:
             image = None
 
-        if scan_group is not None:
+        if scan_group:
             if "&" in group:
                 group = group.split("&")
                 group = [x.strip(' ') for x in group]
@@ -63,10 +60,49 @@ class UpdateSending(commands.Cog):
                 scan_group = scan_groups_search["results"][0]
                 sgs.append(scan_group["record"])
 
-        serverNeed = False
-        userNeed = False
-        userList = []
-        serverList = []
+        if link:
+            serverWant = mongo.manga_wanted_server(sgs, manga_id=mangaid)
+            userWant = mongo.manga_wanted_user(sgs, manga_id=mangaid)
+        else:
+            serverWant = mongo.manga_wanted_server(sgs, manga_title=title)
+            userWant = mongo.manga_wanted_user(sgs, manga_title=title)
+        
+        if userWant or serverWant:
+            print(f"Manga Wanted ({title})")
+
+        if sgs[0]["social"]["site"]:
+            scanLink = sgs[0]["social"]["site"]
+        elif sgs[0]["social"]["discord"]:
+            scanLink = sgs[0]["social"]["discord"]
+        else:
+            scanLink = sgs[0]["url"]
+        
+        if userWant:
+            for user in userWant:
+                userObject = await self.bot.fetch_user(user["id"])
+                userEmbed = discord.Embed(title=f"New {user['title']} chapter released!", url=link, description=f"There is a new `{user['title']}` chapter.", color=0x3083e3)
+                userEmbed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
+                userEmbed.add_field(name="Chapter", value=chapter, inline=True)
+                userEmbed.add_field(name="Group", value=group, inline=True)
+                userEmbed.add_field(name="Scanlator Link", value=scanLink, inline=False)
+                if image != None:
+                    userEmbed.set_image(url=image)
+                await userObject.send(embed=userEmbed)
+        else:
+            print(f"New manga not wanted. (User: {title})")
+        if serverWant:
+            for server in serverWant:
+                channelObject = self.bot.get_channel(server["channelid"])
+                channelEmbed = discord.Embed(title=f"New {server['title']} chapter released!", url=link, description=f"There is a new `{server['title']}` chapter.", color=0x3083e3)
+                channelEmbed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
+                channelEmbed.add_field(name="Chapter", value=chapter, inline=True)
+                channelEmbed.add_field(name="Group", value=group, inline=True)
+                channelEmbed.add_field(name="Scanlator Link", value=scanLink, inline=False)
+                if image != None:
+                    channelEmbed.set_image(url=image)
+                await channelObject.send(embed=channelEmbed)
+        else:
+            print(f"New manga not wanted. (Server: {title})")
 
 def setup(bot):
     bot.add_cog(UpdateSending(bot))
