@@ -270,7 +270,7 @@ class MangaMain(commands.Cog):
                 modeval = mode.value
         else:
             modeval = "user"
-        setupError = discord.Embed(title="Error", color=0xff4f4f, description="Sorry! Please run the `+setup` command first.")
+        setupError = discord.Embed(title="Error", color=0xff4f4f, description="Sorry! Please run the setup command first.")
         if modeval == "user":
             userExist = await mongo.check_user_exist(ctx.author.id)
             if userExist is False:
@@ -351,7 +351,7 @@ class MangaMain(commands.Cog):
                 modeval = mode.value
         else:
             modeval = "user"
-        setupError = discord.Embed(title="Error", color=0xff4f4f, description="Sorry! Please run the `+setup` command first.")
+        setupError = discord.Embed(title="Error", color=0xff4f4f, description="Sorry! Please run the setup command first.")
         noManga = discord.Embed(title="Error", color=0xff4f4f, description="You have no manga added to your list. Please add some manga first.")
         if modeval == "user":
             userExist = await mongo.check_user_exist(ctx.author.id)
@@ -404,7 +404,7 @@ class MangaMain(commands.Cog):
                 await mode.interaction.response.edit_message(embed=timeoutError, view=None)
             else:
                 modeval = mode.value
-        setupError = discord.Embed(title="Error", color=0xff4f4f, description="Sorry! Please run the `+setup` command first.")
+        setupError = discord.Embed(title="Error", color=0xff4f4f, description="Sorry! Please run the setup command first.")
         if modeval == "user":
             userExist = await mongo.check_user_exist(ctx.author.id)
             if userExist is False:
@@ -446,7 +446,7 @@ class MangaMain(commands.Cog):
                 await mode.interaction.response.edit_message(embed=timeoutError, view=None)
             else:
                 modeval = mode.value
-        setupError = discord.Embed(title="Error", color=0xff4f4f, description="Sorry! Please run the `+setup` command first.")
+        setupError = discord.Embed(title="Error", color=0xff4f4f, description="Sorry! Please run the setup command first.")
         noManga = discord.Embed(title="Error", color=0xff4f4f, description="You have no manga added to your list. Please add some manga first.")
         if modeval == "user":
             userExist = await mongo.check_user_exist(ctx.author.id)

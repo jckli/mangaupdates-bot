@@ -45,6 +45,13 @@ class Mongo:
     async def get_user(self, user_id):
         return self.usr.find_one({"userid": user_id})
 
+    async def set_channel(self, server_id, channel_id):
+        self.srv.update_one({"serverid": server_id}, {"$set": {"channelid": channel_id}})
+
+    async def get_channel(self, server_id):
+        result = self.srv.find_one({"serverid": server_id}, {"channelid": 1})
+        return result["channelid"]
+
     async def check_server_exist(self, server_id):
         result = await Mongo.get_server(self, server_id)
         if result is not None:
