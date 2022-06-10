@@ -1,6 +1,8 @@
 from pymongo import MongoClient
 import certifi
 import os
+import requests
+from bs4 import BeautifulSoup as bs
 
 class Mongo:
     def __init__(self):
@@ -102,3 +104,71 @@ class Mongo:
     
     async def remove_manga_user(self, user_id, manga_id):
         self.usr.update_one({"userid": user_id}, {"$pull": {"manga": {"id": manga_id}}})
+
+    async def manga_wanted_server(self, group_list, manga_id=None, manga_title=None):
+        serverList = []
+        if manga_title is not None:
+            result = self.srv.find({"manga.title": manga_title}, {"serverid": 1, "channelid": 1, "manga.$": 1})
+        else:
+            result = self.srv.find({"manga.id": manga_id}, {"serverid": 1, "channelid": 1, "manga.$": 1})
+        for i in result:
+            print(i)
+            if "groupid" in i["manga"][0]:
+                for group in group_list:
+                    if i["manga"][0]["groupid"] == group["group_id"]:
+                        serverList.append({"serverid": i["serverid"], "channelid": i["channelid"], "title": i["manga"][0]["title"]})
+            elif "groupid" not in i["manga"][0]:
+                serverList.append({"serverid": i["serverid"], "channelid": i["channelid"], "title": i["manga"][0]["title"]})
+        if serverList != []:
+            return serverList
+        else:
+            return None
+
+    async def manga_wanted_user(self, group_list, manga_id=None, manga_title=None):
+        userList = []
+        if manga_title is not None:
+            result = self.usr.find({"manga.title": manga_title}, {"userid": 1, "manga.$": 1})
+        else:
+            result = self.usr.find({"manga.id": manga_id}, {"userid": 1, "manga.$": 1})
+        for i in result:
+            if "groupid" in i["manga"][0]:
+                for group in group_list:
+                    if i["manga"][0]["groupid"] == group["group_id"]:
+                        userList.append({"userid": i["userid"], "title": i["manga"][0]["title"]})
+            elif "groupid" not in i["manga"][0]:
+                userList.append({"userid": i["userid"], "title": i["manga"][0]["title"]})
+        if userList != []:
+            return userList
+        else:
+            return None
+
+    # hella scuffed, dont use lmao
+    def update_all_ids(self, mode):
+        if mode == "server":
+            result = self.srv.find({}, {"_id": 1})
+            for i in result:
+                a = self.srv.find({"_id": i["_id"]}, {"manga": 1})
+                for j in a:
+                    print(j["_id"])
+                    for k in j["manga"]:
+                        req = requests.get(f"https://www.mangaupdates.com/series.html?id={k['id']}")
+                        soup = bs(req.text, "html.parser")
+                        new = soup.find("link", {"rel": "canonical"})["href"]
+                        link = new.partition("https://www.mangaupdates.com/series/")[2]
+                        mangaid = link.partition("/")[0]
+                        mangaid = int(mangaid, 36)
+                        self.srv.update_one({"_id": i["_id"], "manga": {"$elemMatch": {"title": k["title"]}}}, {"$set": {"manga.$.id": mangaid}})
+        if mode == "user":
+            result = self.usr.find({}, {"_id": 1})
+            for i in result:
+                a = self.usr.find({"_id": i["_id"]}, {"manga": 1})
+                for j in a:
+                    print(j["_id"])
+                    for k in j["manga"]:
+                        req = requests.get(f"https://www.mangaupdates.com/series.html?id={k['id']}")
+                        soup = bs(req.text, "html.parser")
+                        new = soup.find("link", {"rel": "canonical"})["href"]
+                        link = new.partition("https://www.mangaupdates.com/series/")[2]
+                        mangaid = link.partition("/")[0]
+                        mangaid = int(mangaid, 36)
+                        self.usr.update_one({"_id": i["_id"], "manga": {"$elemMatch": {"title": k["title"]}}}, {"$set": {"manga.$.id": mangaid}})
