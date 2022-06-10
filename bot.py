@@ -20,7 +20,7 @@ for file in os.listdir("./cogs"):
 @bot.event
 async def on_ready():
     print(f"Bot is online.")
-    await bot.change_presence(activity=discord.Game(name="+help"))
+    await bot.change_presence(activity=discord.Game(name="/help"))
 
 @bot.event
 async def on_guild_remove(guild):
