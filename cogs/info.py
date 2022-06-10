@@ -37,6 +37,7 @@ class Information(commands.Cog):
         embed.add_field(name="__Manga__", 
             value="""
                 **setup**: Sets up your server/user for manga updates.
+                **setchannel**: Sets the server's that manga chapter updates are sent to.
                 **search `manga`**: Searches for information about a manga series.
                 **manga list**: Displays your list of tracked manga.
                 **manga add `manga`**: Adds a manga to your list to be tracked.
