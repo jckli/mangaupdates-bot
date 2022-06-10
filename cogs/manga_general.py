@@ -75,7 +75,7 @@ class MangaGeneral(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @slash_command(name="search", description="Searches for a manga series", guild_ids=[721216108668911636])
+    @slash_command(name="search", description="Searches for a manga series")
     async def search(self, ctx, manga: Option(str, description="The name of the manga series (can use mangaupdates links)", required=True)):
         if validators.url(manga) is True:
             link = manga.partition("https://www.mangaupdates.com/series/")[2]
@@ -134,7 +134,7 @@ class MangaGeneral(commands.Cog):
 
     setup = SlashCommandGroup("setup", "Setup commands")
 
-    @setup.command(name="server", description="Sets up your server for manga updates", guild_only=True, guild_ids=[721216108668911636])
+    @setup.command(name="server", description="Sets up your server for manga updates", guild_only=True)
     async def server(self, ctx, channel: Option(discord.TextChannel, required=True)):
         serverExist = await mongo.check_server_exist(ctx.guild.id)
         if serverExist is True:
@@ -150,7 +150,7 @@ class MangaGeneral(commands.Cog):
         embedServerF = discord.Embed(title="Setup", color=0x3083e3, description="Great! You're all set up and can add manga now.")
         await ctx.respond(embed=embedServerF, view=None)
 
-    @setup.command(name="user", description="Sets up your user for manga updates", guild_ids=[721216108668911636])
+    @setup.command(name="user", description="Sets up your user for manga updates")
     async def user(self, ctx):
         userExist = await mongo.check_user_exist(ctx.author.id)
         if userExist is True:
@@ -162,7 +162,7 @@ class MangaGeneral(commands.Cog):
         embedUser = discord.Embed(title="Setup", color=0x3083e3, description="Great! You're all set up and can add manga now.")
         await ctx.respond(embed=embedUser, view=None)
 
-    @slash_command(name="setchannel", description="Sets the server's that manga chapter updates are sent to", guild_only=True, guild_ids=[721216108668911636])
+    @slash_command(name="setchannel", description="Sets the server's that manga chapter updates are sent to", guild_only=True)
     async def setchannel(self, ctx, channel: Option(discord.TextChannel, required=True)):
         setupError = discord.Embed(title="Error", color=0xff4f4f, description="Sorry! Please run the setup command first.")
         serverExist = await mongo.check_server_exist(ctx.guild.id)
@@ -182,6 +182,8 @@ class MangaGeneral(commands.Cog):
         await mongo.set_channel(ctx.guild.id, channelid)
         embedChannel = discord.Embed(title="Set Channel", color=0x3083e3, description=f"The server's channel has been successfully changed to `#{ctx.guild.get_channel(channelid)}`.")
         await ctx.respond(embed=embedChannel, view=None)
+
+    
 
 def setup(bot):
     bot.add_cog(MangaGeneral(bot))

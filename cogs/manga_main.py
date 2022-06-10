@@ -257,7 +257,7 @@ class MangaMain(commands.Cog):
     
     manga = SlashCommandGroup("manga", "Manga related commands")
 
-    @manga.command(name="add", description="Adds manga to your list to be tracked", guild_ids=[721216108668911636])
+    @manga.command(name="add", description="Adds manga to your list to be tracked")
     async def add(self, ctx, manga: Option(str, description="The name of the manga series (can use mangaupdates links)", required=True)):
         if isinstance(ctx.channel, discord.DMChannel) is False:
             modeEmbed = discord.Embed(title="Add Manga", color=0x3083e3, description="Do you want this manga added to your list or this server's list?")
@@ -338,7 +338,7 @@ class MangaMain(commands.Cog):
             completeError = discord.Embed(title="Error", color=0xff4f4f, description=f"Something went wrong. Create an issue here for support: https://github.com/{ghuser}/mangaupdates-bot")
             await mode.interaction.response.edit_message(embed=completeError)
         
-    @manga.command(name="remove", description="Removes a manga series from your list", guild_ids=[721216108668911636])
+    @manga.command(name="remove", description="Removes a manga series from your list")
     async def remove(self, ctx):
         if isinstance(ctx.channel, discord.DMChannel) is False:
             modeEmbed = discord.Embed(title="Remove Manga", color=0x3083e3, description="Do you want to remove a manga from your list or this server's list?")
@@ -393,7 +393,7 @@ class MangaMain(commands.Cog):
         else:
             return
 
-    @manga.command(name="list", description="Lists all manga in your list", guild_ids=[721216108668911636])
+    @manga.command(name="list", description="Lists all manga in your list")
     async def list(self, ctx):
         if isinstance(ctx.channel, discord.DMChannel) is False:
             modeEmbed = discord.Embed(title="Manga List", color=0x3083e3, description="Do you want to see your manga list or this server's manga list?")
@@ -435,7 +435,7 @@ class MangaMain(commands.Cog):
         mangaListEmbed.set_thumbnail(url=icon)
         await mode.interaction.response.edit_message(embed=mangaListEmbed, view=None)
 
-    @manga.command(name="setgroup", description="Sets a manga's scan group", guild_ids=[721216108668911636])
+    @manga.command(name="setgroup", description="Sets a manga's scan group")
     async def setgroup(self, ctx):
         if isinstance(ctx.channel, discord.DMChannel) is False:
             modeEmbed = discord.Embed(title="Set Scanlator Group", color=0x3083e3, description="Do you want to set your manga's scan groups or the server's scan groups?")
