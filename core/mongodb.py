@@ -83,7 +83,7 @@ class Mongo:
         manga = []
         result = self.srv.find_one({"serverid": server_id}, {"manga": 1})
         for i in result["manga"]:
-            manga.append(i["title"])
+            manga.append({"id": i["id"], "title": i["title"]})
         if manga != []:
             return manga
         else:
@@ -141,6 +141,12 @@ class Mongo:
             return userList
         else:
             return None
+
+    async def set_scan_group_server(self, serverid, manga_id, group_id, group_name):
+        self.srv.update_one({"serverid": serverid, "manga.id": manga_id}, {"$set": {"manga.$.groupName": group_name, "manga.$.groupid": group_id}})
+
+    async def set_scan_group_user(self, userid, manga_id, group_id, group_name):
+        self.usr.update_one({"userid": userid, "manga.id": manga_id}, {"$set": {"manga.$.groupName": group_name, "manga.$.groupid": group_id}})
 
     # hella scuffed, dont use lmao
     def update_all_ids(self, mode):

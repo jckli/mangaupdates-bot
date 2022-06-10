@@ -11,3 +11,7 @@ class Util:
         soup = soup.text
         soup = " ".join(soup.split())
         return soup
+
+    def format_group_name(self, group_name):
+        group_name = re.sub(r"&#039;", "'", group_name)
+        return group_name

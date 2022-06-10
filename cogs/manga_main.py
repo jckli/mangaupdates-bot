@@ -155,8 +155,101 @@ class SelectMangaRemove(discord.ui.Select):
                 await mongo.remove_manga_user(confirm.interaction.user.id, mangaid)
             elif self.modeval == "server":
                 await mongo.remove_manga_server(confirm.interaction.guild.id, mangaid)
-            mangaRemoved = discord.Embed(title="Add Manga", color=0x3083e3, description="Manga succesfully removed.")
+            mangaRemoved = discord.Embed(title="Remove Manga", color=0x3083e3, description="Manga succesfully removed.")
             await confirm.interaction.response.edit_message(embed=mangaRemoved, view=None)
+
+# manga setgroup views
+class SelectMangaSetGroupView(discord.ui.View):
+    def __init__(self, manga_list, mode):
+        super().__init__(timeout=15.0)
+        self.select_manga = SelectMangaSetGroup(manga_list=manga_list, mode=mode)
+        self.add_item(self.select_manga)
+
+class SelectMangaSetGroup(discord.ui.Select):
+    def __init__(self, manga_list, mode):
+        manga_desc = []
+        for manga in manga_list:
+            manga_desc.append(discord.SelectOption(label=manga["dropdownTitle"]))
+        super().__init__(
+            placeholder="Choose a manga series...",
+            min_values=1,
+            max_values=1,
+            options=manga_desc
+        )
+        self.manga_list = manga_list
+        self.finish = None
+        self.modeval = mode
+
+    async def callback(self, interaction: discord.Interaction):
+        value = int(self.values[0][:2].replace(".", "")) - 1
+        mangaid = self.manga_list[value]["id"]
+        title = self.manga_list[value]["title"]
+        series_groups = await mangaupdates.series_groups(mangaid)
+        i = 1
+        description = f"Select the scanlator group you want to set for `{title}`.\n"
+        group_list = []
+        for group in series_groups["group_list"]:
+            name = util.format_group_name(group["name"])
+            description += f"{i}. {name}\n"
+            group_list.append({"id": group["group_id"], "dropdownTitle": f"{i}. {name}", "name": name, "mangaTitle": title, "mangaid": mangaid})
+            i += 1
+        groupEmbed = discord.Embed(title="Set Scanlator Group", color=0x3083e3, description=description)
+        group_drop = SelectScanGroupView(group_list=group_list, mode=self.modeval)
+        await interaction.response.edit_message(embed=groupEmbed, view=group_drop)
+        self.finish = True
+        await group_drop.wait()
+        if group_drop.select_group.finish is None:
+            await interaction.message.edit(embed=timeoutError, view=None)
+            return
+        else:
+            return
+
+class SelectScanGroupView(discord.ui.View):
+    def __init__(self, group_list, mode):
+        super().__init__(timeout=15.0)
+        self.select_group = SelectScanGroup(group_list=group_list, mode=mode)
+        self.add_item(self.select_group)
+
+class SelectScanGroup(discord.ui.Select):
+    def __init__(self, group_list, mode):
+        group_desc = []
+        for group in group_list:
+            group_desc.append(discord.SelectOption(label=group["dropdownTitle"]))
+        super().__init__(
+            placeholder="Choose a scanlator group...",
+            min_values=1,
+            max_values=1,
+            options=group_desc
+        )
+        self.group_list = group_list
+        self.finish = None
+        self.modeval = mode
+
+    async def callback(self, interaction: discord.Interaction):
+        value = int(self.values[0][:2].replace(".", "")) - 1
+        name = self.group_list[value]["name"]
+        mangaTitle = self.group_list[value]["mangaTitle"]
+        result = discord.Embed(title=f"Confirm", description=f"Are you sure you want to set `{name}` as the scanlator group for `{mangaTitle}`?", color=0x3083e3)
+        confirm = Confirm()
+        await interaction.response.edit_message(embed=result, view=confirm)
+        mangaid = self.group_list[value]["mangaid"]
+        groupid = self.group_list[value]["id"]
+        self.finish = True
+        await confirm.wait()
+        if confirm.value is None:
+            await interaction.message.edit(embed=timeoutError, view=None)
+            return
+        elif confirm.value is False:
+            cancelEmbed = discord.Embed(title=f"Canceled", color=0x3083e3, description="Successfully canceled.")
+            await confirm.interaction.response.edit_message(embed=cancelEmbed, view=None)
+            return
+        else:
+            if self.modeval == "user":
+                await mongo.set_scan_group_user(confirm.interaction.user.id, mangaid, groupid, name)
+            elif self.modeval == "server":
+                await mongo.set_scan_group_server(confirm.interaction.guild.id, mangaid, groupid, name)
+            completeEmbed = discord.Embed(title="Successfully Set Scanlator Group", color=0x3083e3, description=f"Scanlator group for `{mangaTitle}` has been set to `{name}`.")
+            await confirm.interaction.response.edit_message(embed=completeEmbed, view=None)
 
 class MangaMain(commands.Cog):
     def __init__(self, bot):
@@ -248,7 +341,7 @@ class MangaMain(commands.Cog):
     @manga.command(name="remove", description="Removes a manga series from your list", guild_ids=[721216108668911636])
     async def remove(self, ctx):
         if isinstance(ctx.channel, discord.DMChannel) is False:
-            modeEmbed = discord.Embed(title="Add Manga", color=0x3083e3, description="Do you want to remove a manga from your list or this server's list?")
+            modeEmbed = discord.Embed(title="Remove Manga", color=0x3083e3, description="Do you want to remove a manga from your list or this server's list?")
             mode = Mode()
             await ctx.respond(embed=modeEmbed, view=mode)
             await mode.wait()
@@ -303,7 +396,7 @@ class MangaMain(commands.Cog):
     @manga.command(name="list", description="Lists all manga in your list", guild_ids=[721216108668911636])
     async def list(self, ctx):
         if isinstance(ctx.channel, discord.DMChannel) is False:
-            modeEmbed = discord.Embed(title="Add Manga", color=0x3083e3, description="Do you want to see your manga list or this server's manga list?")
+            modeEmbed = discord.Embed(title="Manga List", color=0x3083e3, description="Do you want to see your manga list or this server's manga list?")
             mode = Mode()
             await ctx.respond(embed=modeEmbed, view=mode)
             await mode.wait()
@@ -341,6 +434,59 @@ class MangaMain(commands.Cog):
         mangaListEmbed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
         mangaListEmbed.set_thumbnail(url=icon)
         await mode.interaction.response.edit_message(embed=mangaListEmbed, view=None)
+
+    @manga.command(name="setgroup", description="Sets a manga's scan group", guild_ids=[721216108668911636])
+    async def setgroup(self, ctx):
+        if isinstance(ctx.channel, discord.DMChannel) is False:
+            modeEmbed = discord.Embed(title="Set Scanlator Group", color=0x3083e3, description="Do you want to set your manga's scan groups or the server's scan groups?")
+            mode = Mode()
+            await ctx.respond(embed=modeEmbed, view=mode)
+            await mode.wait()
+            if mode.value is None:
+                await mode.interaction.response.edit_message(embed=timeoutError, view=None)
+            else:
+                modeval = mode.value
+        setupError = discord.Embed(title="Error", color=0xff4f4f, description="Sorry! Please run the `+setup` command first.")
+        noManga = discord.Embed(title="Error", color=0xff4f4f, description="You have no manga added to your list. Please add some manga first.")
+        if modeval == "user":
+            userExist = await mongo.check_user_exist(ctx.author.id)
+            if userExist is False:
+                await mode.interaction.response.edit_message(embed=setupError, view=None)
+                return
+            mangaList = await mongo.get_manga_list_user(ctx.author.id)
+            if mangaList is None:
+                await mode.interaction.response.edit_message(embed=noManga, view=None)
+                return
+        elif modeval == "server":
+            if ctx.author.guild_permissions.administrator is False:
+                permissionError = discord.Embed(title="Error", color=0xff4f4f, description="You don't have permission to remove manga. You need `Administrator` permission to use this.")
+                await mode.interaction.response.edit_message(embed=permissionError, view=None)
+                return
+            else:
+                serverExist = await mongo.check_server_exist(ctx.guild.id)
+                if serverExist is False:
+                    await mode.interaction.response.edit_message(embed=setupError, view=None)
+                    return
+                mangaList = await mongo.get_manga_list_server(ctx.guild.id)
+                if mangaList is None:
+                    await mode.interaction.response.edit_message(embed=noManga, view=None)
+                    return
+        i = 1
+        description = "Select the manga you want to set the scanlator group for.\n"
+        manga_list = []
+        for manga in mangaList:
+            description += f"{i}. {manga['title']}\n"
+            manga_list.append({"id": manga["id"], "dropdownTitle": f"{i}. {manga['title']}", "title": manga["title"]})
+            i += 1
+        selectMangaEmbed = discord.Embed(title="Set Scanlator Group", color=0x3083e3, description=description)
+        manga_drop = SelectMangaSetGroupView(manga_list=manga_list, mode=modeval)
+        await mode.interaction.response.edit_message(embed=selectMangaEmbed, view=manga_drop)
+        await manga_drop.wait()
+        if manga_drop.select_manga.finish is None:
+            await mode.interaction.message.edit(embed=timeoutError, view=None)
+            return
+        else:
+            return
         
 def setup(bot):
     bot.add_cog(MangaMain(bot))

@@ -28,7 +28,7 @@ class MangaUpdates:
         info = requests.get(infourl, headers=self.headers).json()
         return info
 
-    def search_groups(self, group_name):
+    async def search_groups(self, group_name):
         searchurl = f"https://api.mangaupdates.com/v1/groups/search"
         search = requests.post(searchurl, data={"search": group_name, "perpage": 10}, headers=self.headers).json()
         return search
@@ -37,3 +37,8 @@ class MangaUpdates:
         infourl = f"https://api.mangaupdates.com/v1/groups/{group_id}"
         info = requests.get(infourl, headers=self.headers).json()
         return info
+
+    async def series_groups(self, series_id):
+        groupsurl = f"https://api.mangaupdates.com/v1/series/{series_id}/groups"
+        groups = requests.get(groupsurl, headers=self.headers).json()
+        return groups
