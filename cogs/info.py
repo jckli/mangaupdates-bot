@@ -24,7 +24,7 @@ class Information(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @slash_command(name="help", description="Displays all commands", guild_ids=[721216108668911636])
+    @slash_command(name="help", description="Displays all commands")
     async def help(self, ctx):
         embed = discord.Embed(title="MangaUpdates Commands", color=0x3083e3,
             description="""
@@ -46,7 +46,7 @@ class Information(commands.Cog):
             """, inline=False)
         await ctx.respond(embed=embed, ephemeral=True)
 
-    @slash_command(name="mangaupdates", description="Displays basic information about MangaUpdates", guild_ids=[721216108668911636])
+    @slash_command(name="mangaupdates", description="Displays basic information about MangaUpdates")
     async def mangaupdates(self, ctx):
         activeServers = self.bot.guilds
         botUsers = 0
@@ -64,7 +64,7 @@ class Information(commands.Cog):
         botinfo.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
         await ctx.respond(embed=botinfo, view=InfoButtons("https://discord.gg/UcYspqftTF", f"https://github.com/{ghuser}/mangaupdates-bot"))
 
-    @slash_command(name="ping", description="Pong!", guild_ids=[721216108668911636])
+    @slash_command(name="ping", description="Pong!")
     async def ping(self, ctx):
         await ctx.respond(f"🏓 Pong! My ping is {round(self.bot.latency * 1000)}ms")
 
@@ -82,7 +82,7 @@ class Information(commands.Cog):
         embed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
         await ctx.respond(embed=embed, view=Link("GitHub", link))
     
-    @slash_command(name="invite", description="Invite MangaUpdates to your own server", guild_ids=[721216108668911636])
+    @slash_command(name="invite", description="Invite MangaUpdates to your own server")
     async def invite(self, ctx):
         link = "https://jackli.dev/mangaupdates"
         embed = discord.Embed(title="Invite Link", color=0x3083e3, description="Invite me to your own servers!")
