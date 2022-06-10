@@ -40,7 +40,8 @@ class Information(commands.Cog):
                 **search `manga`**: Searches for information about a manga series.
                 **manga list**: Displays your list of tracked manga.
                 **manga add `manga`**: Adds a manga to your list to be tracked.
-                **manga remove `manga`**: Removes a manga from your list.
+                **manga remove**: Removes a manga from your list.
+                **manga setgroup**: Sets a manga's scan group. Only that scan group's chapter updates for that manga will be sent.
             """, inline=False)
         await ctx.respond(embed=embed, ephemeral=True)
 
