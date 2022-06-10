@@ -162,5 +162,26 @@ class MangaGeneral(commands.Cog):
         embedUser = discord.Embed(title="Setup", color=0x3083e3, description="Great! You're all set up and can add manga now.")
         await ctx.respond(embed=embedUser, view=None)
 
+    @slash_command(name="setchannel", description="Sets the server's that manga chapter updates are sent to", guild_only=True, guild_ids=[721216108668911636])
+    async def setchannel(self, ctx, channel: Option(discord.TextChannel, required=True)):
+        setupError = discord.Embed(title="Error", color=0xff4f4f, description="Sorry! Please run the setup command first.")
+        serverExist = await mongo.check_server_exist(ctx.guild.id)
+        if serverExist is False:
+            await ctx.respond(embed=setupError, view=None)
+            return
+        if ctx.author.guild_permissions.administrator is False:
+            permissionError = discord.Embed(title="Error", color=0xff4f4f, description="You don't have permission to change this server's channel for manga updates. You need `Administrator` permission to use this.")
+            await ctx.respond(embed=permissionError, view=None)
+            return
+        channelid = channel.id
+        curchannel = await mongo.get_channel(ctx.guild.id)
+        if channelid == curchannel:
+            sameError = discord.Embed(title="Error", color=0xff4f4f, description="This channel is already set as the channel for manga updates.")
+            await ctx.respond(embed=sameError, view=None)
+            return
+        await mongo.set_channel(ctx.guild.id, channelid)
+        embedChannel = discord.Embed(title="Set Channel", color=0x3083e3, description=f"The server's channel has been successfully changed to `#{ctx.guild.get_channel(channelid)}`.")
+        await ctx.respond(embed=embedChannel, view=None)
+
 def setup(bot):
     bot.add_cog(MangaGeneral(bot))
