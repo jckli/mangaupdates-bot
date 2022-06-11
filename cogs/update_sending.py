@@ -67,7 +67,7 @@ class UpdateSending(commands.Cog):
             userWant = await mongo.manga_wanted_user(sgs, manga_title=title)
         
         if userWant or serverWant:
-            print(f"Manga Wanted ({title})")\
+            print(f"Manga Wanted ({title})")
             
             if sgs[0]["social"]["site"]:
                 scanLink = sgs[0]["social"]["site"]

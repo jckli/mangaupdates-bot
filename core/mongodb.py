@@ -119,7 +119,6 @@ class Mongo:
         else:
             result = self.srv.find({"manga.id": manga_id}, {"serverid": 1, "channelid": 1, "manga.$": 1})
         for i in result:
-            print(i)
             if "groupid" in i["manga"][0]:
                 for group in group_list:
                     if i["manga"][0]["groupid"] == group["group_id"]:
