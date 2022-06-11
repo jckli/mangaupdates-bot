@@ -37,9 +37,10 @@ class UpdateSending(commands.Cog):
         await self.bot.wait_until_ready()
 
     async def notify(self, title, chapter, scan_group, link):
+        print(f"Notifying! ({title})")
         if link:
-            link = link.partition("https://www.mangaupdates.com/series/")[2]
-            mangaid = link.partition("/")[0]
+            templink = link.partition("https://www.mangaupdates.com/series/")[2]
+            mangaid = templink.partition("/")[0]
             mangaid = await mangaupdates.convert_new_id(mangaid)
             data = await mangaupdates.series_info(mangaid)
             image = data["image"]["url"]["original"]
@@ -47,41 +48,43 @@ class UpdateSending(commands.Cog):
             image = None
 
         if scan_group:
-            if "&" in group:
-                group = group.split("&")
-                group = [x.strip(' ') for x in group]
+            if "&" in scan_group:
+                group = scan_group.split("&")
+                group = [x.strip(' ') for x in scan_group]
             else:
                 group = [scan_group]
             sgs = []
             for g in group:
                 scan_groups_search = await mangaupdates.search_groups(scan_group)
-                scan_group = scan_groups_search["results"][0]
-                sgs.append(scan_group["record"])
+                scan_group_results = scan_groups_search["results"][0]
+                sgs.append(scan_group_results["record"])
 
         if link:
-            serverWant = mongo.manga_wanted_server(sgs, manga_id=mangaid)
-            userWant = mongo.manga_wanted_user(sgs, manga_id=mangaid)
+            serverWant = await mongo.manga_wanted_server(sgs, manga_id=mangaid)
+            userWant = await mongo.manga_wanted_user(sgs, manga_id=mangaid)
         else:
-            serverWant = mongo.manga_wanted_server(sgs, manga_title=title)
-            userWant = mongo.manga_wanted_user(sgs, manga_title=title)
+            serverWant = await mongo.manga_wanted_server(sgs, manga_title=title)
+            userWant = await mongo.manga_wanted_user(sgs, manga_title=title)
         
         if userWant or serverWant:
-            print(f"Manga Wanted ({title})")
-
-        if sgs[0]["social"]["site"]:
-            scanLink = sgs[0]["social"]["site"]
-        elif sgs[0]["social"]["discord"]:
-            scanLink = sgs[0]["social"]["discord"]
-        else:
-            scanLink = sgs[0]["url"]
+            print(f"Manga Wanted ({title})")\
+            
+            if sgs[0]["social"]["site"]:
+                scanLink = sgs[0]["social"]["site"]
+            elif sgs[0]["social"]["discord"]:
+                scanLink = sgs[0]["social"]["discord"]
+            elif sgs[0]["social"]["forum"]:
+                scanLink = sgs[0]["social"]["forum"]
+            else:
+                scanLink = sgs[0]["url"]
         
         if userWant:
             for user in userWant:
-                userObject = await self.bot.fetch_user(user["id"])
+                userObject = await self.bot.fetch_user(user["userid"])
                 userEmbed = discord.Embed(title=f"New {user['title']} chapter released!", url=link, description=f"There is a new `{user['title']}` chapter.", color=0x3083e3)
                 userEmbed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
                 userEmbed.add_field(name="Chapter", value=chapter, inline=True)
-                userEmbed.add_field(name="Group", value=group, inline=True)
+                userEmbed.add_field(name="Group", value=scan_group, inline=True)
                 userEmbed.add_field(name="Scanlator Link", value=scanLink, inline=False)
                 if image != None:
                     userEmbed.set_image(url=image)
@@ -94,7 +97,7 @@ class UpdateSending(commands.Cog):
                 channelEmbed = discord.Embed(title=f"New {server['title']} chapter released!", url=link, description=f"There is a new `{server['title']}` chapter.", color=0x3083e3)
                 channelEmbed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
                 channelEmbed.add_field(name="Chapter", value=chapter, inline=True)
-                channelEmbed.add_field(name="Group", value=group, inline=True)
+                channelEmbed.add_field(name="Group", value=scan_group, inline=True)
                 channelEmbed.add_field(name="Scanlator Link", value=scanLink, inline=False)
                 if image != None:
                     channelEmbed.set_image(url=image)
