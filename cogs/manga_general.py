@@ -31,6 +31,24 @@ class Mode(discord.ui.View):
         self.interaction = interaction
         self.stop()
 
+class Confirm(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=15.0)
+        self.value = None
+        self.interaction = None
+
+    @discord.ui.button(label="Confirm", style=discord.ButtonStyle.green)
+    async def confirm(self, button: discord.ui.Button, interaction: discord.Interaction):
+        self.value = True
+        self.interaction = interaction
+        self.stop()
+
+    @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red)
+    async def cancel(self, button: discord.ui.Button, interaction: discord.Interaction):
+        self.value = False
+        self.interaction = interaction
+        self.stop()
+
 # search command views
 class SelectMangaView(discord.ui.View):
     def __init__(self, manga_list):
@@ -183,7 +201,50 @@ class MangaGeneral(commands.Cog):
         embedChannel = discord.Embed(title="Set Channel", color=0x3083e3, description=f"The server's channel has been successfully changed to `#{ctx.guild.get_channel(channelid)}`.")
         await ctx.respond(embed=embedChannel, view=None)
 
-    
+    @slash_command(name="deleteaccount", description="Deletes your account and manga list from the database")
+    async def deleteaccount(self, ctx):
+        if isinstance(ctx.channel, discord.DMChannel) is False:
+            modeEmbed = discord.Embed(title="Delete Account", color=0x3083e3, description="Do you want to delete your account or your server's account?")
+            mode = Mode()
+            await ctx.respond(embed=modeEmbed, view=mode)
+            await mode.wait()
+            if mode.value is None:
+                await mode.interaction.response.edit_message(embed=timeoutError, view=None)
+            else:
+                modeval = mode.value
+        setupError = discord.Embed(title="Error", color=0xff4f4f, description="Sorry! Please run the setup command first.")
+        if modeval == "user":
+            userExist = await mongo.check_user_exist(ctx.author.id)
+            if userExist is False:
+                await mode.interaction.response.edit_message(embed=setupError, view=None)
+                return
+        elif modeval == "server":
+            serverExist = await mongo.check_server_exist(ctx.guild.id)
+            if serverExist is False:
+                await mode.interaction.response.edit_message(embed=setupError, view=None)
+                return
+            if ctx.author.guild_permissions.administrator is False:
+                permissionError = discord.Embed(title="Error", color=0xff4f4f, description="You don't have permission to delete this server's account. You need `Administrator` permission to use this.")
+                await mode.interaction.response.edit_message(embed=permissionError, view=None)
+                return
+        embed = discord.Embed(title="Delete Account", color=0x3083e3, description="Are you sure you want to delete your account? (Your manga list will be gone forever!)")
+        confirm = Confirm()
+        await mode.interaction.response.edit_message(embed=embed, view=confirm)
+        await confirm.wait()
+        if confirm.value is None:
+            await confirm.interaction.response.edit_message(embed=timeoutError, view=None)
+            return
+        elif confirm.value is False:
+            cancelEmbed = discord.Embed(title=f"Canceled", color=0x3083e3, description="Successfully canceled.")
+            await confirm.interaction.response.edit_message(embed=cancelEmbed, view=None)
+            return
+        else:
+            if modeval == "user":
+                await mongo.remove_user(ctx.author.id)
+            elif modeval == "server":
+                await mongo.remove_server(ctx.guild.id)
+            completeEmbed = discord.Embed(title="Delete Account", color=0x3083e3, description="Successfully deleted your account.")
+            await confirm.interaction.response.edit_message(embed=completeEmbed, view=None)
 
 def setup(bot):
     bot.add_cog(MangaGeneral(bot))
