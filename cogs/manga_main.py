@@ -259,7 +259,7 @@ class MangaMain(commands.Cog):
 
     @manga.command(name="add", description="Adds manga to your list to be tracked")
     async def add(self, ctx, manga: Option(str, description="The name of the manga series (can use mangaupdates links)", required=True)):
-        if isinstance(ctx.channel, discord.DMChannel) is False:
+        if ctx.guild is not None:
             modeEmbed = discord.Embed(title="Add Manga", color=0x3083e3, description="Do you want this manga added to your list or this server's list?")
             mode = Mode()
             await ctx.respond(embed=modeEmbed, view=mode)
@@ -270,21 +270,31 @@ class MangaMain(commands.Cog):
                 modeval = mode.value
         else:
             modeval = "user"
+            mode = None
         setupError = discord.Embed(title="Error", color=0xff4f4f, description="Sorry! Please run the setup command first.")
         if modeval == "user":
             userExist = await mongo.check_user_exist(ctx.author.id)
             if userExist is False:
-                await mode.interaction.response.edit_message(embed=setupError, view=None)
+                if mode is not None:
+                    await mode.interaction.response.edit_message(embed=setupError, view=None)
+                else:
+                    await ctx.respond(embed=setupError, view=None)
                 return
         elif modeval == "server":
             serverExist = await mongo.check_server_exist(ctx.guild.id)
             if ctx.author.guild_permissions.administrator is False:
                 permissionError = discord.Embed(title="Error", color=0xff4f4f, description="You don't have permission to add manga. You need `Administrator` permission to use this.")
-                await mode.interaction.response.edit_message(embed=permissionError, view=None)
+                if mode is not None:
+                    await mode.interaction.response.edit_message(embed=permissionError, view=None)
+                else:
+                    await ctx.respond(embed=permissionError, view=None)
                 return
             else:
                 if serverExist is False:
-                    await mode.interaction.response.edit_message(embed=setupError, view=None)
+                    if mode is not None:
+                        await mode.interaction.response.edit_message(embed=setupError, view=None)
+                    else:
+                        await ctx.respond(embed=setupError, view=None)
                     return
         if validators.url(manga) is True:
             link = manga.partition("https://www.mangaupdates.com/series/")[2]
@@ -298,7 +308,10 @@ class MangaMain(commands.Cog):
                 mangaindb = await mongo.check_manga_exist_server(ctx.guild.id, mangaid)
             if mangaindb is True:
                 mangaExist = discord.Embed(title="Add Manga", color=0x3083e3, description="This manga is already added to your list.")
-                await mode.interaction.response.edit_message(embed=mangaExist, view=None)
+                if mode is not None:
+                    await mode.interaction.response.edit_message(embed=mangaExist, view=None)
+                else:
+                    await ctx.respond(embed=mangaExist, view=None)
                 return
             elif mangaindb is False:
                 if modeval == "user":
@@ -306,14 +319,20 @@ class MangaMain(commands.Cog):
                 elif modeval == "server":
                     await mongo.add_manga_server(ctx.guild.id, mangaid, manganame)
                 mangaAdded = discord.Embed(title="Add Manga", color=0x3083e3, description="Manga succesfully added.")
-                await mode.interaction.response.edit_message(embed=mangaAdded, view=None)
+                if mode is not None:
+                    await mode.interaction.response.edit_message(embed=mangaAdded, view=None)
+                else:
+                    await ctx.respond(embed=mangaAdded, view=None)
         elif validators.url(manga) is not True:
             search_results = []
             description = "Select the manga you want to add to your list.\n"
             search_data = await mangaupdates.search_series(manga)
             if search_data["results"] == []:
                 resultError = discord.Embed(title="Error", color=0xff4f4f, description="No mangas were found.")
-                await mode.interaction.response.edit_message(embed=resultError)
+                if mode is not None:
+                    await mode.interaction.response.edit_message(embed=resultError)
+                else:
+                    await ctx.respond(embed=resultError)
                 return
             elif search_data["results"] != []:
                 count = 1
@@ -327,10 +346,16 @@ class MangaMain(commands.Cog):
                     count += 1
                 searchEmbed = discord.Embed(title="Search Results", color=0x3083e3, description=description)
                 manga_drop = SelectMangaView(manga_list=search_results, mode=modeval)
-                await mode.interaction.response.edit_message(embed=searchEmbed, view=manga_drop)
+                if mode is not None:
+                    await mode.interaction.response.edit_message(embed=searchEmbed, view=manga_drop)
+                else:
+                    search = await ctx.respond(embed=searchEmbed, view=manga_drop)
                 await manga_drop.wait()
                 if manga_drop.select_manga.finish is None:
-                    await mode.interaction.message.edit(embed=timeoutError, view=None)
+                    if mode is not None:
+                        await mode.interaction.message.edit(embed=timeoutError, view=None)
+                    else:
+                        await search.edit(embed=timeoutError, view=None)
                     return
                 else:
                     return
@@ -340,7 +365,7 @@ class MangaMain(commands.Cog):
         
     @manga.command(name="remove", description="Removes a manga series from your list")
     async def remove(self, ctx):
-        if isinstance(ctx.channel, discord.DMChannel) is False:
+        if ctx.guild is not None:
             modeEmbed = discord.Embed(title="Remove Manga", color=0x3083e3, description="Do you want to remove a manga from your list or this server's list?")
             mode = Mode()
             await ctx.respond(embed=modeEmbed, view=mode)
@@ -351,30 +376,46 @@ class MangaMain(commands.Cog):
                 modeval = mode.value
         else:
             modeval = "user"
+            mode = None
         setupError = discord.Embed(title="Error", color=0xff4f4f, description="Sorry! Please run the setup command first.")
         noManga = discord.Embed(title="Error", color=0xff4f4f, description="You have no manga added to your list. Please add some manga first.")
         if modeval == "user":
             userExist = await mongo.check_user_exist(ctx.author.id)
             if userExist is False:
-                await mode.interaction.response.edit_message(embed=setupError, view=None)
+                if mode is not None:
+                    await mode.interaction.response.edit_message(embed=setupError, view=None)
+                else:
+                    await ctx.respond(embed=setupError, view=None)
                 return
             mangaList = await mongo.get_manga_list_user(ctx.author.id)
             if mangaList is None:
-                await mode.interaction.response.edit_message(embed=noManga, view=None)
+                if mode is not None:
+                    await mode.interaction.response.edit_message(embed=noManga, view=None)
+                else:
+                    await ctx.respond(embed=noManga, view=None)
                 return
         elif modeval == "server":
             if ctx.author.guild_permissions.administrator is False:
                 permissionError = discord.Embed(title="Error", color=0xff4f4f, description="You don't have permission to remove manga. You need `Administrator` permission to use this.")
-                await mode.interaction.response.edit_message(embed=permissionError, view=None)
+                if mode is not None:
+                    await mode.interaction.response.edit_message(embed=permissionError, view=None)
+                else:
+                    await ctx.respond(embed=permissionError, view=None)
                 return
             else:
                 serverExist = await mongo.check_server_exist(ctx.guild.id)
                 if serverExist is False:
-                    await mode.interaction.response.edit_message(embed=setupError, view=None)
+                    if mode is not None:
+                        await mode.interaction.response.edit_message(embed=setupError, view=None)
+                    else:
+                        await ctx.respond(embed=setupError, view=None)
                     return
                 mangaList = await mongo.get_manga_list_server(ctx.guild.id)
                 if mangaList is None:
-                    await mode.interaction.response.edit_message(embed=noManga, view=None)
+                    if mode is not None:
+                        await mode.interaction.response.edit_message(embed=noManga, view=None)
+                    else:
+                        await ctx.respond(embed=noManga, view=None)
                     return
         i = 1
         description = "Select the manga you want to remove.\n"
@@ -385,17 +426,23 @@ class MangaMain(commands.Cog):
             i += 1
         removeEmbed = discord.Embed(title="Remove Manga", color=0x3083e3, description=description)
         manga_drop = SelectMangaRemoveView(manga_list=manga_list, mode=modeval)
-        await mode.interaction.response.edit_message(embed=removeEmbed, view=manga_drop)
+        if mode is not None:
+            await mode.interaction.response.edit_message(embed=removeEmbed, view=manga_drop)
+        else:
+            remove = await ctx.respond(embed=removeEmbed, view=manga_drop)
         await manga_drop.wait()
         if manga_drop.select_manga.finish is None:
-            await mode.interaction.message.edit(embed=timeoutError, view=None)
+            if mode is not None:
+                await mode.interaction.message.edit(embed=timeoutError, view=None)
+            else:
+                await remove.edit(embed=timeoutError, view=None)
             return
         else:
             return
 
     @manga.command(name="list", description="Lists all manga in your list")
     async def list(self, ctx):
-        if isinstance(ctx.channel, discord.DMChannel) is False:
+        if ctx.guild is not None:
             modeEmbed = discord.Embed(title="Manga List", color=0x3083e3, description="Do you want to see your manga list or this server's manga list?")
             mode = Mode()
             await ctx.respond(embed=modeEmbed, view=mode)
@@ -404,11 +451,17 @@ class MangaMain(commands.Cog):
                 await mode.interaction.response.edit_message(embed=timeoutError, view=None)
             else:
                 modeval = mode.value
+        else:
+            modeval = "user"
+            mode = None
         setupError = discord.Embed(title="Error", color=0xff4f4f, description="Sorry! Please run the setup command first.")
         if modeval == "user":
             userExist = await mongo.check_user_exist(ctx.author.id)
             if userExist is False:
-                await mode.interaction.response.edit_message(embed=setupError, view=None)
+                if mode is not None:
+                    await mode.interaction.response.edit_message(embed=setupError, view=None)
+                else:
+                    await ctx.respond(embed=setupError, view=None)
                 return
             name = ctx.author.name
             icon = ctx.author.display_avatar
@@ -416,7 +469,10 @@ class MangaMain(commands.Cog):
         elif modeval == "server":
             serverExist = await mongo.check_server_exist(ctx.guild.id)
             if serverExist is False:
-                await mode.interaction.response.edit_message(embed=setupError, view=None)
+                if mode is not None:
+                    await mode.interaction.response.edit_message(embed=setupError, view=None)
+                else:
+                    await ctx.respond(embed=setupError, view=None)
                 return
             name = ctx.guild.name
             if ctx.guild.icon is not None:
@@ -433,11 +489,14 @@ class MangaMain(commands.Cog):
         mangaListEmbed = discord.Embed(title=f"{name}'s Manga List", color=0x3083e3, description=description)
         mangaListEmbed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
         mangaListEmbed.set_thumbnail(url=icon)
-        await mode.interaction.response.edit_message(embed=mangaListEmbed, view=None)
+        if mode is not None:
+            await mode.interaction.response.edit_message(embed=mangaListEmbed, view=None)
+        else:
+            await ctx.respond(embed=mangaListEmbed, view=None)
 
     @manga.command(name="setgroup", description="Sets a manga's scan group")
     async def setgroup(self, ctx):
-        if isinstance(ctx.channel, discord.DMChannel) is False:
+        if ctx.guild is not None:
             modeEmbed = discord.Embed(title="Set Scanlator Group", color=0x3083e3, description="Do you want to set your manga's scan groups or the server's scan groups?")
             mode = Mode()
             await ctx.respond(embed=modeEmbed, view=mode)
@@ -446,30 +505,48 @@ class MangaMain(commands.Cog):
                 await mode.interaction.response.edit_message(embed=timeoutError, view=None)
             else:
                 modeval = mode.value
+        else:
+            modeval = "user"
+            mode = None
         setupError = discord.Embed(title="Error", color=0xff4f4f, description="Sorry! Please run the setup command first.")
         noManga = discord.Embed(title="Error", color=0xff4f4f, description="You have no manga added to your list. Please add some manga first.")
         if modeval == "user":
             userExist = await mongo.check_user_exist(ctx.author.id)
             if userExist is False:
-                await mode.interaction.response.edit_message(embed=setupError, view=None)
+                if mode is not None:
+                    await mode.interaction.response.edit_message(embed=setupError, view=None)
+                else:
+                    await ctx.respond(embed=setupError, view=None)
                 return
             mangaList = await mongo.get_manga_list_user(ctx.author.id)
             if mangaList is None:
-                await mode.interaction.response.edit_message(embed=noManga, view=None)
+                if mode is not None:
+                    await mode.interaction.response.edit_message(embed=noManga, view=None)
+                else:
+                    await ctx.respond(embed=noManga, view=None)
                 return
         elif modeval == "server":
             if ctx.author.guild_permissions.administrator is False:
                 permissionError = discord.Embed(title="Error", color=0xff4f4f, description="You don't have permission to remove manga. You need `Administrator` permission to use this.")
-                await mode.interaction.response.edit_message(embed=permissionError, view=None)
+                if mode is not None:
+                    await mode.interaction.response.edit_message(embed=permissionError, view=None)
+                else:
+                    await ctx.respond(embed=permissionError, view=None)
                 return
             else:
                 serverExist = await mongo.check_server_exist(ctx.guild.id)
                 if serverExist is False:
-                    await mode.interaction.response.edit_message(embed=setupError, view=None)
+                    if mode is not None:
+                        await mode.interaction.response.edit_message(embed=setupError, view=None)
+                    else:
+                        await ctx.respond(embed=setupError, view=None)
                     return
                 mangaList = await mongo.get_manga_list_server(ctx.guild.id)
                 if mangaList is None:
-                    await mode.interaction.response.edit_message(embed=noManga, view=None)
+                    if mode is not None:
+                        await mode.interaction.response.edit_message(embed=noManga, view=None)
+                    else:
+                        await ctx.respond(embed=noManga, view=None)
                     return
         i = 1
         description = "Select the manga you want to set the scanlator group for.\n"
@@ -480,10 +557,16 @@ class MangaMain(commands.Cog):
             i += 1
         selectMangaEmbed = discord.Embed(title="Set Scanlator Group", color=0x3083e3, description=description)
         manga_drop = SelectMangaSetGroupView(manga_list=manga_list, mode=modeval)
-        await mode.interaction.response.edit_message(embed=selectMangaEmbed, view=manga_drop)
+        if mode is not None:
+            await mode.interaction.response.edit_message(embed=selectMangaEmbed, view=manga_drop)
+        else:
+            search = await ctx.respond(embed=selectMangaEmbed, view=manga_drop)
         await manga_drop.wait()
         if manga_drop.select_manga.finish is None:
-            await mode.interaction.message.edit(embed=timeoutError, view=None)
+            if mode is not None:
+                await mode.interaction.message.edit(embed=timeoutError, view=None)
+            else:
+                await search.edit(embed=timeoutError, view=None)
             return
         else:
             return

@@ -203,7 +203,7 @@ class MangaGeneral(commands.Cog):
 
     @slash_command(name="deleteaccount", description="Deletes your account and manga list from the database")
     async def deleteaccount(self, ctx):
-        if isinstance(ctx.channel, discord.DMChannel) is False:
+        if ctx.guild is not None:
             modeEmbed = discord.Embed(title="Delete Account", color=0x3083e3, description="Do you want to delete your account or your server's account?")
             mode = Mode()
             await ctx.respond(embed=modeEmbed, view=mode)
@@ -212,24 +212,39 @@ class MangaGeneral(commands.Cog):
                 await mode.interaction.response.edit_message(embed=timeoutError, view=None)
             else:
                 modeval = mode.value
+        else:
+            modeval = "user"
+            mode = None
         setupError = discord.Embed(title="Error", color=0xff4f4f, description="Sorry! Please run the setup command first.")
         if modeval == "user":
             userExist = await mongo.check_user_exist(ctx.author.id)
             if userExist is False:
-                await mode.interaction.response.edit_message(embed=setupError, view=None)
+                if mode is not None:
+                    await mode.interaction.response.edit_message(embed=setupError, view=None)
+                else:
+                    await ctx.respond(embed=setupError, view=None)
                 return
         elif modeval == "server":
             serverExist = await mongo.check_server_exist(ctx.guild.id)
             if serverExist is False:
-                await mode.interaction.response.edit_message(embed=setupError, view=None)
+                if mode is not None:
+                    await mode.interaction.response.edit_message(embed=setupError, view=None)
+                else:
+                    await ctx.respond(embed=setupError, view=None)
                 return
             if ctx.author.guild_permissions.administrator is False:
                 permissionError = discord.Embed(title="Error", color=0xff4f4f, description="You don't have permission to delete this server's account. You need `Administrator` permission to use this.")
-                await mode.interaction.response.edit_message(embed=permissionError, view=None)
+                if mode is not None:
+                    await mode.interaction.response.edit_message(embed=permissionError, view=None)
+                else:
+                    await ctx.respond(embed=permissionError, view=None)
                 return
         embed = discord.Embed(title="Delete Account", color=0x3083e3, description="Are you sure you want to delete your account? (Your manga list will be gone forever!)")
         confirm = Confirm()
-        await mode.interaction.response.edit_message(embed=embed, view=confirm)
+        if mode is not None:
+            await mode.interaction.response.edit_message(embed=embed, view=confirm)
+        else:
+            await ctx.respond(embed=embed, view=confirm)
         await confirm.wait()
         if confirm.value is None:
             await confirm.interaction.response.edit_message(embed=timeoutError, view=None)
