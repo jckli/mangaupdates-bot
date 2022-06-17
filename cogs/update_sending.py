@@ -88,7 +88,11 @@ class UpdateSending(commands.Cog):
                 userEmbed.add_field(name="Scanlator Link", value=scanLink, inline=False)
                 if image != None:
                     userEmbed.set_image(url=image)
-                await userObject.send(embed=userEmbed)
+                try:
+                    await userObject.send(embed=userEmbed)
+                except discord.Forbidden:
+                    print(f"Could not send message to {user['userid']}")
+                    continue
         else:
             print(f"New manga not wanted. (User: {title})")
         if serverWant:
@@ -101,7 +105,11 @@ class UpdateSending(commands.Cog):
                 channelEmbed.add_field(name="Scanlator Link", value=scanLink, inline=False)
                 if image != None:
                     channelEmbed.set_image(url=image)
-                await channelObject.send(embed=channelEmbed)
+                try:
+                    await channelObject.send(embed=channelEmbed)
+                except discord.Forbidden:
+                    print(f"Could not send message to {server['channelid']}")
+                    continue
         else:
             print(f"New manga not wanted. (Server: {title})")
 
