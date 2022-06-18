@@ -3,6 +3,8 @@ import certifi
 import os
 import requests
 from bs4 import BeautifulSoup as bs
+import time
+import re
 
 class Mongo:
     def __init__(self):
@@ -163,6 +165,7 @@ class Mongo:
                 for j in a:
                     print(j["_id"])
                     for k in j["manga"]:
+                        print(k)
                         req = requests.get(f"https://www.mangaupdates.com/series.html?id={k['id']}")
                         soup = bs(req.text, "html.parser")
                         new = soup.find("link", {"rel": "canonical"})["href"]
@@ -170,13 +173,24 @@ class Mongo:
                         mangaid = link.partition("/")[0]
                         mangaid = int(mangaid, 36)
                         self.srv.update_one({"_id": i["_id"], "manga": {"$elemMatch": {"title": k["title"]}}}, {"$set": {"manga.$.id": mangaid}})
+                        time.sleep(8)
+                        if "groupid" in k:
+                            req = requests.get(f"https://www.mangaupdates.com/groups.html?id={k['groupid']}")
+                            soup = bs(req.text, "html.parser")
+                            new = soup.find("link", {"rel": "canonical"})["href"]
+                            link = new.partition("https://www.mangaupdates.com/group/")[2]
+                            mangaid = link.partition("/")[0]
+                            mangaid = int(mangaid, 36)
+                            self.srv.update_one({"_id": i["_id"], "manga": {"$elemMatch": {"title": k["title"]}}}, {"$set": {"manga.$.groupid": mangaid}})
+                            time.sleep(8)
         if mode == "user":
-            result = self.usr.find({}, {"_id": 1})
+            result = self.usr.find({}, {"_id": 1}).skip(200)
             for i in result:
                 a = self.usr.find({"_id": i["_id"]}, {"manga": 1})
                 for j in a:
                     print(j["_id"])
                     for k in j["manga"]:
+                        print(k)
                         req = requests.get(f"https://www.mangaupdates.com/series.html?id={k['id']}")
                         soup = bs(req.text, "html.parser")
                         new = soup.find("link", {"rel": "canonical"})["href"]
@@ -184,3 +198,19 @@ class Mongo:
                         mangaid = link.partition("/")[0]
                         mangaid = int(mangaid, 36)
                         self.usr.update_one({"_id": i["_id"], "manga": {"$elemMatch": {"title": k["title"]}}}, {"$set": {"manga.$.id": mangaid}})
+                        time.sleep(8)
+                        if "groupid" in k:
+                            req = requests.get(f"https://www.mangaupdates.com/groups.html?id={k['groupid']}")
+                            soup = bs(req.text, "html.parser")
+                            new = soup.find("link", {"rel": "canonical"})["href"]
+                            link = new.partition("https://www.mangaupdates.com/group/")[2]
+                            mangaid = link.partition("/")[0]
+                            mangaid = int(mangaid, 36)
+                            self.usr.update_one({"_id": i["_id"], "manga": {"$elemMatch": {"title": k["title"]}}}, {"$set": {"manga.$.groupid": mangaid}})
+                            time.sleep(8)
+    
+    def test(self):
+        self.usr.update_many({"manga.title": "Berserk"}, {"$set": {"manga.$.id": 51239621230}})
+        a = self.usr.find({"manga.id": ""}, {"manga": 1})
+        for i in a:
+            print(i)
