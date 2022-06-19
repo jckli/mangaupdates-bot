@@ -1,4 +1,5 @@
-config.json
-cogs/__pycache__/
+/.venv
+.env
 test.py
-__pycache__
+__pycache__/
+*.pyc

@@ -1,98 +1,94 @@
 import discord
 from discord.ext import commands
-
+from discord.commands import slash_command
 import time
-import datetime
+import os
 from datetime import datetime
 from datetime import timedelta
-import json
 
 startTime = time.time()
+ghuser = os.environ.get("GITHUB_USER")
 
-# Load config
-with open("config.json", "r") as f:
-    config = json.load(f)
-
-class InviteLink(discord.ui.View):
-    def __init__(self, link):
+class Link(discord.ui.View):
+    def __init__(self, label, link):
         super().__init__()
-        self.add_item(discord.ui.Button(label="Invite Link", url=link))
+        self.add_item(discord.ui.Button(label=label, url=link))
+
+class InfoButtons(discord.ui.View):
+    def __init__(self, support_server, github):
+        super().__init__()
+        self.add_item(discord.ui.Button(label="Support Server", url=support_server))
+        self.add_item(discord.ui.Button(label="GitHub", url=github))
 
 class Information(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name="help")
+    @slash_command(name="help", description="Displays all commands")
     async def help(self, ctx):
-        embed = discord.Embed(title="MangaUpdates Help", color=0x3083e3)
-        embed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
-        embed.add_field(name="+help", value="Displays this message.", inline=False)
-        embed.add_field(name="+alert", value="Displays bot alerts/announcements.", inline=False)
-        embed.add_field(name="+ping", value="Pong! Displays the ping.", inline=False)
-        embed.add_field(name="+invite", value="Displays bot invite link.", inline=False)
-        embed.add_field(name="+source", value="Displays bot's GitHub repository.", inline=False)
-        embed.add_field(name="+setup `user/server`", value="Setup your user/server for manga updates.", inline=False)
-        embed.add_field(name="+addmanga `user/server`", value="Adds manga to your list to be tracked.", inline=False)
-        embed.add_field(name="+removemanga `user/server`", value="Removes manga from your list that were tracked.", inline=False)
-        embed.add_field(name="+mangalist `user/server`", value="Lists all manga that are being tracked.", inline=False)
-        embed.add_field(name="+clearmanga `user/server`", value="Removes all manga from your current manga list.", inline=False)
-        embed.add_field(name="+setchannel", value="Changes the server's channel that manga chapter updates are sent to.", inline=False)
-        embed.add_field(name="+deleteaccount `user/server`", value="Deletes your account and your manga list.", inline=False)
-        embed.add_field(name="+setgroup `user/server`", value="Sets a manga's scan group. Only that scan group's chapter updates for that manga will be sent.", inline=False)
-        embed.add_field(name="+search `manga`", value="Searches for information about a manga.", inline=False)
-        await ctx.send(embed=embed)
+        embed = discord.Embed(title="MangaUpdates Commands", color=0x3083e3,
+            description="""
+                **mangaupdates**: Displays basic information about MangaUpdates.
+                **help**: Shows this message.
+                **ping**: Pong! Displays the ping.
+                **invite**: Displays bot invite link.
+                **alert**: Displays bot announcements.
+            """)
+        embed.add_field(name="__Manga__", 
+            value="""
+                **setup**: Sets up your server/user for manga updates.
+                **delete**: Deletes your account and your manga list.
+                **setchannel**: Sets the server's that manga chapter updates are sent to.
+                **search `manga`**: Searches for information about a manga series.
+                **manga list**: Displays your list of tracked manga.
+                **manga add `manga`**: Adds a manga to your list to be tracked.
+                **manga remove**: Removes a manga from your list.
+                **manga setgroup**: Sets a manga's scan group. Only that scan group's chapter updates for that manga will be sent.
+            """, inline=False)
+        await ctx.respond(embed=embed, ephemeral=True)
 
-    @commands.command(name="ping")
+    @slash_command(name="mangaupdates", description="Displays basic information about MangaUpdates")
+    async def mangaupdates(self, ctx):
+        activeServers = self.bot.guilds
+        botUsers = 0
+        for i in activeServers:
+            botUsers += i.member_count
+        currentTime = time.time()
+        differenceUptime = int(round(currentTime - startTime))
+        uptime = str(timedelta(seconds = differenceUptime))
+        botinfo = discord.Embed(
+            title="MangaUpdates",
+            color=0x3083e3,
+            timestamp=datetime.now(),
+            description=f"Thanks for using MangaUpdates bot! Any questions can be brought up in the support server. This bot is also open-source! All code can be found on GitHub (Please leave a star ⭐ if you enjoy the bot).\n\n**Server Count:** {len(self.bot.guilds)}\n**Bot Users:** {botUsers}\n**Bot Uptime:** {uptime}"
+        )
+        botinfo.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
+        await ctx.respond(embed=botinfo, view=InfoButtons("https://discord.gg/UcYspqftTF", f"https://github.com/{ghuser}/mangaupdates-bot"))
+
+    @slash_command(name="ping", description="Pong!")
     async def ping(self, ctx):
-        await ctx.send(f"🏓 Pong! My ping is {round(self.bot.latency * 1000)}ms")
+        await ctx.respond(f"🏓 Pong! My ping is {round(self.bot.latency * 1000)}ms")
 
-    @commands.command(name="invite")
+    @slash_command(name="alert", description="Displays bot alerts/announcements.", guild_ids=[721216108668911636])
+    async def alert(self, ctx):
+        link = f"https://github.com/{ghuser}/mangaupdates-bot"
+        description = """
+        Ayo! Thanks for keeping MangaUpdates Bot. I have been working on this version for a while now, and I hope you enjoy it.
+        
+        I have changed the manga updates whole system to use mangaupdates.com new API, as well as changed the commands system to use Discord's new slash commands.
+        
+        Anyways, sorry for any inconveniences when the bot wasn't working. Cheers!
+        """
+        embed = discord.Embed(title="Alert - Bot revamp", color=0x3083e3, description=description)
+        embed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
+        await ctx.respond(embed=embed, view=Link("GitHub", link))
+    
+    @slash_command(name="invite", description="Invite MangaUpdates to your own server")
     async def invite(self, ctx):
+        link = "https://jackli.dev/mangaupdates"
         embed = discord.Embed(title="Invite Link", color=0x3083e3, description="Invite me to your own servers!")
         embed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
-        embed.add_field(name="Link", value="https://discord.com/oauth2/authorize?client_id=880694914365685781&scope=applications.commands%20bot&permissions=268856384")
-        await ctx.send(embed=embed)
-
-    @commands.command(description="Shows the bot uptime.")
-    async def botinfo(self, ctx):
-        if ctx.message.author.id == config["ownerid"]:
-            # Get all users in all servers the bot is in.
-            activeServers = self.bot.guilds
-            botUsers = 0
-            for i in activeServers:
-                botUsers += i.member_count
-            # Get the current uptime.
-            currentTime = time.time()
-            differenceUptime = int(round(currentTime - startTime))
-            uptime = str(timedelta(seconds = differenceUptime))
-            # Make the embed for the message.
-            botinfo = discord.Embed(
-                title="Bot info",
-                color=0x3083e3,
-                timestamp=datetime.now(),
-                description=f"**Server Count:** {len(self.bot.guilds)}\n**Bot Users:** {botUsers}\n**Bot Uptime:** {uptime}"
-            )
-            botinfo.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
-            await ctx.send(embed=botinfo)
-        else:
-            permissionError = discord.Embed(title="Error", color=0xff4f4f, description="You found a hidden command! Too bad only the bot owner can use this.")
-            await ctx.send(embed=permissionError, delete_after=5.0)
-
-    @commands.command(name="source")
-    async def source(self, ctx):
-        embed = discord.Embed(title="Source Code", color=0x3083e3, description="MangaUpdates' source code can be found on GitHub. Any issues with the bot can be raised there.")
-        embed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
-        embed.add_field(name="Link", value="https://github.com/ohashizu/mangaupdates-bot")
-        await ctx.send(embed=embed)
-
-    @commands.command(name="alert")
-    async def alert(self, ctx):
-        link = 'https://discord.com/oauth2/authorize?client_id=880694914365685781&scope=applications.commands%20bot&permissions=268856384'
-        description = f"*This alert is only if you invited the bot before December 25th.*\n\nYo everyone! Recently Discord changed their API to require message content as intents. They want every bot to move to slash commands. This means that this bot needs new permissions to use these slash commands (don't ask me why).\n\nPlease reinvite the bot with the link or else by April 30, 2022, you won't be able to use the bot. Thanks for understanding and using MangaUpdates Bot!"
-        embed = discord.Embed(title="Alert - Please read", color=0x3083e3, description=description)
-        embed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
-        embed.set_footer(text="If button doesn't work: https://discord.com/oauth2/authorize?client_id=880694914365685781&scope=applications.commands%20bot&permissions=268856384")
-        await ctx.send(embed=embed, view=InviteLink(link))
+        await ctx.respond(embed=embed, view=Link("Invite", link))
 
 def setup(bot):
     bot.add_cog(Information(bot))

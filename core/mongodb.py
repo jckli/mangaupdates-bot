@@ -1,194 +1,216 @@
 from pymongo import MongoClient
-
-import json
 import certifi
+import os
+import requests
+from bs4 import BeautifulSoup as bs
+import time
+import re
 
-from core import update
-
-with open("config.json", "r") as f:
-    config = json.load(f)
-
-ca = certifi.where()
-
-dbUsername = config["dbUsername"]
-dbPassword = config["dbPassword"]
-mongo = MongoClient(f"mongodb+srv://{dbUsername}:{dbPassword}@akane.dsytm.mongodb.net/Kana?retryWrites=true&w=majority", tlsCAFile=ca)
-
-database = mongo["Kana"]
-srv = database["servers"]
-usr = database["users"]
-
-def addServer(serverName, serverID, channelID):
-    documentCount = srv.count_documents({})
-    while documentCount >= 0:
-        try:
-            srv.insert_one({"_id": documentCount, "serverid": serverID, "serverName": serverName, "channelid": channelID, "manga": []})
-            break
-        except:
-            documentCount -= 1
-
-def addUser(userName, userID):
-    documentCount = usr.count_documents({})
-    while documentCount >= 0:
-        try:
-            usr.insert_one({"_id": documentCount, "userid": userID, "username": userName, "manga": []})
-            break
-        except:
-            documentCount -= 1
-
-def removeServer(serverID):
-    srv.delete_one({"serverid": serverID})
-
-def removeUser(userID):
-    usr.delete_one({"userid": userID})
-
-def updateChannel(idName, channelID):
-    srv.update_one({"serverid": idName}, {"$set": {"channelid": channelID}})
-
-def findChannel(idName):
-    result = srv.find_one({"serverid": idName})
-    return result["channelid"]
-
-def checkServerExist(idName):
-    result = srv.find_one({"serverid": idName})
-    if result != None:
-        return True
-    else:
-        return False
-
-def checkUserExist(idName):
-    result = usr.find_one({"userid": idName})
-    if result != None:
-        return True
-    else:
-        return False
-
-def addManga(idName, title, link, mode):
-    mangaid = link.partition("https://www.mangaupdates.com/series.html?id=")[2]
-    if mode == "user":
-        usr.update_one({"userid": idName}, {"$push": {"manga": {"title": title, "id": mangaid}}})
-    elif mode == "server":
-        srv.update_one({"serverid": idName}, {"$push": {"manga": {"title": title, "id": mangaid}}})
+class Mongo:
+    def __init__(self):
+        ca = certifi.where()
+        username = os.environ.get("MONGO_USER")
+        password = os.environ.get("MONGO_PASS")
+        database_name = os.environ.get("MONGO_DB_NAME")
+        mongo = MongoClient(f"mongodb+srv://{username}:{password}@akane.dsytm.mongodb.net/{database_name}?retryWrites=true&w=majority", tlsCAFile=ca)
+        db = mongo[database_name]
+        self.usr = db["users"]
+        self.srv = db["servers"]
     
-def removeManga(idName, title, mode):
-    if mode == "user":
-        usr.update_one({"userid": idName}, {"$pull": {"manga": {"title": title}}})
-    elif mode == "server":
-        srv.update_one({"serverid": idName}, {"$pull": {"manga": {"title": title}}})
+    async def add_server(self, server_name, server_id, channel_id):
+        document_count = self.srv.count_documents({})
+        while document_count >= 0:
+            try:
+                self.srv.insert_one({"_id": document_count, "serverid": server_id, "serverName": server_name, "channelid": channel_id, "manga": []})
+                break
+            except:
+                document_count -= 1
 
-def mangaWanted(title, group, mode):
-    if "&" in group:
-        group = group.split("&")
-        group = [x.strip(' ') for x in group]
-    if mode == "user":
-        idList = []
-        result = usr.find({"manga.title": title}, {"_id": 0, "userid": 1, "manga": 1})
-        for i in result:
-            for m in i["manga"]:
-                if m["title"] == title:
-                    if "groupName" in m:
-                        if m["groupName"] in group:
-                            idList.append(i["userid"])
-                    elif "groupName" not in m:
-                        idList.append(i["userid"])
-                    break
-        if idList != []:
-            return idList
-        else:
-            return None
-    elif mode == "server":
-        class list:
-            serverList = []
-            channelList = []
-        result = srv.find({"manga.title": title}, {"_id": 0, "serverid": 1, "channelid": 1, "manga": 1})
-        for i in result:
-            for m in i["manga"]:
-                if m["title"] == title:
-                    if "groupName" in m:
-                        if m["groupName"] in group:
-                            list.serverList.append(i["serverid"])
-                            list.channelList.append(i["channelid"])
-                    elif "groupName" not in m:
-                        list.serverList.append(i["serverid"])
-                        list.channelList.append(i["channelid"])
-                    break
-        if list.serverList != []:
-            return list
-        else:
-            return None
+    async def add_user(self, user_name, user_id):
+        document_count = self.usr.count_documents({})
+        while document_count >= 0:
+            try:
+                self.usr.insert_one({"_id": document_count, "userid": user_id, "username": user_name, "manga": []})
+                break
+            except:
+                document_count -= 1
 
-def checkMangaAlreadyWithinDb(id, link, mode):
-    mangaid = link.partition("https://www.mangaupdates.com/series.html?id=")[2]
-    if mode == "user":
-        result = usr.find_one({"userid": id}, {"manga": 1})
+    async def remove_server(self, server_id):
+        self.srv.delete_one({"serverid": server_id})
+
+    async def remove_user(self, user_id):
+        self.usr.delete_one({"userid": user_id})
+
+    async def get_server(self, server_id):
+        return self.srv.find_one({"serverid": server_id})
+
+    async def get_user(self, user_id):
+        return self.usr.find_one({"userid": user_id})
+
+    async def set_channel(self, server_id, channel_id):
+        self.srv.update_one({"serverid": server_id}, {"$set": {"channelid": channel_id}})
+
+    async def get_channel(self, server_id):
+        result = self.srv.find_one({"serverid": server_id}, {"channelid": 1})
+        return result["channelid"]
+
+    async def check_server_exist(self, server_id):
+        result = await Mongo.get_server(self, server_id)
+        if result is not None:
+            return True
+        else:
+            return False
+    
+    async def check_user_exist(self, user_id):
+        result = await Mongo.get_user(self, user_id)
+        if result is not None:
+            return True
+        else:
+            return False
+
+    async def check_manga_exist_server(self, server_id, manga_id):
+        result = self.srv.find_one({"serverid": server_id}, {"manga": 1})
         for i in result["manga"]:
-            if i["id"] == mangaid:
+            if i["id"] == manga_id:
                 return True
         return False
-    elif mode == "server":
-        result = srv.find_one({"serverid": id}, {"manga": 1})
+    
+    async def check_manga_exist_user(self, user_id, manga_id):
+        result = self.usr.find_one({"userid": user_id}, {"manga": 1})
         for i in result["manga"]:
-            if i["id"] == mangaid:
+            if i["id"] == manga_id:
                 return True
         return False
+    
+    async def add_manga_server(self, server_id, manga_id, manga_name):
+        self.srv.update_one({"serverid": server_id}, {"$push": {"manga": {"title": manga_name, "id": manga_id}}})
+    
+    async def add_manga_user(self, user_id, manga_id, manga_name):
+        self.usr.update_one({"userid": user_id}, {"$push": {"manga": {"title": manga_name, "id": manga_id}}})
 
-def getMangaList(id, mode):
-    manga = []
-    if mode == "user":
-        result = usr.find_one({"userid": id}, {"manga": 1})
+    async def get_manga_list_server(self, server_id):
+        manga = []
+        result = self.srv.find_one({"serverid": server_id}, {"manga": 1})
         for i in result["manga"]:
-            manga.append(i["title"])
+            manga.append({"id": i["id"], "title": i["title"]})
         if manga != []:
             return manga
         else:
             return None
-    elif mode == "server":
-        result = srv.find_one({"serverid": id}, {"manga": 1})
+    
+    async def get_manga_list_user(self, user_id):
+        manga = []
+        result = self.usr.find_one({"userid": user_id}, {"manga": 1})
         for i in result["manga"]:
-            manga.append(i["title"])
+            manga.append({"id": i["id"], "title": i["title"]})
         if manga != []:
             return manga
         else:
             return None
-        
-def getMangaID(title, mode):
-    if mode == "user":
-        result = usr.find_one({"manga.title": title}, {"manga": 1})
-    elif mode == "server":
-        result = srv.find_one({"manga.title": title}, {"manga": 1})
-    for i in result["manga"]:
-        if i["title"] == title:
-            return i["id"]
 
-def setScanGroup(id, title, group, groupid, mode):
-    if mode == "user":
-        usr.update_one({"userid": id, "manga.title": title}, {"$set": {"manga.$.groupName": group, "manga.$.groupid": groupid}})
-    elif mode == "server":
-        srv.update_one({"serverid": id, "manga.title": title}, {"$set": {"manga.$.groupName": group, "manga.$.groupid": groupid}})
+    async def remove_manga_server(self, server_id, manga_id):
+        self.srv.update_one({"serverid": server_id}, {"$pull": {"manga": {"id": manga_id}}})
     
-def removeScanGroup(id, title, mode):
-    if mode == "user":
-        usr.update_one({"userid": id, "manga.title": title}, {"$unset": {"manga.$.groupName": "", "manga.$.groupid": ""}})
-    elif mode == "server":
-        srv.update_one({"serverid": id, "manga.title": title}, {"$unset": {"manga.$.groupName": "", "manga.$.groupid": ""}})
+    async def remove_manga_user(self, user_id, manga_id):
+        self.usr.update_one({"userid": user_id}, {"$pull": {"manga": {"id": manga_id}}})
 
-def getAllIds(mode):
-    if mode == "user":
-        result = usr.find({}, {"userid": 1})
-    elif mode == "server":
-        result = srv.find({}, {"serverid": 1})
-    idList = []
-    for i in result:
+    async def manga_wanted_server(self, group_list, manga_id=None, manga_title=None):
+        serverList = []
+        if manga_title is not None:
+            result = self.srv.find({"manga.title": manga_title}, {"serverid": 1, "channelid": 1, "manga.$": 1})
+        else:
+            result = self.srv.find({"manga.id": manga_id}, {"serverid": 1, "channelid": 1, "manga.$": 1})
+        for i in result:
+            if "groupid" in i["manga"][0]:
+                for group in group_list:
+                    if i["manga"][0]["groupid"] == group["group_id"]:
+                        serverList.append({"serverid": i["serverid"], "channelid": i["channelid"], "title": i["manga"][0]["title"]})
+            elif "groupid" not in i["manga"][0]:
+                serverList.append({"serverid": i["serverid"], "channelid": i["channelid"], "title": i["manga"][0]["title"]})
+        if serverList != []:
+            return serverList
+        else:
+            return None
+
+    async def manga_wanted_user(self, group_list, manga_id=None, manga_title=None):
+        userList = []
+        if manga_title is not None:
+            result = self.usr.find({"manga.title": manga_title}, {"userid": 1, "manga.$": 1})
+        else:
+            result = self.usr.find({"manga.id": manga_id}, {"userid": 1, "manga.$": 1})
+        for i in result:
+            if "groupid" in i["manga"][0]:
+                for group in group_list:
+                    if i["manga"][0]["groupid"] == group["group_id"]:
+                        userList.append({"userid": i["userid"], "title": i["manga"][0]["title"]})
+            elif "groupid" not in i["manga"][0]:
+                userList.append({"userid": i["userid"], "title": i["manga"][0]["title"]})
+        if userList != []:
+            return userList
+        else:
+            return None
+
+    async def set_scan_group_server(self, serverid, manga_id, group_id, group_name):
+        self.srv.update_one({"serverid": serverid, "manga.id": manga_id}, {"$set": {"manga.$.groupName": group_name, "manga.$.groupid": group_id}})
+
+    async def set_scan_group_user(self, userid, manga_id, group_id, group_name):
+        self.usr.update_one({"userid": userid, "manga.id": manga_id}, {"$set": {"manga.$.groupName": group_name, "manga.$.groupid": group_id}})
+
+    # hella scuffed, dont use lmao
+    def update_all_ids(self, mode):
+        if mode == "server":
+            result = self.srv.find({}, {"_id": 1})
+            for i in result:
+                a = self.srv.find({"_id": i["_id"]}, {"manga": 1})
+                for j in a:
+                    print(j["_id"])
+                    for k in j["manga"]:
+                        print(k)
+                        req = requests.get(f"https://www.mangaupdates.com/series.html?id={k['id']}")
+                        soup = bs(req.text, "html.parser")
+                        new = soup.find("link", {"rel": "canonical"})["href"]
+                        link = new.partition("https://www.mangaupdates.com/series/")[2]
+                        mangaid = link.partition("/")[0]
+                        mangaid = int(mangaid, 36)
+                        self.srv.update_one({"_id": i["_id"], "manga": {"$elemMatch": {"title": k["title"]}}}, {"$set": {"manga.$.id": mangaid}})
+                        time.sleep(8)
+                        if "groupid" in k:
+                            req = requests.get(f"https://www.mangaupdates.com/groups.html?id={k['groupid']}")
+                            soup = bs(req.text, "html.parser")
+                            new = soup.find("link", {"rel": "canonical"})["href"]
+                            link = new.partition("https://www.mangaupdates.com/group/")[2]
+                            mangaid = link.partition("/")[0]
+                            mangaid = int(mangaid, 36)
+                            self.srv.update_one({"_id": i["_id"], "manga": {"$elemMatch": {"title": k["title"]}}}, {"$set": {"manga.$.groupid": mangaid}})
+                            time.sleep(8)
         if mode == "user":
-            idList.append(i["userid"])
-        elif mode == "server":
-            idList.append(i["serverid"])
-    return idList   
-
-def test():
-    documentCount = usr.count_documents({})
-    print(documentCount)
-
-#        if result != None:
-#            sheeesh.append(result.serverid)
-#    return result
+            result = self.usr.find({}, {"_id": 1}).skip(200)
+            for i in result:
+                a = self.usr.find({"_id": i["_id"]}, {"manga": 1})
+                for j in a:
+                    print(j["_id"])
+                    for k in j["manga"]:
+                        print(k)
+                        req = requests.get(f"https://www.mangaupdates.com/series.html?id={k['id']}")
+                        soup = bs(req.text, "html.parser")
+                        new = soup.find("link", {"rel": "canonical"})["href"]
+                        link = new.partition("https://www.mangaupdates.com/series/")[2]
+                        mangaid = link.partition("/")[0]
+                        mangaid = int(mangaid, 36)
+                        self.usr.update_one({"_id": i["_id"], "manga": {"$elemMatch": {"title": k["title"]}}}, {"$set": {"manga.$.id": mangaid}})
+                        time.sleep(8)
+                        if "groupid" in k:
+                            req = requests.get(f"https://www.mangaupdates.com/groups.html?id={k['groupid']}")
+                            soup = bs(req.text, "html.parser")
+                            new = soup.find("link", {"rel": "canonical"})["href"]
+                            link = new.partition("https://www.mangaupdates.com/group/")[2]
+                            mangaid = link.partition("/")[0]
+                            mangaid = int(mangaid, 36)
+                            self.usr.update_one({"_id": i["_id"], "manga": {"$elemMatch": {"title": k["title"]}}}, {"$set": {"manga.$.groupid": mangaid}})
+                            time.sleep(8)
+    
+    def test(self):
+        self.usr.update_many({"manga.title": "Berserk"}, {"$set": {"manga.$.id": 51239621230}})
+        a = self.usr.find({"manga.id": ""}, {"manga": 1})
+        for i in a:
+            print(i)
