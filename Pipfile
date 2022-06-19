@@ -4,7 +4,6 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-py-cord = "==2.0.0rc1"
 requests = "*"
 numpy = "*"
 pymongo = {extras = ["srv"], version = "*"}
@@ -13,6 +12,7 @@ python-dotenv = "*"
 validators = "*"
 beautifulsoup4 = "*"
 nest-asyncio = "*"
+py-cord = {git = "https://github.com/Pycord-Development/pycord"}
 
 [dev-packages]
 
