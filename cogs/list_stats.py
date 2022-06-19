@@ -38,5 +38,9 @@ class ListStatistics(commands.Cog):
         except Exception as err:
             print(f"Failed to post to dbl.com: {err}")
 
+    @update_stats.before_loop
+    async def before_update_stats(self):
+        await self.bot.wait_until_ready()
+
 def setup(bot):
     bot.add_cog(ListStatistics(bot))
