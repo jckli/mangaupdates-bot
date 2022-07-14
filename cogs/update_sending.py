@@ -37,6 +37,7 @@ class UpdateSending(commands.Cog):
         await self.bot.wait_until_ready()
 
     async def notify(self, title, chapter, scan_group, link):
+        errorChannel = self.bot.get_channel(990005048408936529)
         print(f"Notifying! ({title})")
         if link:
             templink = link.partition("https://www.mangaupdates.com/series/")[2]
@@ -65,6 +66,11 @@ class UpdateSending(commands.Cog):
         else:
             serverWant = await mongo.manga_wanted_server(sgs, manga_title=title)
             userWant = await mongo.manga_wanted_user(sgs, manga_title=title)
+
+        serverstosend = f"All servers that want {title}: {serverWant.join(', ')}"
+        userstosend = f"All users that want {title}: {userWant.join(', ')}"
+        await errorChannel.send(serverstosend)
+        await errorChannel.send(userstosend)
         
         if userWant or serverWant:
             print(f"Manga Wanted ({title})")
@@ -90,8 +96,11 @@ class UpdateSending(commands.Cog):
                     userEmbed.set_image(url=image)
                 try:
                     await userObject.send(embed=userEmbed)
+                    success = f"Sent message to User {user['userid']}, Title: {user['title']} ({title}), SG: {scan_group}, MULink: {link}"
+                    await errorChannel.send(success)
                 except discord.Forbidden:
-                    print(f"Could not send message to {user['userid']}")
+                    exception = f"Could not send message to User {user['userid']}, Title: {user['title']} ({title}), SG: {scan_group}, MULink: {link}"
+                    await errorChannel.send(exception)
                     continue
         else:
             print(f"New manga not wanted. (User: {title})")
@@ -107,8 +116,11 @@ class UpdateSending(commands.Cog):
                     channelEmbed.set_image(url=image)
                 try:
                     await channelObject.send(embed=channelEmbed)
+                    success = f"Sent message to Server Channel {server['channelid']}, Title: {server['title']} ({title}), SG: {scan_group}, MULink: {link}"
+                    await errorChannel.send(success)
                 except discord.Forbidden:
-                    print(f"Could not send message to {server['channelid']}")
+                    exception = f"Could not send message to Server Channel {server['channelid']}, Title: {server['title']} ({title}), SG: {scan_group}, MULink: {link}"
+                    await errorChannel.send(exception)
                     continue
         else:
             print(f"New manga not wanted. (Server: {title})")
