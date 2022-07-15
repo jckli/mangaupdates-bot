@@ -67,8 +67,12 @@ class UpdateSending(commands.Cog):
             serverWant = await mongo.manga_wanted_server(sgs, manga_title=title)
             userWant = await mongo.manga_wanted_user(sgs, manga_title=title)
 
-        serverstosend = f"All servers that want {title}: {serverWant.join(', ')}"
-        userstosend = f"All users that want {title}: {userWant.join(', ')}"
+        if serverWant or userWant:
+            serverstosend = f"All servers that want {title}: {serverWant.join(', ')}"
+            userstosend = f"All users that want {title}: {userWant.join(', ')}"
+        else:
+            serverstosend = f"No servers want this {title}"
+            userstosend = f"No users want this {title}"
         await errorChannel.send(serverstosend)
         await errorChannel.send(userstosend)
         
