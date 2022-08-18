@@ -4,6 +4,7 @@ import asyncio
 from datetime import datetime
 from core.mongodb import Mongo
 from core.rss import RSSParser
+import traceback
 from core.mangaupdates import MangaUpdates
 
 mongo = Mongo()
@@ -98,40 +99,50 @@ class UpdateSending(commands.Cog):
         
         if userWant:
             for user in userWant:
-                userObject = await self.bot.fetch_user(user["userid"])
-                userEmbed = discord.Embed(title=f"New {user['title']} chapter released!", url=link, description=f"There is a new `{user['title']}` chapter.", color=0x3083e3)
-                userEmbed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
-                userEmbed.add_field(name="Chapter", value=chapter, inline=True)
-                userEmbed.add_field(name="Group", value=scan_group, inline=True)
-                userEmbed.add_field(name="Scanlator Link", value=scanLink, inline=False)
-                if image != None:
-                    userEmbed.set_image(url=image)
                 try:
-                    await userObject.send(embed=userEmbed)
-                    success = f"Sent message to User {user['userid']}, Title: {user['title']} ({title}), SG: {scan_group}, MULink: {link}"
-                    await errorChannel.send(success)
-                except discord.Forbidden:
-                    exception = f"Could not send message to User {user['userid']}, Title: {user['title']} ({title}), SG: {scan_group}, MULink: {link}"
+                    userObject = await self.bot.fetch_user(user["userid"])
+                    userEmbed = discord.Embed(title=f"New {user['title']} chapter released!", url=link, description=f"There is a new `{user['title']}` chapter.", color=0x3083e3)
+                    userEmbed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
+                    userEmbed.add_field(name="Chapter", value=chapter, inline=True)
+                    userEmbed.add_field(name="Group", value=scan_group, inline=True)
+                    userEmbed.add_field(name="Scanlator Link", value=scanLink, inline=False)
+                    if image != None:
+                        userEmbed.set_image(url=image)
+                    try:
+                        await userObject.send(embed=userEmbed)
+                        success = f"Sent message to User {user['userid']}, Title: {user['title']} ({title}), SG: {scan_group}, MULink: {link}"
+                        await errorChannel.send(success)
+                    except discord.Forbidden:
+                        exception = f"Could not send message to User {user['userid']}, Title: {user['title']} ({title}), SG: {scan_group}, MULink: {link}"
+                        await errorChannel.send(exception)
+                        continue
+                except Exception:
+                    exception = f"Error on send message to User {user['userid']}, Title: {user['title']} ({title}), SG: {scan_group}, MULink: {link}\n{traceback.format_exc()}"
                     await errorChannel.send(exception)
                     continue
         else:
             print(f"New manga not wanted. (User: {title})")
         if serverWant:
             for server in serverWant:
-                channelObject = self.bot.get_channel(server["channelid"])
-                channelEmbed = discord.Embed(title=f"New {server['title']} chapter released!", url=link, description=f"There is a new `{server['title']}` chapter.", color=0x3083e3)
-                channelEmbed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
-                channelEmbed.add_field(name="Chapter", value=chapter, inline=True)
-                channelEmbed.add_field(name="Group", value=scan_group, inline=True)
-                channelEmbed.add_field(name="Scanlator Link", value=scanLink, inline=False)
-                if image != None:
-                    channelEmbed.set_image(url=image)
                 try:
-                    await channelObject.send(embed=channelEmbed)
-                    success = f"Sent message to Server Channel {server['channelid']}, Title: {server['title']} ({title}), SG: {scan_group}, MULink: {link}"
-                    await errorChannel.send(success)
-                except discord.Forbidden:
-                    exception = f"Could not send message to Server Channel {server['channelid']}, Title: {server['title']} ({title}), SG: {scan_group}, MULink: {link}"
+                    channelObject = self.bot.get_channel(server["channelid"])
+                    channelEmbed = discord.Embed(title=f"New {server['title']} chapter released!", url=link, description=f"There is a new `{server['title']}` chapter.", color=0x3083e3)
+                    channelEmbed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
+                    channelEmbed.add_field(name="Chapter", value=chapter, inline=True)
+                    channelEmbed.add_field(name="Group", value=scan_group, inline=True)
+                    channelEmbed.add_field(name="Scanlator Link", value=scanLink, inline=False)
+                    if image != None:
+                        channelEmbed.set_image(url=image)
+                    try:
+                        await channelObject.send(embed=channelEmbed)
+                        success = f"Sent message to Server Channel {server['channelid']}, Title: {server['title']} ({title}), SG: {scan_group}, MULink: {link}"
+                        await errorChannel.send(success)
+                    except discord.Forbidden:
+                        exception = f"Could not send message to Server Channel {server['channelid']}, Title: {server['title']} ({title}), SG: {scan_group}, MULink: {link}"
+                        await errorChannel.send(exception)
+                        continue
+                except Exception:
+                    exception = f"Error on send message to Server Channel {server['channelid']}, Title: {server['title']} ({title}), SG: {scan_group}, MULink: {link}\n{traceback.format_exc()}"
                     await errorChannel.send(exception)
                     continue
         else:
