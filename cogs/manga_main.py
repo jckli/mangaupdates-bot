@@ -570,6 +570,38 @@ class MangaMain(commands.Cog):
             return
         else:
             return
+
+    @manga.command(name="test", description="Tests sending manga to your server")
+    async def testsending(self, ctx):
+        if ctx.guild is not None:
+            channel = await mongo.get_channel(ctx.guild.id)
+            if channel is None:
+                noChannelError = discord.Embed(title="Error", color=0xff4f4f, description="You have no channel set up. Please set one up with the `setup` command.")
+                await ctx.respond(embed=noChannelError, view=None)
+                return
+            else:
+                try:
+                    channelObject = self.bot.get_channel(channel)
+                    if channelObject is None:
+                        noChannelError = discord.Embed(title="Error", color=0xff4f4f, description="Channel doesn't exist anymore, please reset the channel with the `server setchannel` command.")
+                        await ctx.respond(embed=noChannelError, view=None)
+                        return
+                    mangaTestEmbed = discord.Embed(title=f"Testing Update", url="https://picsiv.hayasaka.moe/", description=f"This is a test alert for the MangaUpdates Bot.", color=0x3083e3)
+                    mangaTestEmbed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
+                    mangaTestEmbed.add_field(name="Chapter", value="c.1", inline=True)
+                    mangaTestEmbed.add_field(name="Group", value="The MangaUpdates Bot Team", inline=True)
+                    mangaTestEmbed.add_field(name="Scanlator Link", value="https://picsiv.hayasaka.moe/", inline=False)
+                    await channelObject.send(embed=mangaTestEmbed, view=None)
+                    mainResponseEmbed = discord.Embed(title="Test Manga Update Message", color=0x3083e3, description="Congrats! Manga can be sent to your server.")
+                    await ctx.respond(embed=mainResponseEmbed, view=None)
+                except:
+                    mainResponseEmbed = discord.Embed(title="Test Manga Update Message", color=0xff4f4f, description="Oops! Something went wrong. Give the bot permissions to send messages in the channel you have set and then try again.")
+                    await ctx.respond(embed=mainResponseEmbed, view=None)
+                    return   
+        else:
+            notServerError = discord.Embed(title="Error", color=0xff4f4f, description="You need to be in a server to use this command.")
+            await ctx.respond(embed=notServerError, view=None)
+            return
         
 def setup(bot):
     bot.add_cog(MangaMain(bot))
