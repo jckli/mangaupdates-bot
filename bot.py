@@ -22,11 +22,9 @@ async def on_ready():
     print(f"Bot is online.")
     await bot.change_presence(activity=discord.Game(name="/help"))
 
-"""
 @bot.event
 async def on_guild_remove(guild):
     mongo.remove_server(guild.id)
-"""
 
 try:
     bot.run(os.environ.get("TOKEN"))
