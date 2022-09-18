@@ -8,11 +8,15 @@ import re
 
 class Mongo:
     def __init__(self):
-        ca = certifi.where()
-        username = os.environ.get("MONGO_USER")
-        password = os.environ.get("MONGO_PASS")
         database_name = os.environ.get("MONGO_DB_NAME")
-        mongo = MongoClient(f"mongodb+srv://{username}:{password}@akane.dsytm.mongodb.net/{database_name}?retryWrites=true&w=majority", tlsCAFile=ca)
+        host = os.environ.get("MONGO_HOST")
+        if host:
+            mongo = MongoClient(host)
+        else:
+            ca = certifi.where()
+            username = os.environ.get("MONGO_USER")
+            password = os.environ.get("MONGO_PASS")
+            mongo = MongoClient(f"mongodb+srv://{username}:{password}@akane.dsytm.mongodb.net/{database_name}?retryWrites=true&w=majority", tlsCAFile=ca)
         db = mongo[database_name]
         self.usr = db["users"]
         self.srv = db["servers"]
