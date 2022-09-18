@@ -271,7 +271,11 @@ class MangaMain(commands.Cog):
         else:
             modeval = "user"
             mode = None
+
+        # error embeds
         setupError = discord.Embed(title="Error", color=0xff4f4f, description="Sorry! Please run the setup command first.")
+        permissionError = discord.Embed(title="Error", color=0xff4f4f, description=("You don't have permission to add manga. Allow roles to add manga with `/server add_role`."))
+
         if modeval == "user":
             userExist = await mongo.check_user_exist(ctx.author.id)
             if userExist is False:
@@ -281,21 +285,22 @@ class MangaMain(commands.Cog):
                     await ctx.respond(embed=setupError, view=None)
                 return
         elif modeval == "server":
-            serverExist = await mongo.check_server_exist(ctx.guild.id)
-            if ctx.author.guild_permissions.administrator is False:
-                permissionError = discord.Embed(title="Error", color=0xff4f4f, description="You don't have permission to add manga. You need `Administrator` permission to use this.")
+            server_exists = await mongo.check_server_exist(ctx.guild.id)
+            has_permission = False
+            if server_exists:
+                roles_allowed_to_add = await mongo.get_server_add_roles(ctx.guild.id)
+                author_roles = [r.id for r in ctx.author.roles]
+
+                has_permission = ctx.author.guild_permissions.administrator or (bool(set(roles_allowed_to_add) & set(author_roles)))
+
+            if not server_exists or not has_permission:
+                embed_type = permissionError if not has_permission else setupError
                 if mode is not None:
-                    await mode.interaction.response.edit_message(embed=permissionError, view=None)
+                    await mode.interaction.response.edit_message(embed=embed_type, view=None)
                 else:
-                    await ctx.respond(embed=permissionError, view=None)
+                    await ctx.respond(embed=embed_type, view=None)
                 return
-            else:
-                if serverExist is False:
-                    if mode is not None:
-                        await mode.interaction.response.edit_message(embed=setupError, view=None)
-                    else:
-                        await ctx.respond(embed=setupError, view=None)
-                    return
+
         if validators.url(manga) is True:
             link = manga.partition("https://www.mangaupdates.com/series/")[2]
             mangaid = link.partition("/")[0]
@@ -587,7 +592,8 @@ class MangaMain(commands.Cog):
                         await ctx.respond(embed=noChannelError, view=None)
                         return
                     mangaTestEmbed = discord.Embed(title=f"Testing Update", url="https://picsiv.hayasaka.moe/", description=f"This is a test alert for the MangaUpdates Bot.", color=0x3083e3)
-                    mangaTestEmbed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
+                    if self.bot.user and self.bot.user.avatar:
+                        mangaTestEmbed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
                     mangaTestEmbed.add_field(name="Chapter", value="c.1", inline=True)
                     mangaTestEmbed.add_field(name="Group", value="The MangaUpdates Bot Team", inline=True)
                     mangaTestEmbed.add_field(name="Scanlator Link", value="https://picsiv.hayasaka.moe/", inline=False)
