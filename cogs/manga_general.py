@@ -245,7 +245,7 @@ class MangaGeneral(commands.Cog):
         await ctx.respond(embed=embedChannel, view=None)
 
     @server.command(name="remove_role", description="Remove roles that are allowed to add to the manga list updates")
-    async def add_role(self, ctx, role: Option(discord.Role), required=True):
+    async def remove_role(self, ctx, role: Option(discord.Role), required=True):
         has_permission = await validate_admin_and_server(ctx)
         if not has_permission:
             return
