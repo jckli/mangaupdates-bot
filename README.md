@@ -67,12 +67,13 @@ If you have any issues, please don't be afraid to raise an issue on [GitHub](htt
 
 ## Environment Variables
 **Discord**
-- `TOKEN`: Discord bot private key
+- `TOKEN`: Discord Bot Token
+
 **Mongo DB**
-- `MONGO_HOST`: Mongo url link
 - `MONGO_USER`: Mongo username
 - `MONGO_PASS`: Mongo password
 - `MONGO_DB_NAME`: Mongo database name
+
 **[MangaUpdates](https://www.mangaupdates.com/)**
 - `MU_USER`: MangaUpdates username
 - `MU_PASS`: MangaUpdates password

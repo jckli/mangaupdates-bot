@@ -271,10 +271,7 @@ class MangaMain(commands.Cog):
         else:
             modeval = "user"
             mode = None
-
-        # error embeds
         setupError = discord.Embed(title="Error", color=0xff4f4f, description="Sorry! Please run the setup command first.")
-        permissionError = discord.Embed(title="Error", color=0xff4f4f, description=("You don't have permission to add manga. Allow roles to add manga with `/server add_role`."))
 
         if modeval == "user":
             userExist = await mongo.check_user_exist(ctx.author.id)
@@ -294,6 +291,7 @@ class MangaMain(commands.Cog):
                 has_permission = ctx.author.guild_permissions.administrator or (bool(set(roles_allowed_to_add) & set(author_roles)))
 
             if not server_exists or not has_permission:
+                permissionError = discord.Embed(title="Error", color=0xff4f4f, description=("You don't have permission to add manga. Allow roles to add manga with `/server add_role`."))
                 embed_type = permissionError if not has_permission else setupError
                 if mode is not None:
                     await mode.interaction.response.edit_message(embed=embed_type, view=None)

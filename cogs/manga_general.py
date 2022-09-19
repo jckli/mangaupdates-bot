@@ -234,7 +234,8 @@ class MangaGeneral(commands.Cog):
             completeEmbed = discord.Embed(title="Delete Account", color=0x3083e3, description="Successfully deleted your account.")
             await confirm.interaction.response.edit_message(embed=completeEmbed, view=None)
 
-    @server.command(name="add_role", description="Add roles that are allowed to add to the manga list")
+    role = SlashCommandGroup("role", description="Role commands", guild_only=True)
+    @role.command(name="add", description="Add roles that are allowed to add to the manga list")
     async def add_role(self, ctx, role: Option(discord.Role), required=True):
         has_permission = await validate_admin_and_server(ctx)
         if not has_permission:
@@ -244,7 +245,7 @@ class MangaGeneral(commands.Cog):
         embedChannel = discord.Embed(title="Setup", color=0x3083e3, description=f"Successfully allowed role `{role}` to add to the manga list.")
         await ctx.respond(embed=embedChannel, view=None)
 
-    @server.command(name="remove_role", description="Remove roles that are allowed to add to the manga list updates")
+    @role.command(name="remove", description="Remove roles that are allowed to add to the manga list updates")
     async def remove_role(self, ctx, role: Option(discord.Role), required=True):
         has_permission = await validate_admin_and_server(ctx)
         if not has_permission:
