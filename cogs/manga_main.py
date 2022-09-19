@@ -285,13 +285,13 @@ class MangaMain(commands.Cog):
             server_exists = await mongo.check_server_exist(ctx.guild.id)
             has_permission = False
             if server_exists:
-                roles_allowed_to_add = await mongo.get_server_add_roles(ctx.guild.id)
+                allow_add_role = await mongo.get_server_allow_add_role(ctx.guild.id)
                 author_roles = [r.id for r in ctx.author.roles]
 
-                has_permission = ctx.author.guild_permissions.administrator or (bool(set(roles_allowed_to_add) & set(author_roles)))
+                has_permission = ctx.author.guild_permissions.administrator or (allow_add_role in author_roles)
 
             if not server_exists or not has_permission:
-                permissionError = discord.Embed(title="Error", color=0xff4f4f, description=("You don't have permission to add manga. Allow roles to add manga with `/server add_role`."))
+                permissionError = discord.Embed(title="Error", color=0xff4f4f, description=("You don't have permission to add manga. Allow roles to add manga with `/role add`."))
                 embed_type = permissionError if not has_permission else setupError
                 if mode is not None:
                     await mode.interaction.response.edit_message(embed=embed_type, view=None)
