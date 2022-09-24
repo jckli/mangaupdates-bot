@@ -272,6 +272,7 @@ class MangaMain(commands.Cog):
             modeval = "user"
             mode = None
         setupError = discord.Embed(title="Error", color=0xff4f4f, description="Sorry! Please run the setup command first.")
+
         if modeval == "user":
             userExist = await mongo.check_user_exist(ctx.author.id)
             if userExist is False:
@@ -282,19 +283,23 @@ class MangaMain(commands.Cog):
                 return
         elif modeval == "server":
             serverExist = await mongo.check_server_exist(ctx.guild.id)
-            if ctx.author.guild_permissions.administrator is False:
-                permissionError = discord.Embed(title="Error", color=0xff4f4f, description="You don't have permission to add manga. You need `Administrator` permission to use this.")
+            if serverExist is False:
                 if mode is not None:
-                    await mode.interaction.response.edit_message(embed=permissionError, view=None)
+                    await mode.interaction.response.edit_message(embed=setupError, view=None)
                 else:
-                    await ctx.respond(embed=permissionError, view=None)
+                    await ctx.respond(embed=setupError, view=None)
                 return
             else:
-                if serverExist is False:
+                hasPermission = False
+                adminRole = await mongo.get_admin_role_server(ctx.guild.id)
+                authorRoles = [r.id for r in ctx.author.roles]
+                hasPermission = ctx.author.guild_permissions.administrator or (adminRole in authorRoles)
+                if not hasPermission:
+                    permissionError = discord.Embed(title="Error", color=0xff4f4f, description=("You don't have permission to add manga. Set a role to modify manga with `/server addadminrole` or have `Administrator` permission."))
                     if mode is not None:
-                        await mode.interaction.response.edit_message(embed=setupError, view=None)
+                        await mode.interaction.response.edit_message(embed=permissionError, view=None)
                     else:
-                        await ctx.respond(embed=setupError, view=None)
+                        await ctx.respond(embed=permissionError, view=None)
                     return
         if validators.url(manga) is True:
             link = manga.partition("https://www.mangaupdates.com/series/")[2]
@@ -395,20 +400,24 @@ class MangaMain(commands.Cog):
                     await ctx.respond(embed=noManga, view=None)
                 return
         elif modeval == "server":
-            if ctx.author.guild_permissions.administrator is False:
-                permissionError = discord.Embed(title="Error", color=0xff4f4f, description="You don't have permission to remove manga. You need `Administrator` permission to use this.")
+            serverExist = await mongo.check_server_exist(ctx.guild.id)
+            if serverExist is False:
                 if mode is not None:
-                    await mode.interaction.response.edit_message(embed=permissionError, view=None)
+                    await mode.interaction.response.edit_message(embed=setupError, view=None)
                 else:
-                    await ctx.respond(embed=permissionError, view=None)
+                    await ctx.respond(embed=setupError, view=None)
                 return
             else:
-                serverExist = await mongo.check_server_exist(ctx.guild.id)
-                if serverExist is False:
+                hasPermission = False
+                adminRole = await mongo.get_admin_role_server(ctx.guild.id)
+                authorRoles = [r.id for r in ctx.author.roles]
+                hasPermission = ctx.author.guild_permissions.administrator or (adminRole in authorRoles)
+                if not hasPermission:
+                    permissionError = discord.Embed(title="Error", color=0xff4f4f, description=("You don't have permission to remove manga. Set a role to modify manga with `/server addadminrole` or have `Administrator` permission."))
                     if mode is not None:
-                        await mode.interaction.response.edit_message(embed=setupError, view=None)
+                        await mode.interaction.response.edit_message(embed=permissionError, view=None)
                     else:
-                        await ctx.respond(embed=setupError, view=None)
+                        await ctx.respond(embed=permissionError, view=None)
                     return
                 mangaList = await mongo.get_manga_list_server(ctx.guild.id)
                 if mangaList is None:
@@ -526,20 +535,24 @@ class MangaMain(commands.Cog):
                     await ctx.respond(embed=noManga, view=None)
                 return
         elif modeval == "server":
-            if ctx.author.guild_permissions.administrator is False:
-                permissionError = discord.Embed(title="Error", color=0xff4f4f, description="You don't have permission to remove manga. You need `Administrator` permission to use this.")
+            serverExist = await mongo.check_server_exist(ctx.guild.id)
+            if serverExist is False:
                 if mode is not None:
-                    await mode.interaction.response.edit_message(embed=permissionError, view=None)
+                    await mode.interaction.response.edit_message(embed=setupError, view=None)
                 else:
-                    await ctx.respond(embed=permissionError, view=None)
+                    await ctx.respond(embed=setupError, view=None)
                 return
             else:
-                serverExist = await mongo.check_server_exist(ctx.guild.id)
-                if serverExist is False:
+                hasPermission = False
+                adminRole = await mongo.get_admin_role_server(ctx.guild.id)
+                authorRoles = [r.id for r in ctx.author.roles]
+                hasPermission = ctx.author.guild_permissions.administrator or (adminRole in authorRoles)
+                if not hasPermission:
+                    permissionError = discord.Embed(title="Error", color=0xff4f4f, description=("You don't have permission to set a manga's scan groups. Set a role to modify manga with `/server addadminrole` or have `Administrator` permission."))
                     if mode is not None:
-                        await mode.interaction.response.edit_message(embed=setupError, view=None)
+                        await mode.interaction.response.edit_message(embed=permissionError, view=None)
                     else:
-                        await ctx.respond(embed=setupError, view=None)
+                        await ctx.respond(embed=permissionError, view=None)
                     return
                 mangaList = await mongo.get_manga_list_server(ctx.guild.id)
                 if mangaList is None:
@@ -587,7 +600,8 @@ class MangaMain(commands.Cog):
                         await ctx.respond(embed=noChannelError, view=None)
                         return
                     mangaTestEmbed = discord.Embed(title=f"Testing Update", url="https://picsiv.hayasaka.moe/", description=f"This is a test alert for the MangaUpdates Bot.", color=0x3083e3)
-                    mangaTestEmbed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
+                    if self.bot.user and self.bot.user.avatar:
+                        mangaTestEmbed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
                     mangaTestEmbed.add_field(name="Chapter", value="c.1", inline=True)
                     mangaTestEmbed.add_field(name="Group", value="The MangaUpdates Bot Team", inline=True)
                     mangaTestEmbed.add_field(name="Scanlator Link", value="https://picsiv.hayasaka.moe/", inline=False)

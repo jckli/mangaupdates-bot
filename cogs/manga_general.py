@@ -89,6 +89,24 @@ class SelectManga(discord.ui.Select):
         await interaction.response.edit_message(embed=result, view=None)
         self.finish = True
 
+# Helpers
+async def is_admin(ctx):
+    has_add_permission = ctx.author.guild_permissions.administrator
+    if not has_add_permission:
+        permissionError = discord.Embed(title="Error", color=0xff4f4f, description="You don't have permission to delete this server's account. You need `Administrator` permission to use this.")
+        await ctx.respond(embed=permissionError, view=None)
+    return has_add_permission
+
+async def is_server_exists(ctx):
+    server_exists = await mongo.check_server_exist(ctx.guild.id)
+    if not server_exists:
+        setupError = discord.Embed(title="Error", color=0xff4f4f, description="Sorry! Please run the setup command first.")
+        await ctx.respond(embed=setupError, view=None)
+    return server_exists
+
+async def validate_admin_and_server(ctx):
+    return await is_admin(ctx) and await is_server_exists(ctx)
+
 class MangaGeneral(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -215,7 +233,36 @@ class MangaGeneral(commands.Cog):
             await mongo.remove_server(ctx.guild.id)
             completeEmbed = discord.Embed(title="Delete Account", color=0x3083e3, description="Successfully deleted your account.")
             await confirm.interaction.response.edit_message(embed=completeEmbed, view=None)
-        
+
+    @server.command(name="addadminrole", description="Sets a role that permits modification to add to the manga list")
+    async def add_admin_role(self, ctx, role: Option(discord.Role, required=True)):
+        hasPermission = await validate_admin_and_server(ctx)
+        if not hasPermission:
+            return
+        await mongo.add_admin_role_server(ctx.guild.id, role.id)
+        embedChannel = discord.Embed(title="Add Admin Role", color=0x3083e3, description=f"Successfully allowed role `{role}` to modify to the manga list.")
+        await ctx.respond(embed=embedChannel, view=None)
+
+    @server.command(name="removeadminrole", description="Removes the role that permits modification to the manga list")
+    async def remove_admin_role(self, ctx):
+        hasPermission = await validate_admin_and_server(ctx)
+        if not hasPermission:
+            return
+        embed = discord.Embed(title="Remove Admin Role", color=0x3083e3, description="Are you sure you want to remove the admin role?")
+        confirm = Confirm()
+        await ctx.respond(embed=embed, view=confirm)
+        await confirm.wait()
+        if confirm.value is None:
+            await confirm.interaction.response.edit_message(embed=timeoutError, view=None)
+            return
+        elif confirm.value is False:
+            cancelEmbed = discord.Embed(title=f"Canceled", color=0x3083e3, description="Successfully canceled.")
+            await confirm.interaction.response.edit_message(embed=cancelEmbed, view=None)
+            return
+        else:
+            await mongo.remove_admin_role_server(ctx.guild.id)
+            embedChannel = discord.Embed(title="Remove Admin Role", color=0x3083e3, description=f"Successfully removed the admin role.")
+            await ctx.respond(embed=embedChannel, view=None)
 
     user = SlashCommandGroup(name="user", description="User commands")
 

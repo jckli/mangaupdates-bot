@@ -13,6 +13,7 @@ class Mongo:
         password = os.environ.get("MONGO_PASS")
         database_name = os.environ.get("MONGO_DB_NAME")
         mongo = MongoClient(f"mongodb+srv://{username}:{password}@akane.dsytm.mongodb.net/{database_name}?retryWrites=true&w=majority", tlsCAFile=ca)
+
         db = mongo[database_name]
         self.usr = db["users"]
         self.srv = db["servers"]
@@ -97,7 +98,7 @@ class Mongo:
             return manga
         else:
             return None
-    
+
     async def get_manga_list_user(self, user_id):
         manga = []
         result = self.usr.find_one({"userid": user_id}, {"manga": 1})
@@ -113,6 +114,19 @@ class Mongo:
     
     async def remove_manga_user(self, user_id, manga_id):
         self.usr.update_one({"userid": user_id}, {"$pull": {"manga": {"id": manga_id}}})
+
+    async def add_admin_role_server(self, server_id, role_id):
+        self.srv.update_one({"serverid": server_id}, {"$set": {"roles.admin": role_id}})
+
+    async def remove_admin_role_server(self, server_id):
+        self.srv.update_one({"serverid": server_id}, {"$unset": {"roles.admin": 1}})
+
+    async def get_admin_role_server(self, server_id):
+        result = self.srv.find_one({"serverid": server_id}, {"roles.admin": 1})
+        if ("roles" in result.keys()) and (result["roles"] != {}) and ("admin" in result["roles"]):
+            return result["roles"]["admin"]
+        else:
+            return None
 
     async def manga_wanted_server(self, group_list, manga_id=None, manga_title=None):
         serverList = []
