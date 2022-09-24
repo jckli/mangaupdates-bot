@@ -282,23 +282,20 @@ class MangaMain(commands.Cog):
                     await ctx.respond(embed=setupError, view=None)
                 return
         elif modeval == "server":
-            server_exists = await mongo.check_server_exist(ctx.guild.id)
-            has_permission = False
-            if server_exists:
-                allow_add_role = await mongo.get_server_allow_add_role(ctx.guild.id)
-                author_roles = [r.id for r in ctx.author.roles]
-
-                has_permission = ctx.author.guild_permissions.administrator or (allow_add_role in author_roles)
-
-            if not server_exists or not has_permission:
-                permissionError = discord.Embed(title="Error", color=0xff4f4f, description=("You don't have permission to add manga. Allow roles to add manga with `/role add`."))
-                embed_type = permissionError if not has_permission else setupError
+            serverExists = await mongo.check_server_exist(ctx.guild.id)
+            hasPermission = False
+            if serverExists:
+                adminRole = await mongo.get_admin_role_server(ctx.guild.id)
+                authorRoles = [r.id for r in ctx.author.roles]
+                hasPermission = ctx.author.guild_permissions.administrator or (adminRole in authorRoles)
+            if not serverExists or not hasPermission:
+                permissionError = discord.Embed(title="Error", color=0xff4f4f, description=("You don't have permission to add manga. Set a role to modify manga with `/role add` or have `Administrator` permission."))
+                embed_type = permissionError if not hasPermission else setupError
                 if mode is not None:
                     await mode.interaction.response.edit_message(embed=embed_type, view=None)
                 else:
                     await ctx.respond(embed=embed_type, view=None)
                 return
-
         if validators.url(manga) is True:
             link = manga.partition("https://www.mangaupdates.com/series/")[2]
             mangaid = link.partition("/")[0]
