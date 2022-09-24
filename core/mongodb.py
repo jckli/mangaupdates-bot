@@ -13,6 +13,7 @@ class Mongo:
         password = os.environ.get("MONGO_PASS")
         database_name = os.environ.get("MONGO_DB_NAME")
         mongo = MongoClient(f"mongodb+srv://{username}:{password}@akane.dsytm.mongodb.net/{database_name}?retryWrites=true&w=majority", tlsCAFile=ca)
+
         db = mongo[database_name]
         self.usr = db["users"]
         self.srv = db["servers"]
@@ -88,6 +89,9 @@ class Mongo:
     async def add_manga_user(self, user_id, manga_id, manga_name):
         self.usr.update_one({"userid": user_id}, {"$push": {"manga": {"title": manga_name, "id": manga_id}}})
 
+    async def add_add_role_server(self, server_id, discord_role_id):
+        self.srv.update_one({"serverid": server_id}, {"$set": {"role": discord_role_id}})
+
     async def get_manga_list_server(self, server_id):
         manga = []
         result = self.srv.find_one({"serverid": server_id}, {"manga": 1})
@@ -98,6 +102,10 @@ class Mongo:
         else:
             return None
     
+    async def get_server_allow_add_role(self, server_id):
+        result = self.srv.find_one({'serverid': server_id}, {'role': 1})
+        return result.get('role', '')
+
     async def get_manga_list_user(self, user_id):
         manga = []
         result = self.usr.find_one({"userid": user_id}, {"manga": 1})
@@ -113,6 +121,9 @@ class Mongo:
     
     async def remove_manga_user(self, user_id, manga_id):
         self.usr.update_one({"userid": user_id}, {"$pull": {"manga": {"id": manga_id}}})
+
+    async def remove_add_role_server(self, server_id):
+        self.srv.update_one({"serverid": server_id}, {"$set": {"role": ''}})
 
     async def manga_wanted_server(self, group_list, manga_id=None, manga_title=None):
         serverList = []

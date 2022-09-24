@@ -64,3 +64,16 @@ If you have any issues, please don't be afraid to raise an issue on [GitHub](htt
 **manga remove**: Removes a manga from your list.
 
 **manga setgroup**: Sets a manga's scan group. Only that scan group's chapter updates for that manga will be sent.
+
+## Environment Variables
+**Discord**
+- `TOKEN`: Discord Bot Token
+
+**Mongo DB**
+- `MONGO_USER`: Mongo username
+- `MONGO_PASS`: Mongo password
+- `MONGO_DB_NAME`: Mongo database name
+
+**[MangaUpdates](https://www.mangaupdates.com/)**
+- `MU_USER`: MangaUpdates username
+- `MU_PASS`: MangaUpdates password
