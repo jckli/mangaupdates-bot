@@ -239,6 +239,11 @@ class MangaGeneral(commands.Cog):
         hasPermission = await validate_admin_and_server(ctx)
         if not hasPermission:
             return
+        curRole = await mongo.get_admin_role_server(ctx.guild.id)
+        if curRole == role.id:
+            sameError = discord.Embed(title="Error", color=0xff4f4f, description="This role is already set as the admin role.")
+            await ctx.respond(embed=sameError, view=None)
+            return
         await mongo.add_admin_role_server(ctx.guild.id, role.id)
         embedChannel = discord.Embed(title="Add Admin Role", color=0x3083e3, description=f"Successfully allowed role `{role}` to modify to the manga list.")
         await ctx.respond(embed=embedChannel, view=None)
@@ -262,7 +267,7 @@ class MangaGeneral(commands.Cog):
         else:
             await mongo.remove_admin_role_server(ctx.guild.id)
             embedChannel = discord.Embed(title="Remove Admin Role", color=0x3083e3, description=f"Successfully removed the admin role.")
-            await ctx.respond(embed=embedChannel, view=None)
+            await confirm.interaction.response.edit_message(embed=embedChannel, view=None)
 
     @server.command(name="test", description="Tests sending manga to your server")
     async def testsending(self, ctx):
