@@ -282,20 +282,25 @@ class MangaMain(commands.Cog):
                     await ctx.respond(embed=setupError, view=None)
                 return
         elif modeval == "server":
-            serverExists = await mongo.check_server_exist(ctx.guild.id)
-            hasPermission = False
-            if serverExists:
+            serverExist = await mongo.check_server_exist(ctx.guild.id)
+            if serverExist is False:
+                if mode is not None:
+                    await mode.interaction.response.edit_message(embed=setupError, view=None)
+                else:
+                    await ctx.respond(embed=setupError, view=None)
+                return
+            else:
+                hasPermission = False
                 adminRole = await mongo.get_admin_role_server(ctx.guild.id)
                 authorRoles = [r.id for r in ctx.author.roles]
                 hasPermission = ctx.author.guild_permissions.administrator or (adminRole in authorRoles)
-            if not serverExists or not hasPermission:
-                permissionError = discord.Embed(title="Error", color=0xff4f4f, description=("You don't have permission to add manga. Set a role to modify manga with `/role add` or have `Administrator` permission."))
-                embed_type = permissionError if not hasPermission else setupError
-                if mode is not None:
-                    await mode.interaction.response.edit_message(embed=embed_type, view=None)
-                else:
-                    await ctx.respond(embed=embed_type, view=None)
-                return
+                if not hasPermission:
+                    permissionError = discord.Embed(title="Error", color=0xff4f4f, description=("You don't have permission to add manga. Set a role to modify manga with `/server addadminrole` or have `Administrator` permission."))
+                    if mode is not None:
+                        await mode.interaction.response.edit_message(embed=permissionError, view=None)
+                    else:
+                        await ctx.respond(embed=permissionError, view=None)
+                    return
         if validators.url(manga) is True:
             link = manga.partition("https://www.mangaupdates.com/series/")[2]
             mangaid = link.partition("/")[0]
@@ -395,20 +400,24 @@ class MangaMain(commands.Cog):
                     await ctx.respond(embed=noManga, view=None)
                 return
         elif modeval == "server":
-            if ctx.author.guild_permissions.administrator is False:
-                permissionError = discord.Embed(title="Error", color=0xff4f4f, description="You don't have permission to remove manga. You need `Administrator` permission to use this.")
+            serverExist = await mongo.check_server_exist(ctx.guild.id)
+            if serverExist is False:
                 if mode is not None:
-                    await mode.interaction.response.edit_message(embed=permissionError, view=None)
+                    await mode.interaction.response.edit_message(embed=setupError, view=None)
                 else:
-                    await ctx.respond(embed=permissionError, view=None)
+                    await ctx.respond(embed=setupError, view=None)
                 return
             else:
-                serverExist = await mongo.check_server_exist(ctx.guild.id)
-                if serverExist is False:
+                hasPermission = False
+                adminRole = await mongo.get_admin_role_server(ctx.guild.id)
+                authorRoles = [r.id for r in ctx.author.roles]
+                hasPermission = ctx.author.guild_permissions.administrator or (adminRole in authorRoles)
+                if not hasPermission:
+                    permissionError = discord.Embed(title="Error", color=0xff4f4f, description=("You don't have permission to remove manga. Set a role to modify manga with `/server addadminrole` or have `Administrator` permission."))
                     if mode is not None:
-                        await mode.interaction.response.edit_message(embed=setupError, view=None)
+                        await mode.interaction.response.edit_message(embed=permissionError, view=None)
                     else:
-                        await ctx.respond(embed=setupError, view=None)
+                        await ctx.respond(embed=permissionError, view=None)
                     return
                 mangaList = await mongo.get_manga_list_server(ctx.guild.id)
                 if mangaList is None:
