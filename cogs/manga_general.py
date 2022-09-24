@@ -240,7 +240,7 @@ class MangaGeneral(commands.Cog):
         if not hasPermission:
             return
         await mongo.add_admin_role_server(ctx.guild.id, role.id)
-        embedChannel = discord.Embed(title="Setup", color=0x3083e3, description=f"Successfully allowed role `{role}` to modify to the manga list.")
+        embedChannel = discord.Embed(title="Add Admin Role", color=0x3083e3, description=f"Successfully allowed role `{role}` to modify to the manga list.")
         await ctx.respond(embed=embedChannel, view=None)
 
     @server.command(name="removeadminrole", description="Removes the role that permits modification to the manga list")
@@ -248,9 +248,21 @@ class MangaGeneral(commands.Cog):
         hasPermission = await validate_admin_and_server(ctx)
         if not hasPermission:
             return
-        await mongo.remove_admin_role_server(ctx.guild.id)
-        embedChannel = discord.Embed(title="Setup", color=0x3083e3, description=f"Successfully deleted the admin role.")
-        await ctx.respond(embed=embedChannel, view=None)
+        embed = discord.Embed(title="Remove Admin Role", color=0x3083e3, description="Are you sure you want to remove the admin role?")
+        confirm = Confirm()
+        await ctx.respond(embed=embed, view=confirm)
+        await confirm.wait()
+        if confirm.value is None:
+            await confirm.interaction.response.edit_message(embed=timeoutError, view=None)
+            return
+        elif confirm.value is False:
+            cancelEmbed = discord.Embed(title=f"Canceled", color=0x3083e3, description="Successfully canceled.")
+            await confirm.interaction.response.edit_message(embed=cancelEmbed, view=None)
+            return
+        else:
+            await mongo.remove_admin_role_server(ctx.guild.id)
+            embedChannel = discord.Embed(title="Remove Admin Role", color=0x3083e3, description=f"Successfully removed the admin role.")
+            await ctx.respond(embed=embedChannel, view=None)
 
     user = SlashCommandGroup(name="user", description="User commands")
 
