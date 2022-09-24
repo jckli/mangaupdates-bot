@@ -65,15 +65,19 @@ If you have any issues, please don't be afraid to raise an issue on [GitHub](htt
 
 **manga setgroup**: Sets a manga's scan group. Only that scan group's chapter updates for that manga will be sent.
 
-## Environment Variables
-**Discord**
-- `TOKEN`: Discord Bot Token
+## Self-Hosting
 
-**Mongo DB**
-- `MONGO_USER`: Mongo username
-- `MONGO_PASS`: Mongo password
-- `MONGO_DB_NAME`: Mongo database name
+I would prefer you not to self-host, as it is unnecessarily complicated. I would much rather a feature request on my support discord or here. However if you still wish to do so, here is how to do so.
 
-**[MangaUpdates](https://www.mangaupdates.com/)**
+This bot is not really written for someone else to host for, so if some things don't work, I am not going to help much. You have to change the code yourself.
+
+### Environment Variables
+- `TOKEN`: Discord tot token
+- `MONGO_USER`: MongoDB username
+- `MONGO_PASS`: MongoDB password
+- `MONGO_DB_NAME`: MongoDB database name
 - `MU_USER`: MangaUpdates username
 - `MU_PASS`: MangaUpdates password
+- `GITHUB_USER`: GitHub username (for error responses)
+- `TOPGG_TOKEN`: Top.gg token
+- `DBL_TOKEN`: Discordbotlist.com token
