@@ -123,7 +123,10 @@ class Mongo:
 
     async def get_admin_role_server(self, server_id):
         result = self.srv.find_one({"serverid": server_id}, {"roles.admin": 1})
-        if result["roles"] != {}:
+        print(result)
+        if result is None:
+            return None
+        elif (result["roles"] != {}) and ("admin" in result["roles"]):
             return result["roles"]["admin"]
         else:
             return None
