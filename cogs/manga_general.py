@@ -264,6 +264,43 @@ class MangaGeneral(commands.Cog):
             embedChannel = discord.Embed(title="Remove Admin Role", color=0x3083e3, description=f"Successfully removed the admin role.")
             await ctx.respond(embed=embedChannel, view=None)
 
+    @server.command(name="test", description="Tests sending manga to your server")
+    async def testsending(self, ctx):
+        channel = await mongo.get_channel(ctx.guild.id)
+        if channel is None:
+            noChannelError = discord.Embed(title="Error", color=0xff4f4f, description="You have no channel set up. Please set one up with the `setup` command.")
+            await ctx.respond(embed=noChannelError, view=None)
+            return
+        else:
+            hasPermission = False
+            adminRole = await mongo.get_admin_role_server(ctx.guild.id)
+            authorRoles = [r.id for r in ctx.author.roles]
+            hasPermission = ctx.author.guild_permissions.administrator or (adminRole in authorRoles)
+            if not hasPermission:
+                permissionError = discord.Embed(title="Error", color=0xff4f4f, description=("You don't have permission to test alerts. Set a role to modify manga with `/server addadminrole` or have `Administrator` permission."))
+                await ctx.respond(embed=permissionError, view=None)
+                return
+            else:
+                try:
+                    channelObject = self.bot.get_channel(channel)
+                    if channelObject is None:
+                        noChannelError = discord.Embed(title="Error", color=0xff4f4f, description="Channel doesn't exist anymore, please reset the channel with the `server setchannel` command.")
+                        await ctx.respond(embed=noChannelError, view=None)
+                        return
+                    mangaTestEmbed = discord.Embed(title=f"Testing Update", url="https://hayasaka.moe/", description=f"This is a test alert for the MangaUpdates Bot.", color=0x3083e3)
+                    if self.bot.user and self.bot.user.avatar:
+                        mangaTestEmbed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
+                    mangaTestEmbed.add_field(name="Chapter", value="c.1", inline=True)
+                    mangaTestEmbed.add_field(name="Group", value="The MangaUpdates Bot Team", inline=True)
+                    mangaTestEmbed.add_field(name="Scanlator Link", value="https://hayasaka.moe/", inline=False)
+                    await channelObject.send(embed=mangaTestEmbed, view=None)
+                    mainResponseEmbed = discord.Embed(title="Test Manga Update Message", color=0x3083e3, description="Congrats! Manga can be sent to your server.")
+                    await ctx.respond(embed=mainResponseEmbed, view=None)
+                except:
+                    mainResponseEmbed = discord.Embed(title="Test Manga Update Message", color=0xff4f4f, description="Oops! Something went wrong. Give the bot permissions to send messages in the channel you have set and then try again.")
+                    await ctx.respond(embed=mainResponseEmbed, view=None)
+                    return
+
     user = SlashCommandGroup(name="user", description="User commands")
 
     @user.command(name="setup", description="Sets up your user for manga updates")
