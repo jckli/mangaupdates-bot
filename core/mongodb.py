@@ -115,15 +115,18 @@ class Mongo:
     async def remove_manga_user(self, user_id, manga_id):
         self.usr.update_one({"userid": user_id}, {"$pull": {"manga": {"id": manga_id}}})
 
-    async def add_server_admin_role(self, server_id, discord_role_id):
-        self.srv.update_one({"serverid": server_id}, {"$set": {"role": discord_role_id}})
+    async def add_admin_role_server(self, server_id, role_id):
+        self.srv.update_one({"serverid": server_id}, {"$set": {"roles.admin": role_id}})
 
-    async def remove_server_admin_role(self, server_id):
-        self.srv.update_one({"serverid": server_id}, {"$set": {"role": ''}})
+    async def remove_admin_role_server(self, server_id):
+        self.srv.update_one({"serverid": server_id}, {"$unset": {"roles.admin": 1}})
 
-    async def get_server_admin_role(self, server_id):
-        result = self.srv.find_one({'serverid': server_id}, {'role': 1})
-        return result
+    async def get_admin_role_server(self, server_id):
+        result = self.srv.find_one({"serverid": server_id}, {"roles.admin": 1})
+        if result["roles"] != {}:
+            return result["roles"]["admin"]
+        else:
+            return None
 
     async def manga_wanted_server(self, group_list, manga_id=None, manga_title=None):
         serverList = []
