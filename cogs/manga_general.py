@@ -239,7 +239,7 @@ class MangaGeneral(commands.Cog):
         hasPermission = await validate_admin_and_server(ctx)
         if not hasPermission:
             return
-        await mongo.add_server_admin_role(ctx.guild.id, role.id)
+        await mongo.add_admin_role_server(ctx.guild.id, role.id)
         embedChannel = discord.Embed(title="Setup", color=0x3083e3, description=f"Successfully allowed role `{role}` to modify to the manga list.")
         await ctx.respond(embed=embedChannel, view=None)
 
@@ -248,10 +248,9 @@ class MangaGeneral(commands.Cog):
         hasPermission = await validate_admin_and_server(ctx)
         if not hasPermission:
             return
-        await mongo.remove_server_admin_role(ctx.guild.id)
+        await mongo.remove_admin_role_server(ctx.guild.id)
         embedChannel = discord.Embed(title="Setup", color=0x3083e3, description=f"Successfully deleted the admin role.")
         await ctx.respond(embed=embedChannel, view=None)
-
     user = SlashCommandGroup(name="user", description="User commands")
 
     @user.command(name="setup", description="Sets up your user for manga updates")
