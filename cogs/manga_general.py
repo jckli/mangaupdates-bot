@@ -234,25 +234,22 @@ class MangaGeneral(commands.Cog):
             completeEmbed = discord.Embed(title="Delete Account", color=0x3083e3, description="Successfully deleted your account.")
             await confirm.interaction.response.edit_message(embed=completeEmbed, view=None)
 
-    role = SlashCommandGroup("role", description="Role commands", guild_only=True)
-    @role.command(name="add", description="Set a role that will be allowed to add to the manga list updates")
-    async def add_role(self, ctx, role: Option(discord.Role), required=True):
-        has_permission = await validate_admin_and_server(ctx)
-        if not has_permission:
+    @server.command(name="addadminrole", description="Sets a role that permits modification to add to the manga list")
+    async def add_admin_role(self, ctx, role: Option(discord.Role, required=True)):
+        hasPermission = await validate_admin_and_server(ctx)
+        if not hasPermission:
             return
-
-        await mongo.add_add_role_server(ctx.guild.id, role.id)
-        embedChannel = discord.Embed(title="Setup", color=0x3083e3, description=f"Successfully allowed role `{role}` to add to the manga list.")
+        await mongo.add_server_admin_role(ctx.guild.id, role.id)
+        embedChannel = discord.Embed(title="Setup", color=0x3083e3, description=f"Successfully allowed role `{role}` to modify to the manga list.")
         await ctx.respond(embed=embedChannel, view=None)
 
-    @role.command(name="remove", description="Remove the currently set role that permits addition to the manga list updates")
-    async def remove_role(self, ctx):
-        has_permission = await validate_admin_and_server(ctx)
-        if not has_permission:
+    @server.command(name="removeadminrole", description="Removes the role that permits modification to the manga list")
+    async def remove_admin_role(self, ctx):
+        hasPermission = await validate_admin_and_server(ctx)
+        if not hasPermission:
             return
-
-        await mongo.remove_add_role_server(ctx.guild.id)
-        embedChannel = discord.Embed(title="Setup", color=0x3083e3, description=f"Successfully cleared the role.")
+        await mongo.remove_server_admin_role(ctx.guild.id)
+        embedChannel = discord.Embed(title="Setup", color=0x3083e3, description=f"Successfully deleted the admin role.")
         await ctx.respond(embed=embedChannel, view=None)
 
     user = SlashCommandGroup(name="user", description="User commands")
