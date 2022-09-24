@@ -251,6 +251,7 @@ class MangaGeneral(commands.Cog):
         await mongo.remove_admin_role_server(ctx.guild.id)
         embedChannel = discord.Embed(title="Setup", color=0x3083e3, description=f"Successfully deleted the admin role.")
         await ctx.respond(embed=embedChannel, view=None)
+
     user = SlashCommandGroup(name="user", description="User commands")
 
     @user.command(name="setup", description="Sets up your user for manga updates")
