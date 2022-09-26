@@ -1,6 +1,7 @@
 import os
 import discord
-from discord.ext import commands 
+import numpy
+from discord.ext import commands, pages
 from discord.commands import Option, SlashCommandGroup
 from core.mongodb import Mongo
 from core.mangaupdates import MangaUpdates
@@ -485,23 +486,34 @@ class MangaMain(commands.Cog):
                 return
             name = ctx.guild.name
             if ctx.guild.icon is not None:
-                    icon = ctx.guild.icon.url
+                icon = ctx.guild.icon.url
             else:
                 icon = "https://cdn.discordapp.com/embed/avatars/0.png"
             mangaList = await mongo.get_manga_list_server(ctx.guild.id)
         description = ""
         if mangaList is None:
             description="You have no manga added to your list."
+        elif mangaList > 25:
+            splitMangaList = numpy.array_split(mangaList, 25)
+            mangaListPages = []
+            for mangaList in splitMangaList:
+                for manga in mangaList:
+                    description += f"{manga['title']}\n"
+                mangaListPages.append(pages.Page(embeds=[discord.Embed(title=f"{name}'s Manga List", color=0x3083e3, description=description)]))
+            if mode is not None:
+                pages.Paginator.edit(message=mode.interaction.message, pages=mangaListPages)
+            else:
+                await pages.Paginator.respond(ctx, pages=mangaListPages)
         else:
             for manga in mangaList:
                 description += f"• {manga['title']}\n"
-        mangaListEmbed = discord.Embed(title=f"{name}'s Manga List", color=0x3083e3, description=description)
-        mangaListEmbed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
-        mangaListEmbed.set_thumbnail(url=icon)
-        if mode is not None:
-            await mode.interaction.response.edit_message(embed=mangaListEmbed, view=None)
-        else:
-            await ctx.respond(embed=mangaListEmbed, view=None)
+            mangaListEmbed = discord.Embed(title=f"{name}'s Manga List", color=0x3083e3, description=description)
+            mangaListEmbed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
+            mangaListEmbed.set_thumbnail(url=icon)
+            if mode is not None:
+                await mode.interaction.response.edit_message(embed=mangaListEmbed, view=None)
+            else:
+                await ctx.respond(embed=mangaListEmbed, view=None)
 
     @manga.command(name="setgroup", description="Sets a manga's scan group")
     async def setgroup(self, ctx):
