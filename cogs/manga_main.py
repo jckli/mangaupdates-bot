@@ -1,6 +1,5 @@
 import os
 import discord
-import numpy
 from discord.ext import commands, pages
 from discord.commands import Option, SlashCommandGroup
 from core.mongodb import Mongo
@@ -460,6 +459,7 @@ class MangaMain(commands.Cog):
             if mode.value is None:
                 await mode.interaction.response.edit_message(embed=timeoutError, view=None)
             else:
+                await mode.interaction.response.defer()
                 modeval = mode.value
         else:
             modeval = "user"
@@ -469,7 +469,7 @@ class MangaMain(commands.Cog):
             userExist = await mongo.check_user_exist(ctx.author.id)
             if userExist is False:
                 if mode is not None:
-                    await mode.interaction.response.edit_message(embed=setupError, view=None)
+                    await mode.interaction.edit_original_message(embed=setupError, view=None)
                 else:
                     await ctx.respond(embed=setupError, view=None)
                 return
@@ -480,7 +480,7 @@ class MangaMain(commands.Cog):
             serverExist = await mongo.check_server_exist(ctx.guild.id)
             if serverExist is False:
                 if mode is not None:
-                    await mode.interaction.response.edit_message(embed=setupError, view=None)
+                    await mode.interaction.edit_original_message(embed=setupError, view=None)
                 else:
                     await ctx.respond(embed=setupError, view=None)
                 return
@@ -490,28 +490,41 @@ class MangaMain(commands.Cog):
             else:
                 icon = "https://cdn.discordapp.com/embed/avatars/0.png"
             mangaList = await mongo.get_manga_list_server(ctx.guild.id)
-        description = ""
         if mangaList is None:
-            description="You have no manga added to your list."
-        elif mangaList > 25:
-            splitMangaList = numpy.array_split(mangaList, 25)
+            description = "You have no manga added to your list."
+            mangaListEmbed = discord.Embed(title=f"{name}'s Manga List", color=0x3083e3, description=description)
+            mangaListEmbed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
+            mangaListEmbed.set_thumbnail(url=icon)
+            if mode is not None:
+                await mode.interaction.edit_original_message(embed=mangaListEmbed, view=None)
+            else:
+                await ctx.respond(embed=mangaListEmbed, view=None)
+            return
+        elif len(mangaList) > 25:
+            splitMangaList = [ mangaList [i:i + 24] for i in range(0, len(mangaList), 24) ]
             mangaListPages = []
             for mangaList in splitMangaList:
+                description = ""
                 for manga in mangaList:
-                    description += f"{manga['title']}\n"
-                mangaListPages.append(pages.Page(embeds=[discord.Embed(title=f"{name}'s Manga List", color=0x3083e3, description=description)]))
+                    description += f"• {manga['title']}\n"
+                mangaListEmbed = discord.Embed(title=f"{name}'s Manga List", color=0x3083e3, description=description)
+                mangaListEmbed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
+                mangaListEmbed.set_thumbnail(url=icon)
+                mangaListPages.append(mangaListEmbed)
+            paginator = pages.Paginator(pages=mangaListPages, timeout=None, author_check=False)
             if mode is not None:
-                pages.Paginator.edit(message=mode.interaction.message, pages=mangaListPages)
+                await paginator.edit(message=mode.interaction.message)
             else:
-                await pages.Paginator.respond(ctx, pages=mangaListPages)
+                await paginator.respond(ctx, pages=mangaListPages)
         else:
+            description = ""
             for manga in mangaList:
                 description += f"• {manga['title']}\n"
             mangaListEmbed = discord.Embed(title=f"{name}'s Manga List", color=0x3083e3, description=description)
             mangaListEmbed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
             mangaListEmbed.set_thumbnail(url=icon)
             if mode is not None:
-                await mode.interaction.response.edit_message(embed=mangaListEmbed, view=None)
+                await mode.interaction.edit_original_message(embed=mangaListEmbed, view=None)
             else:
                 await ctx.respond(embed=mangaListEmbed, view=None)
 
