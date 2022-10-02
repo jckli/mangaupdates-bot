@@ -267,9 +267,10 @@ class MangaMain(commands.Cog):
             modeEmbed = discord.Embed(title="Add Manga", color=0x3083e3, description="Do you want this manga added to your list or this server's list?")
             mode = Mode()
             await ctx.respond(embed=modeEmbed, view=mode)
-            await mode.wait()
+            modeResponse = await mode.wait()
             if mode.value is None:
-                await mode.interaction.response.edit_message(embed=timeoutError, view=None)
+                await modeResponse.edit_original_message(embed=timeoutError, view=None)
+                return
             else:
                 modeval = mode.value
         else:
@@ -377,10 +378,11 @@ class MangaMain(commands.Cog):
         if ctx.guild is not None:
             modeEmbed = discord.Embed(title="Remove Manga", color=0x3083e3, description="Do you want to remove a manga from your list or this server's list?")
             mode = Mode()
-            await ctx.respond(embed=modeEmbed, view=mode)
+            modeResponse = await ctx.respond(embed=modeEmbed, view=mode)
             await mode.wait()
             if mode.value is None:
-                await mode.interaction.response.edit_message(embed=timeoutError, view=None)
+                await modeResponse.edit_original_message(embed=timeoutError, view=None)
+                return
             else:
                 await mode.interaction.response.defer()
                 modeval = mode.value
@@ -482,10 +484,11 @@ class MangaMain(commands.Cog):
         if ctx.guild is not None:
             modeEmbed = discord.Embed(title="Manga List", color=0x3083e3, description="Do you want to see your manga list or this server's manga list?")
             mode = Mode()
-            await ctx.respond(embed=modeEmbed, view=mode)
+            modeResponse = await ctx.respond(embed=modeEmbed, view=mode)
             await mode.wait()
             if mode.value is None:
-                await mode.interaction.response.edit_message(embed=timeoutError, view=None)
+                await modeResponse.edit_original_message(embed=timeoutError, view=None)
+                return
             else:
                 await mode.interaction.response.defer()
                 modeval = mode.value
@@ -561,10 +564,11 @@ class MangaMain(commands.Cog):
         if ctx.guild is not None:
             modeEmbed = discord.Embed(title="Set Scanlator Group", color=0x3083e3, description="Do you want to set your manga's scan groups or the server's scan groups?")
             mode = Mode()
-            await ctx.respond(embed=modeEmbed, view=mode)
+            modeResponse = await ctx.respond(embed=modeEmbed, view=mode)
             await mode.wait()
             if mode.value is None:
-                await mode.interaction.response.edit_message(embed=timeoutError, view=None)
+                await modeResponse.edit_original_message(embed=timeoutError, view=None)
+                return
             else:
                 await mode.interaction.response.defer()
                 modeval = mode.value
