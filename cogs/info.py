@@ -34,6 +34,7 @@ class Information(commands.Cog):
                 **invite**: Displays bot invite link.
                 **alert**: Displays bot announcements.
             """)
+        embed.set_author(name="MangaUpdates", icon_url=self.bot.user.avatar.url)
         embed.add_field(name="__Manga__", 
             value="""
                 **manga search `manga`**: Searches for information about a manga series.
