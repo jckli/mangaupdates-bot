@@ -36,16 +36,27 @@ class Information(commands.Cog):
             """)
         embed.add_field(name="__Manga__", 
             value="""
-                **setup**: Sets up your server/user for manga updates.
-                **delete**: Deletes your account and your manga list.
-                **setchannel**: Sets the server's that manga chapter updates are sent to.
-                **search `manga`**: Searches for information about a manga series.
+                **manga search `manga`**: Searches for information about a manga series.
                 **manga list**: Displays your list of tracked manga.
                 **manga add `manga`**: Adds a manga to your list to be tracked.
                 **manga remove**: Removes a manga from your list.
                 **manga setgroup**: Sets a manga's scan group. Only that scan group's chapter updates for that manga will be sent.
             """, inline=False)
-        await ctx.respond(embed=embed, ephemeral=True)
+        embed.add_field(name="__Server__",
+            value="""
+                **server setup**: Sets up your server for manga updates.
+                **server delete**: Deletes your server's account and manga list.
+                **server setchannel**: Sets the server's that manga chapter updates are sent to.
+                **server addadminrole**: Sets a role that can modify the manga list.
+                **server removeadminrole**: Removes the role that can modify the manga list.
+                **server test**: Tests sending manga to your server.
+            """, inline=False)
+        embed.add_field(name="__User__",
+            value="""
+                **user setup**: Sets up your user for manga updates.
+                **user delete**: Deletes your user's account and manga list.
+            """, inline=False)
+        await ctx.respond(embed=embed)
 
     @slash_command(name="mangaupdates", description="Displays basic information about MangaUpdates")
     async def mangaupdates(self, ctx):
