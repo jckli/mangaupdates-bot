@@ -73,7 +73,7 @@ class MangaGeneral(commands.Cog):
 
     server = SlashCommandGroup("server", description="Server commands", guild_only=True)
 
-    @server.command(name="setup", description="Sets up your server for manga updates")
+    @server.command(name="setup", description="Sets up your server for updates")
     async def setup(self, ctx, channel: Option(discord.TextChannel, required=True)):
         serverExist = await mongo.check_server_exist(ctx.guild.id)
         if serverExist is True:
@@ -89,7 +89,7 @@ class MangaGeneral(commands.Cog):
         embedServerF = discord.Embed(title="Setup", color=0x3083e3, description="Great! You're all set up and can add manga now.")
         await ctx.respond(embed=embedServerF, view=None)
 
-    @server.command(name="setchannel", description="Sets the server's that manga chapter updates are sent to")
+    @server.command(name="setchannel", description="Sets the server's channel that updates are sent to")
     async def setchannel(self, ctx, channel: Option(discord.TextChannel, required=True)):
         setupError = discord.Embed(title="Error", color=0xff4f4f, description="Sorry! Please run the setup command first.")
         serverExist = await mongo.check_server_exist(ctx.guild.id)
@@ -110,7 +110,7 @@ class MangaGeneral(commands.Cog):
         embedChannel = discord.Embed(title="Set Channel", color=0x3083e3, description=f"The server's channel has been successfully changed to `#{ctx.guild.get_channel(channelid)}`.")
         await ctx.respond(embed=embedChannel, view=None)
 
-    @server.command(name="delete", description="Deletes your server's account")
+    @server.command(name="delete", description="Deletes your server's account and list")
     async def delete(self, ctx):
         setupError = discord.Embed(title="Error", color=0xff4f4f, description="Sorry! Please run the setup command first.")
         serverExist = await mongo.check_server_exist(ctx.guild.id)
@@ -172,7 +172,7 @@ class MangaGeneral(commands.Cog):
             embedChannel = discord.Embed(title="Remove Admin Role", color=0x3083e3, description=f"Successfully removed the admin role.")
             await confirm.interaction.response.edit_message(embed=embedChannel, view=None)
 
-    @server.command(name="test", description="Tests sending manga to your server")
+    @server.command(name="test", description="Tests sending updates to your server")
     async def testsending(self, ctx):
         channel = await mongo.get_channel(ctx.guild.id)
         if channel is None:
@@ -211,7 +211,7 @@ class MangaGeneral(commands.Cog):
 
     user = SlashCommandGroup(name="user", description="User commands")
 
-    @user.command(name="setup", description="Sets up your user for manga updates")
+    @user.command(name="setup", description="Sets up your user for updates")
     async def setup(self, ctx):
         userExist = await mongo.check_user_exist(ctx.author.id)
         if userExist is True:
@@ -223,7 +223,7 @@ class MangaGeneral(commands.Cog):
         embedUser = discord.Embed(title="Setup", color=0x3083e3, description="Great! You're all set up and can add manga now.")
         await ctx.respond(embed=embedUser, view=None)
     
-    @user.command(name="delete", description="Deletes your personal account")
+    @user.command(name="delete", description="Deletes your user account and list")
     async def delete(self, ctx):
         setupError = discord.Embed(title="Error", color=0xff4f4f, description="Sorry! Please run the setup command first.")
         userExist = await mongo.check_user_exist(ctx.author.id)
