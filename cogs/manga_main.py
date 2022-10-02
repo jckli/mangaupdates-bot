@@ -132,6 +132,10 @@ class SelectMangaRemove(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         value = int(self.values[0][:2].replace(".", "")) - 1
+        print(value)
+        if value > 25:
+            value = value - 25
+        print(value)
         title = self.manga_list[value]["title"]
         search_data = await mangaupdates.series_info(self.manga_list[value]["id"])
         fulldescription = search_data["description"]
@@ -378,6 +382,7 @@ class MangaMain(commands.Cog):
             if mode.value is None:
                 await mode.interaction.response.edit_message(embed=timeoutError, view=None)
             else:
+                await mode.interaction.response.defer()
                 modeval = mode.value
         else:
             modeval = "user"
@@ -388,22 +393,16 @@ class MangaMain(commands.Cog):
             userExist = await mongo.check_user_exist(ctx.author.id)
             if userExist is False:
                 if mode is not None:
-                    await mode.interaction.response.edit_message(embed=setupError, view=None)
+                    await mode.interaction.edit_original_message(embed=setupError, view=None)
                 else:
                     await ctx.respond(embed=setupError, view=None)
                 return
             mangaList = await mongo.get_manga_list_user(ctx.author.id)
-            if mangaList is None:
-                if mode is not None:
-                    await mode.interaction.response.edit_message(embed=noManga, view=None)
-                else:
-                    await ctx.respond(embed=noManga, view=None)
-                return
         elif modeval == "server":
             serverExist = await mongo.check_server_exist(ctx.guild.id)
             if serverExist is False:
                 if mode is not None:
-                    await mode.interaction.response.edit_message(embed=setupError, view=None)
+                    await mode.interaction.edit_original_message(embed=setupError, view=None)
                 else:
                     await ctx.respond(embed=setupError, view=None)
                 return
@@ -415,39 +414,68 @@ class MangaMain(commands.Cog):
                 if not hasPermission:
                     permissionError = discord.Embed(title="Error", color=0xff4f4f, description=("You don't have permission to remove manga. Set a role to modify manga with `/server addadminrole` or have `Administrator` permission."))
                     if mode is not None:
-                        await mode.interaction.response.edit_message(embed=permissionError, view=None)
+                        await mode.interaction.edit_original_message(embed=permissionError, view=None)
                     else:
                         await ctx.respond(embed=permissionError, view=None)
                     return
                 mangaList = await mongo.get_manga_list_server(ctx.guild.id)
-                if mangaList is None:
-                    if mode is not None:
-                        await mode.interaction.response.edit_message(embed=noManga, view=None)
-                    else:
-                        await ctx.respond(embed=noManga, view=None)
-                    return
-        i = 1
-        description = "Select the manga you want to remove.\n"
-        manga_list = []
-        for manga in mangaList:
-            description += f"{i}. {manga['title']}\n"
-            manga_list.append({"id": manga["id"], "dropdownTitle": f"{i}. {manga['title']}", "title": manga["title"]})
-            i += 1
-        removeEmbed = discord.Embed(title="Remove Manga", color=0x3083e3, description=description)
-        manga_drop = SelectMangaRemoveView(manga_list=manga_list, mode=modeval)
-        if mode is not None:
-            await mode.interaction.response.edit_message(embed=removeEmbed, view=manga_drop)
-        else:
-            remove = await ctx.respond(embed=removeEmbed, view=manga_drop)
-        await manga_drop.wait()
-        if manga_drop.select_manga.finish is None:
+        if mangaList is None:
             if mode is not None:
-                await mode.interaction.message.edit(embed=timeoutError, view=None)
+                await mode.interaction.edit_original_message(embed=noManga, view=None)
             else:
-                await remove.edit(embed=timeoutError, view=None)
+                await ctx.respond(embed=noManga, view=None)
             return
+        elif len(mangaList) > 25:
+            splitMangaList = [ mangaList [i:i + 25] for i in range(0, len(mangaList), 25) ]
+            mangaListPages = []
+            i = 1
+            for mangaListPage in splitMangaList:
+                description = "Select the manga you want to remove.\n"
+                manga_list = []
+                for manga in mangaListPage:
+                    description += f"{i}. {manga['title']}\n"
+                    manga_list.append({"id": manga["id"], "dropdownTitle": f"{i}. {manga['title']}", "title": manga["title"]})
+                    i += 1
+                manga_drop = SelectMangaRemoveView(manga_list=manga_list, mode=modeval)
+                page = pages.Page(embeds=[discord.Embed(title="Remove Manga", color=0x3083e3, description=description)], custom_view=manga_drop)
+                mangaListPages.append(page)
+            paginator = pages.Paginator(pages=mangaListPages, timeout=15, author_check=False)
+            if mode is not None:
+                await paginator.edit(message=mode.interaction.message)
+            else:
+                await paginator.respond(ctx)
+            finish = await paginator.wait()
+            if finish is True:
+                if mode is not None:
+                    await mode.interaction.edit_original_message(embed=timeoutError, view=None)
+                else:
+                    await remove.edit(embed=timeoutError, view=None)
+                return
+            else:
+                return
         else:
-            return
+            i = 1
+            description = "Select the manga you want to remove.\n"
+            manga_list = []
+            for manga in mangaList:
+                description += f"{i}. {manga['title']}\n"
+                manga_list.append({"id": manga["id"], "dropdownTitle": f"{i}. {manga['title']}", "title": manga["title"]})
+                i += 1
+            removeEmbed = discord.Embed(title="Remove Manga", color=0x3083e3, description=description)
+            manga_drop = SelectMangaRemoveView(manga_list=manga_list, mode=modeval)
+            if mode is not None:
+                await mode.interaction.edit_original_message(embed=removeEmbed, view=manga_drop)
+            else:
+                remove = await ctx.respond(embed=removeEmbed, view=manga_drop)
+            await manga_drop.wait()
+            if manga_drop.select_manga.finish is None:
+                if mode is not None:
+                    await mode.interaction.edit_original_message(embed=timeoutError, view=None)
+                else:
+                    await remove.edit(embed=timeoutError, view=None)
+                return
+            else:
+                return
 
     @manga.command(name="list", description="Lists all manga in your list")
     async def list(self, ctx):
@@ -501,7 +529,7 @@ class MangaMain(commands.Cog):
                 await ctx.respond(embed=mangaListEmbed, view=None)
             return
         elif len(mangaList) > 25:
-            splitMangaList = [ mangaList [i:i + 24] for i in range(0, len(mangaList), 24) ]
+            splitMangaList = [ mangaList [i:i + 25] for i in range(0, len(mangaList), 25) ]
             mangaListPages = []
             for mangaList in splitMangaList:
                 description = ""
@@ -515,7 +543,7 @@ class MangaMain(commands.Cog):
             if mode is not None:
                 await paginator.edit(message=mode.interaction.message)
             else:
-                await paginator.respond(ctx, pages=mangaListPages)
+                await paginator.respond(ctx)
         else:
             description = ""
             for manga in mangaList:
