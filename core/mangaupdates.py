@@ -26,6 +26,8 @@ class RequestsMU:
         await self.login()
         async with self.session.post(url, headers=self.headers, json=data) as resp:
             return await resp.json()
+    async def close(self):
+        await self.session.close()
 
 class MangaUpdates:
     def __init__(self):
@@ -62,3 +64,5 @@ class MangaUpdates:
         groupsurl = f"https://api.mangaupdates.com/v1/series/{series_id}/groups"
         groups = await self.rq.get(groupsurl)
         return groups
+    async def close(self):
+        await self.rq.close()
