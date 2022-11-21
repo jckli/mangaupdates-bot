@@ -33,7 +33,10 @@ class RSSParser:
             except:
                 scan_group = None
             try:
-                link = entry.link
+                if (re.match("^http://", entry.link)):
+                    link = re.sub("^http://", "https://", entry.link)
+                else:
+                    link = entry.link
             except:
                 link = None
             

@@ -30,19 +30,22 @@ class UpdateSending(commands.Cog):
         print("Checking for new updates! " + (str(datetime.now().strftime("%H:%M:%S"))))
         try:
             tempNew = set(json.dumps(x, sort_keys=True) for x in new)
+            # print("new: " + str(tempNew)[:1000])
             tempOld = set(json.dumps(x, sort_keys=True) for x in self.old)
+            # print("old: " + str(tempOld)[:1000])
             new_mangas = [json.loads(x) for x in (tempNew - tempOld)]
+            # print("before: " + str(new_mangas))
             if new_mangas != []:
                 print("New update found!")
                 await errorChannel.send("New update found!")
-                print(new_mangas)
+                # print("after: " + str(new_mangas))
                 for manga in new_mangas:
                     await self.notify(manga["title"], manga["chapter"], manga["scan_group"], manga["link"])
+            self.old = new
         except:
             print("Error: " + traceback.format_exc())
             await errorChannel.send("Error: There was an error with the update check.")
             pass
-        self.old = new
         
     
     @check_for_updates.before_loop
