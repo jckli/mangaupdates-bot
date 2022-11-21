@@ -5,6 +5,8 @@ from datetime import datetime
 from core.mongodb import Mongo
 from core.rss import RSSParser
 import traceback
+import json
+import re
 from core.mangaupdates import MangaUpdates
 
 mongo = Mongo()
@@ -23,14 +25,25 @@ class UpdateSending(commands.Cog):
     # todo: setup failsafe by saving last data to somewhere to check again if bot dies and needs to restart (redis maybe?)
     @tasks.loop(seconds=15)
     async def check_for_updates(self):
+        errorChannel = self.bot.get_channel(990005048408936529)
         new = await rss.parse_feed()
         print("Checking for new updates! " + (str(datetime.now().strftime("%H:%M:%S"))))
-        if new != self.old:
-            print("New update found!")
-            new_mangas = [manga for manga in new if manga not in self.old]
-            for manga in new_mangas:
-                asyncio.run_coroutine_threadsafe(self.notify(manga["title"], manga["chapter"], manga["scan_group"], manga["link"]), self.bot.loop)
+        try:
+            tempNew = set(json.dumps(x, sort_keys=True) for x in new)
+            tempOld = set(json.dumps(x, sort_keys=True) for x in self.old)
+            new_mangas = [json.loads(x) for x in (tempNew - tempOld)]
+            if new_mangas != []:
+                print("New update found!")
+                await errorChannel.send("New update found!")
+                print(new_mangas)
+                for manga in new_mangas:
+                    await self.notify(manga["title"], manga["chapter"], manga["scan_group"], manga["link"])
+        except:
+            print("Error: " + traceback.format_exc())
+            await errorChannel.send("Error: There was an error with the update check.")
+            pass
         self.old = new
+        
     
     @check_for_updates.before_loop
     async def before_printer(self):
@@ -41,9 +54,8 @@ class UpdateSending(commands.Cog):
         errorChannel = self.bot.get_channel(990005048408936529)
         print(f"Notifying! ({title})")
         if link:
-            templink = link.partition("https://www.mangaupdates.com/series/")[2]
-            mangaid = templink.partition("/")[0]
-            mangaid = await mangaupdates.convert_new_id(mangaid)
+            urlmangaid = re.search("(?<=series/).+?(?=/)", link).group()
+            mangaid = await mangaupdates.convert_new_id(urlmangaid)
             data = await mangaupdates.series_info(mangaid)
             image = data["image"]["url"]["original"]
         else:
@@ -72,14 +84,14 @@ class UpdateSending(commands.Cog):
             channelidsthatwant = []
             for server in serverWant:
                 channelidsthatwant.append(server["channelid"])
-            serverstosend = f"All server's channels that want {title}: {', '.join([str(i) for i in channelidsthatwant])}"
+            serverstosend = f"Some servers want {title}!"
         else:
             serverstosend = f"No servers want this {title}"
         if userWant:
             useridsthatwant = []
             for user in userWant:
                 useridsthatwant.append(user["userid"])
-            userstosend = f"All users that want {title}: {', '.join([str(i) for i in useridsthatwant])}"
+            userstosend = f"Some users want {title}!"
         else:
             userstosend = f"No users want this {title}"
         await errorChannel.send(serverstosend)
