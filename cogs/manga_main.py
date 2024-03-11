@@ -413,10 +413,10 @@ class MangaMain(commands.Cog):
                         await ctx.respond(embed=permissionError, view=None)
                     return
         if validators.url(manga) is True:
-            if manga.partition("https://www.mangaupdates.com/series/") is True:
+            if if manga.partition("https://www.mangaupdates.com/series/")[2] != None:
                 mangaid = manga.partition("https://www.mangaupdates.com/series.html?id=")[2]
                 mangaid = await mangaupdates.convert_old_id(mangaid)
-            elif manga.partition("https://www.mangaupdates.com/series.html") is True: 
+            elif manga.partition("https://www.mangaupdates.com/series.html?id=")[2] != None: 
                 link = manga.partition("https://www.mangaupdates.com/series/")[2]
                 mangaid = link.partition("/")[0]
                 mangaid = await mangaupdates.convert_new_id(mangaid)
