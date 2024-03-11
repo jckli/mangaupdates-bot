@@ -305,9 +305,17 @@ class MangaMain(commands.Cog):
     @manga.command(name="search", description="Searches for a manga series")
     async def search(self, ctx, manga: Option(str, description="The name of the manga series (can use mangaupdates links)", required=True)):
         if validators.url(manga) is True:
-            link = manga.partition("https://www.mangaupdates.com/series/")[2]
-            mangaid = link.partition("/")[0]
-            mangaid = await mangaupdates.convert_new_id(mangaid)
+            if manga.partition("https://www.mangaupdates.com/series/") is True:
+                mangaid = manga.partition("https://www.mangaupdates.com/series.html?id=")[2]
+                mangaid = await mangaupdates.convert_old_id(mangaid)
+            elif manga.partition("https://www.mangaupdates.com/series.html") is True: 
+                link = manga.partition("https://www.mangaupdates.com/series/")[2]
+                mangaid = link.partition("/")[0]
+                mangaid = await mangaupdates.convert_new_id(mangaid)
+            else:
+                mangaLinkBroken = discord.Embed(title="Error Adding Manga", color=0x3083e3, description="The bot didn't recognise the MangaUpdates ID")
+                await ctx.respond(embed=mangaLinkBroken)
+                return
             series_info = await mangaupdates.series_info(mangaid)
             data = SearchData(series_info)
             result = discord.Embed(title=f"{data.title} ({data.status})", url=data.url, color=0x3083e3, description=data.description)
@@ -405,9 +413,17 @@ class MangaMain(commands.Cog):
                         await ctx.respond(embed=permissionError, view=None)
                     return
         if validators.url(manga) is True:
-            link = manga.partition("https://www.mangaupdates.com/series/")[2]
-            mangaid = link.partition("/")[0]
-            mangaid = await mangaupdates.convert_new_id(mangaid)
+            if manga.partition("https://www.mangaupdates.com/series/") is True:
+                mangaid = manga.partition("https://www.mangaupdates.com/series.html?id=")[2]
+                mangaid = await mangaupdates.convert_old_id(mangaid)
+            elif manga.partition("https://www.mangaupdates.com/series.html") is True: 
+                link = manga.partition("https://www.mangaupdates.com/series/")[2]
+                mangaid = link.partition("/")[0]
+                mangaid = await mangaupdates.convert_new_id(mangaid)
+            else:
+                mangaLinkBroken = discord.Embed(title="Error Adding Manga", color=0x3083e3, description="The bot didn't recognise the MangaUpdates ID")
+                await ctx.respond(embed=mangaLinkBroken)
+                return
             series_info = await mangaupdates.series_info(mangaid)
             manganame = series_info["title"]
             if modeval == "user":
