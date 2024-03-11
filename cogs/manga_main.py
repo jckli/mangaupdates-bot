@@ -305,10 +305,10 @@ class MangaMain(commands.Cog):
     @manga.command(name="search", description="Searches for a manga series")
     async def search(self, ctx, manga: Option(str, description="The name of the manga series (can use mangaupdates links)", required=True)):
         if validators.url(manga) is True:
-            if manga.partition("https://www.mangaupdates.com/series/") is True:
+            if manga.partition("https://www.mangaupdates.com/series/")[2] != None:
                 mangaid = manga.partition("https://www.mangaupdates.com/series.html?id=")[2]
                 mangaid = await mangaupdates.convert_old_id(mangaid)
-            elif manga.partition("https://www.mangaupdates.com/series.html") is True: 
+            elif manga.partition("https://www.mangaupdates.com/series.html?id=")[2] != None: 
                 link = manga.partition("https://www.mangaupdates.com/series/")[2]
                 mangaid = link.partition("/")[0]
                 mangaid = await mangaupdates.convert_new_id(mangaid)
