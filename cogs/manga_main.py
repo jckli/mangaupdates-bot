@@ -307,10 +307,6 @@ class MangaMain(commands.Cog):
         if validators.url(manga) is True:
             if manga.partition("https://www.mangaupdates.com/series.html?id=")[2] != "":
                 manga = await mangaupdates.getCanonical(manga)
-            else:
-                mangaLinkBroken = discord.Embed(title="Error Adding Manga", color=0x3083e3, description="The bot didn't recognise the MangaUpdates ID")
-                await ctx.respond(embed=mangaLinkBroken)
-                return
             link = manga.partition("https://www.mangaupdates.com/series/")[2]
             mangaid = link.partition("/")[0]
             mangaid = await mangaupdates.convert_new_id(mangaid)
@@ -413,10 +409,6 @@ class MangaMain(commands.Cog):
         if validators.url(manga) is True:
             if manga.partition("https://www.mangaupdates.com/series.html?id=")[2] != "":
                 manga = await mangaupdates.getCanonical(manga)
-            else:
-                mangaLinkBroken = discord.Embed(title="Error Adding Manga", color=0x3083e3, description="The bot didn't recognise the MangaUpdates ID")
-                await ctx.respond(embed=mangaLinkBroken)
-                return
             link = manga.partition("https://www.mangaupdates.com/series/")[2]
             mangaid = link.partition("/")[0]
             mangaid = await mangaupdates.convert_new_id(mangaid)
