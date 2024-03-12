@@ -1,6 +1,7 @@
 import os
 import numpy
 import aiohttp
+from bs4 import BeautifulSoup
 
 class RequestsMU:
     def __init__(self):
@@ -18,6 +19,10 @@ class RequestsMU:
         await self.login()
         async with self.session.get(url, headers=self.headers) as resp:
             return await resp.json()
+    async def getRaw(self, url):
+        await self.login()
+        async with self.session.get(url, headers=self.headers) as resp:
+            return await resp.text()
     async def put(self, url, data):
         await self.login()
         async with self.session.put(url, headers=self.headers, json=data) as resp:
@@ -39,6 +44,13 @@ class MangaUpdates:
 
     async def convert_new_id(self, new_id):
         return int(new_id, 36)
+
+    async def getCanonical(self, link):
+        canonical = await self.rq.getRaw(link)
+        soup = BeautifulSoup(canonical, "html.parser")
+        link = soup.find("link", {"rel": "canonical"})
+        canonical = link["href"]
+        return canonical
     
     async def search_series(self, series_name):
         searchurl = f"https://api.mangaupdates.com/v1/series/search"
