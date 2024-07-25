@@ -7,9 +7,7 @@ from core.mongodb import Mongo
 load_dotenv()
 mongo = Mongo()
 
-bot = commands.Bot(
-    intents=discord.Intents(guilds=True)
-)
+bot = commands.AutoShardedBot(intents=discord.Intents(guilds=True))
 bot.remove_command("help")
 
 for file in os.listdir("./cogs"):
@@ -17,14 +15,17 @@ for file in os.listdir("./cogs"):
         name = file[:-3]
         bot.load_extension(f"cogs.{name}")
 
+
 @bot.event
 async def on_ready():
     print(f"Bot is online.")
     await bot.change_presence(activity=discord.Game(name="/help"))
 
+
 @bot.event
 async def on_guild_remove(guild):
     mongo.remove_server(guild.id)
+
 
 try:
     bot.run(os.environ.get("TOKEN"))
