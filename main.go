@@ -67,5 +67,8 @@ func main() {
 }
 
 func shutdown(mu *mubot.Bot) {
+	if err := utils.MuLogout(mu); err != nil {
+		mu.Logger.Error(fmt.Sprintf("Failed to logout from MangaUpdates: %s", err))
+	}
 	mu.Logger.Info("Shutting down...")
 }

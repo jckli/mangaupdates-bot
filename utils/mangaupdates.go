@@ -2,7 +2,6 @@ package utils
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -73,7 +72,6 @@ func MuLogin() (*LoginResponse, error) {
 	if err = json.Unmarshal(resp.Body(), respBody); err != nil {
 		return nil, err
 	}
-	fmt.Println(respBody)
 
 	return respBody, nil
 }
@@ -81,7 +79,7 @@ func MuLogin() (*LoginResponse, error) {
 func MuLogout(b *mubot.Bot) error {
 	req := fasthttp.AcquireRequest()
 	defer fasthttp.ReleaseRequest(req)
-	req.Header.SetMethod("PUSH")
+	req.Header.SetMethod("POST")
 	req.SetRequestURI("https://api.mangaupdates.com/v1/account/logout")
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+b.MuToken)
@@ -98,7 +96,6 @@ func MuLogout(b *mubot.Bot) error {
 	if err = json.Unmarshal(resp.Body(), respBody); err != nil {
 		return err
 	}
-	fmt.Println(respBody)
 
 	return nil
 }
