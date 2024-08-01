@@ -24,6 +24,7 @@ type Config struct {
 type Bot struct {
 	Client  bot.Client
 	Logger  *slog.Logger
+	MuToken string
 	Version string
 	Config  Config
 }
@@ -37,6 +38,7 @@ func New(version string) *Bot {
 	return &Bot{
 		Client:  nil,
 		Logger:  logger,
+		MuToken: "",
 		Version: version,
 		Config: Config{
 			Token:       os.Getenv("TOKEN"),
