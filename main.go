@@ -34,6 +34,12 @@ func main() {
 	}
 	mu.MuToken = muToken.Context.SessionToken
 
+	mongoClient, err := utils.DbConnect()
+	if err != nil {
+		mu.Logger.Error(fmt.Sprintf("Failed to connect to MongoDB: %s", err))
+	}
+	mu.MongoClient = mongoClient
+
 	if mu.Config.DevMode {
 		mu.Logger.Info(
 			fmt.Sprintf(
@@ -69,6 +75,9 @@ func main() {
 func shutdown(mu *mubot.Bot) {
 	if err := utils.MuLogout(mu); err != nil {
 		mu.Logger.Error(fmt.Sprintf("Failed to logout from MangaUpdates: %s", err))
+	}
+	if err := utils.DbDisconnect(mu); err != nil {
+		mu.Logger.Error(fmt.Sprintf("Failed to disconnect from MongoDB: %s", err))
 	}
 	mu.Logger.Info("Shutting down...")
 }

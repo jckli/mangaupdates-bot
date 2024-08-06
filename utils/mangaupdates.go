@@ -15,7 +15,7 @@ var (
 	password = os.Getenv("MU_PASSWORD")
 )
 
-func ConvertOldMuId(oldID int64) string {
+func MuConvertOldId(oldID int64) string {
 	const base = 36
 	const digits = "0123456789abcdefghijklmnopqrstuvwxyz"
 
@@ -38,13 +38,13 @@ func ConvertOldMuId(oldID int64) string {
 	return string(runes)
 }
 
-func ConvertNewMuId(newID string) (int64, error) {
+func MuConvertNewId(newID string) (int64, error) {
 	const base = 36
 	return strconv.ParseInt(newID, base, 64)
 }
 
-func MuLogin() (*LoginResponse, error) {
-	login := LoginRequest{
+func MuLogin() (*MuLoginResponse, error) {
+	login := MuLoginRequest{
 		Username: username,
 		Password: password,
 	}
@@ -68,7 +68,7 @@ func MuLogin() (*LoginResponse, error) {
 		return nil, err
 	}
 
-	respBody := &LoginResponse{}
+	respBody := &MuLoginResponse{}
 	if err = json.Unmarshal(resp.Body(), respBody); err != nil {
 		return nil, err
 	}
@@ -92,10 +92,24 @@ func MuLogout(b *mubot.Bot) error {
 		return err
 	}
 
-	respBody := &LogoutResponse{}
+	respBody := &MuLogoutResponse{}
 	if err = json.Unmarshal(resp.Body(), respBody); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func MuSeriesInfo(b *mubot.Bot, seriesId int64) (*MuSeriesInfoResponse, error) {
+	resp, err := muGetRequest(
+		"https://api.mangaupdates.com/v1/series/"+strconv.FormatInt(seriesId, 10),
+		b.MuToken,
+	)
+
+	respBody := &MuSeriesInfoResponse{}
+	if err = json.Unmarshal(resp, respBody); err != nil {
+		return nil, err
+	}
+
+	return respBody, nil
 }
