@@ -124,7 +124,7 @@ func DbServersWanted(
 	b *mubot.Bot,
 	groupList *[]MuSearchGroupsGroup,
 	entry *MangaEntry,
-) ([]mDbServer, error) {
+) ([]MDbServer, error) {
 	collection := b.MongoClient.Database(dbName).Collection("servers")
 
 	var filter bson.M
@@ -142,14 +142,25 @@ func DbServersWanted(
 	}
 	defer cursor.Close(context.TODO())
 
-	var results []mDbServer
+	var results []MDbServer
 	for cursor.Next(context.Background()) {
-		var result mDbServer
+		var result MDbServer
 		err := cursor.Decode(&result)
 		if err != nil {
 			return nil, err
 		}
-		results = append(results, result)
+
+		manga := result.Manga[0]
+		if manga.GroupId != "" {
+			for _, group := range *groupList {
+				if manga.GroupId == group.Record.Name {
+					results = append(results, result)
+					break
+				}
+			}
+		} else {
+			results = append(results, result)
+		}
 	}
 
 	if len(results) == 0 {
@@ -163,7 +174,7 @@ func DbUsersWanted(
 	b *mubot.Bot,
 	groupList *[]MuSearchGroupsGroup,
 	entry *MangaEntry,
-) ([]mDbUser, error) {
+) ([]MDbUser, error) {
 	collection := b.MongoClient.Database(dbName).Collection("users")
 
 	var filter bson.M
@@ -181,14 +192,25 @@ func DbUsersWanted(
 	}
 	defer cursor.Close(context.TODO())
 
-	var results []mDbUser
+	var results []MDbUser
 	for cursor.Next(context.Background()) {
-		var result mDbUser
+		var result MDbUser
 		err := cursor.Decode(&result)
 		if err != nil {
 			return nil, err
 		}
-		results = append(results, result)
+
+		manga := result.Manga[0]
+		if manga.GroupId != "" {
+			for _, group := range *groupList {
+				if manga.GroupId == group.Record.Name {
+					results = append(results, result)
+					break
+				}
+			}
+		} else {
+			results = append(results, result)
+		}
 	}
 
 	if len(results) == 0 {

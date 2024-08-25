@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/snowflake/v2"
 	"github.com/jckli/mangaupdates-bot/mubot"
 	"github.com/jckli/mangaupdates-bot/utils"
@@ -84,14 +85,12 @@ func checkRssForUpdates(b *mubot.Bot) {
 }
 
 func notify(b *mubot.Bot, entry utils.MangaEntry) {
-	errorChannnel := snowflake.ID(990005048408936529)
+	errorChannel := snowflake.ID(990005048408936529)
 
 	var (
-		image         string
-		mangaId       string
-		err           error
-		scanGroupLink string
-		scanGroups    []utils.MuSearchGroupsGroup
+		image      string
+		err        error
+		scanGroups []utils.MuSearchGroupsGroup
 	)
 
 	if entry.Link != "" {
@@ -119,6 +118,32 @@ func notify(b *mubot.Bot, entry utils.MangaEntry) {
 		}
 	}
 
+	serverWant, userWant, err := getWantLists(b, entry, scanGroups)
+	if err != nil {
+		b.Logger.Error(fmt.Sprintf("Failed to get want lists: %s", err.Error()))
+	}
+	if serverWant == nil && userWant == nil {
+		return
+	}
+
+	if serverWant != nil {
+		for _, server := range serverWant {
+			sendServerUpdate(b, entry, server, image, scanGroups, errorChannel)
+		}
+	}
+	if userWant != nil {
+		for _, user := range userWant {
+			sendUserUpdate(b, entry, user, image, scanGroups, errorChannel)
+		}
+	}
+
+	b.Logger.Info(fmt.Sprintf("Finished notifying for %s", entry.Title))
+	_, _ = b.Client.Rest().
+		CreateMessage(errorChannel, discord.MessageCreate{
+			Content: fmt.Sprintf("Finished notifying for %s", entry.Title),
+		})
+
+	return
 }
 
 func getScanGroups(b *mubot.Bot, scanGroup string) ([]utils.MuSearchGroupsGroup, error) {
@@ -132,8 +157,148 @@ func getScanGroups(b *mubot.Bot, scanGroup string) ([]utils.MuSearchGroupsGroup,
 		}
 
 		scanGroups = append(scanGroups, results.Results[0])
-
 	}
 
 	return scanGroups, nil
+}
+
+func getWantLists(
+	b *mubot.Bot,
+	entry utils.MangaEntry,
+	scanGroups []utils.MuSearchGroupsGroup,
+) ([]utils.MDbServer, []utils.MDbUser, error) {
+	var serverErr error
+	var userErr error
+	serverWant, serverErr := utils.DbServersWanted(b, &scanGroups, &entry)
+	userWant, userErr := utils.DbUsersWanted(b, &scanGroups, &entry)
+
+	if userErr != nil && serverErr != nil {
+		return nil, nil, fmt.Errorf(
+			"Both lists errored. userErr: %s, serverErr: %s",
+			userErr.Error(),
+			serverErr.Error(),
+		)
+	}
+	if userErr != nil {
+		return serverWant, nil, userErr
+	}
+	if serverErr != nil {
+		return nil, userWant, serverErr
+	}
+
+	return serverWant, userWant, nil
+}
+
+func sendServerUpdate(
+	b *mubot.Bot,
+	entry utils.MangaEntry,
+	server utils.MDbServer,
+	image string,
+	scanGroups []utils.MuSearchGroupsGroup,
+	errorChannel snowflake.ID,
+) {
+	bu, ok := b.Client.Caches().SelfUser()
+	embed := discord.NewEmbedBuilder().
+		SetTitlef("New %s Chapter!", entry.Title).
+		SetDescriptionf("Chapter `%s` has been released!", entry.Chapter).
+		SetColor(0x3083e3)
+	if ok {
+		embed.SetAuthor(bu.Username, "", *bu.AvatarURL())
+	}
+	if entry.Link != "" {
+		embed.SetURL(entry.Link)
+	}
+	if image != "" {
+		embed.SetImage(image)
+	}
+	if entry.Chapter != "" {
+		embed.AddField("Chapter", entry.Chapter, true)
+	}
+	if scanGroups != nil {
+		scanGroupNames := []string{}
+		scanGroupLinks := []string{}
+		for _, group := range scanGroups {
+			scanGroupNames = append(scanGroupNames, group.Record.Name)
+			scanGroupLinks = append(scanGroupLinks, group.Record.URL)
+		}
+		embed.AddField("Scanlator(s)", strings.Join(scanGroupNames, ", "), true)
+		embed.AddField("Scanlator Link(s)", strings.Join(scanGroupLinks, ", "), true)
+	}
+
+	_, err := b.Client.Rest().
+		CreateMessage(snowflake.MustParse(server.ChannelId), discord.MessageCreate{
+			Embeds: []discord.Embed{embed.Build()},
+		})
+	if err != nil {
+		sendError := fmt.Sprintf("Failed to send message: %s", err.Error())
+		b.Logger.Error(sendError)
+		_, _ = b.Client.Rest().
+			CreateMessage(errorChannel, discord.MessageCreate{
+				Content: sendError,
+			})
+	} else {
+		_, _ = b.Client.Rest().CreateMessage(errorChannel, discord.MessageCreate{
+			Content: fmt.Sprintf("**SERVER**: Sent message to ID %s\nTitle: %s\nScanlator: %s\nLink", server.ChannelId, entry.Title, entry.ScanGroup, entry.Link),
+		})
+	}
+}
+
+func sendUserUpdate(
+	b *mubot.Bot,
+	entry utils.MangaEntry,
+	user utils.MDbUser,
+	image string,
+	scanGroups []utils.MuSearchGroupsGroup,
+	errorChannel snowflake.ID,
+) {
+	bu, ok := b.Client.Caches().SelfUser()
+	embed := discord.NewEmbedBuilder().
+		SetTitlef("New %s Chapter!", entry.Title).
+		SetDescriptionf("Chapter `%s` has been released!", entry.Chapter).
+		SetColor(0x3083e3)
+	if ok {
+		embed.SetAuthor(bu.Username, "", *bu.AvatarURL())
+	}
+	if entry.Link != "" {
+		embed.SetURL(entry.Link)
+	}
+	if image != "" {
+		embed.SetImage(image)
+	}
+	if entry.Chapter != "" {
+		embed.AddField("Chapter", entry.Chapter, true)
+	}
+	if scanGroups != nil {
+		scanGroupNames := []string{}
+		scanGroupLinks := []string{}
+		for _, group := range scanGroups {
+			scanGroupNames = append(scanGroupNames, group.Record.Name)
+			scanGroupLinks = append(scanGroupLinks, group.Record.URL)
+		}
+		embed.AddField("Scanlator(s)", strings.Join(scanGroupNames, ", "), true)
+		embed.AddField("Scanlator Link(s)", strings.Join(scanGroupLinks, ", "), true)
+	}
+
+	userChannel, err := b.Client.Rest().CreateDMChannel((snowflake.MustParse(user.UserId)))
+	if err != nil {
+		sendError := fmt.Sprintf("Failed to create DM channel: %s", err.Error())
+		b.Logger.Error(sendError)
+	}
+
+	_, err = b.Client.Rest().
+		CreateMessage(userChannel.ID(), discord.MessageCreate{
+			Embeds: []discord.Embed{embed.Build()},
+		})
+	if err != nil {
+		sendError := fmt.Sprintf("Failed to send message: %s", err.Error())
+		b.Logger.Error(sendError)
+		_, _ = b.Client.Rest().
+			CreateMessage(errorChannel, discord.MessageCreate{
+				Content: sendError,
+			})
+	} else {
+		_, _ = b.Client.Rest().CreateMessage(errorChannel, discord.MessageCreate{
+			Content: fmt.Sprintf("**USER**: Sent message to ID %s\nTitle: %s\nScanlator: %s\nLink", user.UserId, entry.Title, entry.ScanGroup, entry.Link),
+		})
+	}
 }

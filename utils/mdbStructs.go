@@ -1,23 +1,23 @@
 package utils
 
-type mDbManga struct {
+type MDbManga struct {
 	Title     string `bson:"title"`
 	Id        string `bson:"id"`
 	GroupName string `bson:"groupName"`
 	GroupId   string `bson:"groupId"`
 }
 
-type mDbServer struct {
+type MDbServer struct {
 	Id         string     `bson:"_id"`
 	ServerId   string     `bson:"serverid"`
 	ServerName string     `bson:"serverName"`
 	ChannelId  string     `bson:"channelid"`
-	Manga      []mDbManga `bson:"manga"`
+	Manga      []MDbManga `bson:"manga"`
 }
 
-type mDbUser struct {
+type MDbUser struct {
 	Id       string     `bson:"_id"`
 	UserId   string     `bson:"userid"`
 	Username string     `bson:"username"`
-	Manga    []mDbManga `bson:"manga"`
+	Manga    []MDbManga `bson:"manga"`
 }
