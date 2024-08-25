@@ -2,6 +2,8 @@ package update_sending
 
 import (
 	"fmt"
+	"regexp"
+	"strings"
 	"sync"
 	"time"
 
@@ -84,8 +86,54 @@ func checkRssForUpdates(b *mubot.Bot) {
 func notify(b *mubot.Bot, entry utils.MangaEntry) {
 	errorChannnel := snowflake.ID(990005048408936529)
 
+	var (
+		image         string
+		mangaId       string
+		err           error
+		scanGroupLink string
+		scanGroups    []utils.MuSearchGroupsGroup
+	)
+
 	if entry.Link != "" {
+		urlMangaIdRegex := regexp.MustCompile(`(?<=series/).+?(?=/)`)
+		mangaId, err := utils.MuConvertNewId(urlMangaIdRegex.FindString(entry.Link))
+		if err != nil {
+			b.Logger.Error(fmt.Sprintf("Failed to convert new ID: %s", err.Error()))
+			return
+		}
+		entry.NewId = mangaId
+		var seriesInfo *utils.MuSeriesInfoResponse
+		seriesInfo, err = utils.MuGetSeriesInfo(b, mangaId)
+		if err != nil {
+			b.Logger.Error(fmt.Sprintf("Failed to get series info: %s", err.Error()))
+			return
+		}
+		image = seriesInfo.Image.URL.Original
+	}
+
+	if entry.ScanGroup != "" {
+		scanGroups, err = getScanGroups(b, entry.ScanGroup)
+		if err != nil {
+			b.Logger.Error(fmt.Sprintf("Failed to get scan groups: %s", err.Error()))
+			return
+		}
+	}
+
+}
+
+func getScanGroups(b *mubot.Bot, scanGroup string) ([]utils.MuSearchGroupsGroup, error) {
+	groups := strings.Split(scanGroup, "&")
+	var scanGroups []utils.MuSearchGroupsGroup
+	for i, group := range groups {
+		groups[i] = strings.TrimSpace(group)
+		results, err := utils.MuPostSearchGroups(b, group)
+		if err != nil {
+			return nil, err
+		}
+
+		scanGroups = append(scanGroups, results.Results[0])
 
 	}
 
+	return scanGroups, nil
 }

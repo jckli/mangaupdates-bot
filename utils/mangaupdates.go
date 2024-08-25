@@ -100,13 +100,31 @@ func MuLogout(b *mubot.Bot) error {
 	return nil
 }
 
-func MuSeriesInfo(b *mubot.Bot, seriesId int64) (*MuSeriesInfoResponse, error) {
+func MuGetSeriesInfo(b *mubot.Bot, seriesId int64) (*MuSeriesInfoResponse, error) {
 	resp, err := muGetRequest(
 		"https://api.mangaupdates.com/v1/series/"+strconv.FormatInt(seriesId, 10),
 		b.MuToken,
 	)
 
 	respBody := &MuSeriesInfoResponse{}
+	if err = json.Unmarshal(resp, respBody); err != nil {
+		return nil, err
+	}
+
+	return respBody, nil
+}
+
+func MuPostSearchGroups(b *mubot.Bot, groupName string) (*MuSearchGroupsResponse, error) {
+	resp, err := muPostRequest(
+		"https://api.mangaupdates.com/v1/groups/search",
+		b.MuToken,
+		MuSearchGroupsRequest{
+			Search:  groupName,
+			PerPage: 10,
+		},
+	)
+
+	respBody := &MuSearchGroupsResponse{}
 	if err = json.Unmarshal(resp, respBody); err != nil {
 		return nil, err
 	}

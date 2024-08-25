@@ -10,6 +10,8 @@ import (
 )
 
 type MangaEntry struct {
+	OldId     string
+	NewId     int64
 	Title     string
 	Chapter   string
 	ScanGroup string

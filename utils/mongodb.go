@@ -119,3 +119,81 @@ func DbGetChannel(b *mubot.Bot, serverId int64) (int64, error) {
 
 	return result["channelid"].(int64), err
 }
+
+func DbServersWanted(
+	b *mubot.Bot,
+	groupList *[]MuSearchGroupsGroup,
+	entry *MangaEntry,
+) ([]mDbServer, error) {
+	collection := b.MongoClient.Database(dbName).Collection("servers")
+
+	var filter bson.M
+	if &entry.NewId != nil {
+		filter = bson.M{"manga.id": entry.NewId}
+	} else if entry.Title != "" {
+		filter = bson.M{"manga.title": entry.Title}
+	} else {
+		return nil, fmt.Errorf("No entry to search for")
+	}
+
+	cursor, err := collection.Find(context.TODO(), filter)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(context.TODO())
+
+	var results []mDbServer
+	for cursor.Next(context.Background()) {
+		var result mDbServer
+		err := cursor.Decode(&result)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, result)
+	}
+
+	if len(results) == 0 {
+		return nil, nil
+	}
+
+	return results, nil
+}
+
+func DbUsersWanted(
+	b *mubot.Bot,
+	groupList *[]MuSearchGroupsGroup,
+	entry *MangaEntry,
+) ([]mDbUser, error) {
+	collection := b.MongoClient.Database(dbName).Collection("users")
+
+	var filter bson.M
+	if &entry.NewId != nil {
+		filter = bson.M{"manga.id": entry.NewId}
+	} else if entry.Title != "" {
+		filter = bson.M{"manga.title": entry.Title}
+	} else {
+		return nil, fmt.Errorf("No entry to search for")
+	}
+
+	cursor, err := collection.Find(context.TODO(), filter)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(context.TODO())
+
+	var results []mDbUser
+	for cursor.Next(context.Background()) {
+		var result mDbUser
+		err := cursor.Decode(&result)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, result)
+	}
+
+	if len(results) == 0 {
+		return nil, nil
+	}
+
+	return results, nil
+}
