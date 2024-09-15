@@ -2,6 +2,7 @@ package utils
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -108,7 +109,12 @@ func MuGetSeriesInfo(b *mubot.Bot, seriesId int64) (*MuSeriesInfoResponse, error
 
 	respBody := &MuSeriesInfoResponse{}
 	if err = json.Unmarshal(resp, respBody); err != nil {
-		return nil, err
+		return nil, fmt.Errorf(
+			"Failed to unmarshal response: %s, %s, %d",
+			err.Error(),
+			string(resp),
+			seriesId,
+		)
 	}
 
 	return respBody, nil

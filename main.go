@@ -11,13 +11,13 @@ import (
 	"github.com/disgoorg/disgo/bot"
 	"github.com/jckli/mangaupdates-bot/commands"
 	"github.com/jckli/mangaupdates-bot/mubot"
+	update_sending "github.com/jckli/mangaupdates-bot/updates"
 	"github.com/jckli/mangaupdates-bot/utils"
 	_ "github.com/joho/godotenv/autoload"
 )
 
 func main() {
 	mu := mubot.New(os.Getenv("VERSION"))
-	fmt.Println(mu)
 
 	h := commands.CommandHandlers(mu)
 
@@ -65,7 +65,10 @@ func main() {
 	}
 	defer client.Close(context.TODO())
 
+	update_sending.StartRssCheck(mu)
+
 	mu.Logger.Info("Bot is now running.")
+
 	s := make(chan os.Signal, 1)
 	signal.Notify(s, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 	<-s

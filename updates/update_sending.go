@@ -3,6 +3,7 @@ package update_sending
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -30,6 +31,7 @@ func StartRssCheck(b *mubot.Bot) {
 
 	for _, entry := range newFullEntries {
 		key := getMangaEntryKey(entry)
+		oldEntries = make(map[string]utils.MangaEntry)
 		oldEntries[key] = entry
 	}
 
@@ -94,10 +96,25 @@ func notify(b *mubot.Bot, entry utils.MangaEntry) {
 	)
 
 	if entry.Link != "" {
-		urlMangaIdRegex := regexp.MustCompile(`(?<=series/).+?(?=/)`)
-		mangaId, err := utils.MuConvertNewId(urlMangaIdRegex.FindString(entry.Link))
-		if err != nil {
-			b.Logger.Error(fmt.Sprintf("Failed to convert new ID: %s", err.Error()))
+		idRegex := regexp.MustCompile(`id=([0-9]+)`)
+		pathRegex := regexp.MustCompile(`series/([^/]+)`)
+		var mangaId int64
+		if matches := idRegex.FindStringSubmatch(entry.Link); len(matches) > 1 {
+			strMangaId := matches[1]
+			mangaId, err = strconv.ParseInt(strMangaId, 10, 64)
+			if err != nil {
+				b.Logger.Error(fmt.Sprintf("Failed to convert new ID: %s", err.Error()))
+				return
+			}
+		} else if matches := pathRegex.FindStringSubmatch(entry.Link); len(matches) > 1 {
+			strMangaId := matches[1]
+			mangaId, err = utils.MuConvertNewId(strMangaId)
+			if err != nil {
+				b.Logger.Error(fmt.Sprintf("Failed to convert new ID: %s", err.Error()))
+				return
+			}
+		} else {
+			b.Logger.Error(fmt.Sprintf("Failed to get manga ID from URL: %s", entry.Link))
 			return
 		}
 		entry.NewId = mangaId
@@ -147,7 +164,7 @@ func notify(b *mubot.Bot, entry utils.MangaEntry) {
 }
 
 func getScanGroups(b *mubot.Bot, scanGroup string) ([]utils.MuSearchGroupsGroup, error) {
-	groups := strings.Split(scanGroup, "&")
+	groups := strings.Split(scanGroup, ",")
 	var scanGroups []utils.MuSearchGroupsGroup
 	for i, group := range groups {
 		groups[i] = strings.TrimSpace(group)
@@ -238,7 +255,7 @@ func sendServerUpdate(
 			})
 	} else {
 		_, _ = b.Client.Rest().CreateMessage(errorChannel, discord.MessageCreate{
-			Content: fmt.Sprintf("**SERVER**: Sent message to ID %s\nTitle: %s\nScanlator: %s\nLink", server.ChannelId, entry.Title, entry.ScanGroup, entry.Link),
+			Content: fmt.Sprintf("**SERVER**: Sent message to ID %s\nTitle: %s\nScanlator: %s\nLink: %s", server.ChannelId, entry.Title, entry.ScanGroup, entry.Link),
 		})
 	}
 }
@@ -298,7 +315,7 @@ func sendUserUpdate(
 			})
 	} else {
 		_, _ = b.Client.Rest().CreateMessage(errorChannel, discord.MessageCreate{
-			Content: fmt.Sprintf("**USER**: Sent message to ID %s\nTitle: %s\nScanlator: %s\nLink", user.UserId, entry.Title, entry.ScanGroup, entry.Link),
+			Content: fmt.Sprintf("**USER**: Sent message to ID %s\nTitle: %s\nScanlator: %s\nLink: %s", user.UserId, entry.Title, entry.ScanGroup, entry.Link),
 		})
 	}
 }

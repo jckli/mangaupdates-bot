@@ -35,10 +35,10 @@ type MuSeriesInfoResponse struct {
 		Height int `json:"height"`
 		Width  int `json:"width"`
 	} `json:"image"`
-	Type           string `json:"type"`
-	Year           string `json:"year"`
-	BayesianRating int    `json:"bayesian_rating"`
-	RatingVotes    int    `json:"rating_votes"`
+	Type           string  `json:"type"`
+	Year           string  `json:"year"`
+	BayesianRating float32 `json:"bayesian_rating"`
+	RatingVotes    int     `json:"rating_votes"`
 	Genres         []struct {
 		Genre string `json:"genre"`
 	} `json:"genres"`
@@ -80,7 +80,7 @@ type MuSeriesInfoResponse struct {
 	Publications []struct {
 		PublicationName string `json:"publication_name"`
 		PublisherName   string `json:"publisher_name"`
-		PublisherID     string `json:"publisher_id"`
+		PublisherID     int    `json:"publisher_id"`
 	} `json:"publications"`
 	Recommendations []struct {
 		SeriesName string `json:"series_name"`
