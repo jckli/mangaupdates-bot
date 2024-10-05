@@ -15,5 +15,20 @@ func CommandHandlers(b *mubot.Bot) *handler.Mux {
 
 	h.Command("/ping", PingHandler)
 
+	h.Route("/manga", func(h handler.Router) {
+		h.Command("/add", func(e *handler.CommandEvent) error {
+			return mangaAddHandler(e, b)
+		})
+		h.Component("/manga/add/{mode}/{title}", func(e *handler.ComponentEvent) error {
+			mode := e.Vars["mode"]
+			if mode == "user" {
+				adapter := &ComponentEventAdapter{Event: e}
+				return userMangaAddHandler(adapter, b, e.Vars["title"])
+			} else {
+				return serverMangaAddHandler(e, b, e.Vars["title"])
+			}
+		})
+	})
+
 	return h
 }

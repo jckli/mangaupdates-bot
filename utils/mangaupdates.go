@@ -137,3 +137,21 @@ func MuPostSearchGroups(b *mubot.Bot, groupName string) (*MuSearchGroupsResponse
 
 	return respBody, nil
 }
+
+func MuPostSearchSeries(b *mubot.Bot, seriesName string) (*MuSearchSeriesResponse, error) {
+	resp, err := muPostRequest(
+		"https://api.mangaupdates.com/v1/series/search",
+		b.MuToken,
+		MuSearchSeriesRequest{
+			Search:  seriesName,
+			PerPage: 10,
+		},
+	)
+
+	respBody := &MuSearchSeriesResponse{}
+	if err = json.Unmarshal(resp, respBody); err != nil {
+		return nil, err
+	}
+
+	return respBody, nil
+}

@@ -233,3 +233,130 @@ type MuSearchGroupsGroup struct {
 	} `json:"record"`
 	HitName string `json:"hit_name"`
 }
+
+type MuSearchSeriesRequest struct {
+	Search  string `json:"search"`
+	PerPage int    `json:"per_page"`
+}
+
+type MuSearchSeriesResponse struct {
+	TotalHits int `json:"total_hits"`
+	Page      int `json:"page"`
+	PerPage   int `json:"per_page"`
+	Results   []struct {
+		Record struct {
+			SeriesID    int    `json:"series_id"`
+			Title       string `json:"title"`
+			URL         string `json:"url"`
+			Description string `json:"description"`
+			Image       struct {
+				URL struct {
+					Original string `json:"original"`
+					Thumb    string `json:"thumb"`
+				} `json:"url"`
+				Height int `json:"height"`
+				Width  int `json:"width"`
+			} `json:"image"`
+			Type           string  `json:"type"`
+			Year           string  `json:"year"`
+			BayesianRating float64 `json:"bayesian_rating"`
+			RatingVotes    int     `json:"rating_votes"`
+			Genres         []struct {
+				Genre string `json:"genre"`
+			} `json:"genres"`
+			LatestChapter int `json:"latest_chapter"`
+			Rank          struct {
+				Position struct {
+					Week        int `json:"week"`
+					Month       int `json:"month"`
+					ThreeMonths int `json:"three_months"`
+					SixMonths   int `json:"six_months"`
+					Year        int `json:"year"`
+				} `json:"position"`
+				OldPosition struct {
+					Week        int `json:"week"`
+					Month       int `json:"month"`
+					ThreeMonths int `json:"three_months"`
+					SixMonths   int `json:"six_months"`
+					Year        int `json:"year"`
+				} `json:"old_position"`
+				Lists struct {
+					Reading    int `json:"reading"`
+					Wish       int `json:"wish"`
+					Complete   int `json:"complete"`
+					Unfinished int `json:"unfinished"`
+					Custom     int `json:"custom"`
+				} `json:"lists"`
+			} `json:"rank"`
+			LastUpdated struct {
+				Timestamp int64  `json:"timestamp"`
+				AsRFC3339 string `json:"as_rfc3339"`
+				AsString  string `json:"as_string"`
+			} `json:"last_updated"`
+			Admin struct {
+				AddedBy struct {
+					UserID   int    `json:"user_id"`
+					Username string `json:"username"`
+					URL      string `json:"url"`
+					Avatar   struct {
+						ID     int    `json:"id"`
+						URL    string `json:"url"`
+						Height int    `json:"height"`
+						Width  int    `json:"width"`
+					} `json:"avatar"`
+					TimeJoined struct {
+						Timestamp int64  `json:"timestamp"`
+						AsRFC3339 string `json:"as_rfc3339"`
+						AsString  string `json:"as_string"`
+					} `json:"time_joined"`
+					Signature     string `json:"signature"`
+					ForumTitle    string `json:"forum_title"`
+					FoldingAtHome bool   `json:"folding_at_home"`
+					Profile       struct {
+						Upgrade struct {
+							Requested bool   `json:"requested"`
+							Reason    string `json:"reason"`
+						} `json:"upgrade"`
+					} `json:"profile"`
+					Stats struct {
+						ForumPosts      int `json:"forum_posts"`
+						AddedAuthors    int `json:"added_authors"`
+						AddedGroups     int `json:"added_groups"`
+						AddedPublishers int `json:"added_publishers"`
+						AddedReleases   int `json:"added_releases"`
+						AddedSeries     int `json:"added_series"`
+					} `json:"stats"`
+					UserGroup     string `json:"user_group"`
+					UserGroupName string `json:"user_group_name"`
+				} `json:"added_by"`
+				Approved bool `json:"approved"`
+			} `json:"admin"`
+		} `json:"record"`
+		HitTitle string `json:"hit_title"`
+		Metadata struct {
+			UserList struct {
+				Series struct {
+					ID    int    `json:"id"`
+					Title string `json:"title"`
+				} `json:"series"`
+				ListID   int    `json:"list_id"`
+				ListType string `json:"list_type"`
+				ListIcon string `json:"list_icon"`
+				Status   struct {
+					Volume  int `json:"volume"`
+					Chapter int `json:"chapter"`
+				} `json:"status"`
+				Priority  int `json:"priority"`
+				TimeAdded struct {
+					Timestamp int64  `json:"timestamp"`
+					AsRFC3339 string `json:"as_rfc3339"`
+					AsString  string `json:"as_string"`
+				} `json:"time_added"`
+				UserGenreHighlights []struct {
+					Genre string `json:"genre"`
+					Color string `json:"color"`
+				} `json:"user_genre_highlights"`
+			} `json:"user_list"`
+		} `json:"metadata"`
+	} `json:"results"`
+}
