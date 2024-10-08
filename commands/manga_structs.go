@@ -69,4 +69,5 @@ type searchResultsFormatted struct {
 	Title  string
 	Year   string
 	Rating float64
+	Id     int
 }

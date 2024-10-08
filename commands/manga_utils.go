@@ -81,6 +81,7 @@ func searchResultsEmbed(
 			Title:  result.Record.Title,
 			Year:   result.Record.Year,
 			Rating: result.Record.BayesianRating,
+			Id:     result.Record.SeriesID,
 		})
 	}
 
@@ -95,23 +96,23 @@ func searchResultsEmbed(
 func dropdownSearchResultsComponents(
 	command, subcommand string,
 	results []searchResultsFormatted,
-) []discord.SelectMenuComponent {
+) []discord.ContainerComponent {
+	options := []discord.StringSelectMenuOption{}
+	for i, result := range results {
+		options = append(options, discord.StringSelectMenuOption{
+			Label:       fmt.Sprintf("%d. %s", i, result.Title),
+			Description: fmt.Sprintf("%d, Rating: %.2f", result.Year, result.Rating),
+			Value:       string(result.Id),
+		})
+
+	}
+
 	return []discord.ContainerComponent{
 		discord.ActionRowComponent{
-
+			discord.NewStringSelectMenu(
+				"/"+command+"/"+subcommand+"/select",
+				"Select a Manga",
+				options...),
 		},
-	}
-	options := []discord.SelectMenuOption{}
-	for i, result := range results {
-			Label: fmt.Sprintf("%d. %s", i, result.Title),
-			Value: fmt.Sprintf("%d, Rating: %.2f", result.Year, result.Rating),
-		})
-	}
-
-	return []discord.SelectMenuComponent{
-		discord.NewSelectMenu().
-			SetCustomID(command + "/" + subcommand).
-			SetPlaceholder("Select a manga").
-			SetOptions(options...),
 	}
 }

@@ -8,6 +8,7 @@ import (
 
 var CommandList = []discord.ApplicationCommandCreate{
 	pingCommand,
+	mangaCommand,
 }
 
 func CommandHandlers(b *mubot.Bot) *handler.Mux {

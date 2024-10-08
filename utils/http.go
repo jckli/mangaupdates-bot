@@ -16,16 +16,20 @@ func getRequest(url string) ([]byte, error) {
 	req.SetRequestURI(url)
 
 	resp := fasthttp.AcquireResponse()
+	defer fasthttp.ReleaseResponse(resp)
 
 	err := client.Do(req, resp)
 	if err != nil {
 		return nil, err
 	}
 
-	return resp.Body(), nil
+	bodyCopy := make([]byte, len(resp.Body()))
+	copy(bodyCopy, resp.Body())
+
+	return bodyCopy, nil
 }
 
-func muGetRequest(url, token string) ([]byte, error) {
+func muGetRequest(url, token string) ([]byte, int, error) {
 	req := fasthttp.AcquireRequest()
 	defer fasthttp.ReleaseRequest(req)
 	req.Header.SetMethod("GET")
@@ -33,13 +37,19 @@ func muGetRequest(url, token string) ([]byte, error) {
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp := fasthttp.AcquireResponse()
+	defer fasthttp.ReleaseResponse(resp)
 
 	err := client.Do(req, resp)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	return resp.Body(), nil
+	bodyCopy := make([]byte, len(resp.Body()))
+	copy(bodyCopy, resp.Body())
+
+	statusCode := resp.StatusCode()
+
+	return bodyCopy, statusCode, nil
 }
 
 func muPostRequest(url, token string, body interface{}) ([]byte, error) {
@@ -57,11 +67,15 @@ func muPostRequest(url, token string, body interface{}) ([]byte, error) {
 	req.SetBody(jsonBody)
 
 	resp := fasthttp.AcquireResponse()
+	defer fasthttp.ReleaseResponse(resp)
 
 	err = client.Do(req, resp)
 	if err != nil {
 		return nil, err
 	}
 
-	return resp.Body(), nil
+	bodyCopy := make([]byte, len(resp.Body()))
+	copy(bodyCopy, resp.Body())
+
+	return bodyCopy, nil
 }

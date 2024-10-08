@@ -6,7 +6,9 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/jckli/mangaupdates-bot/mubot"
 	"github.com/valyala/fasthttp"
 )
@@ -102,19 +104,55 @@ func MuLogout(b *mubot.Bot) error {
 }
 
 func MuGetSeriesInfo(b *mubot.Bot, seriesId int64) (*MuSeriesInfoResponse, error) {
-	resp, err := muGetRequest(
-		"https://api.mangaupdates.com/v1/series/"+strconv.FormatInt(seriesId, 10),
-		b.MuToken,
-	)
+	var respBody *MuSeriesInfoResponse
 
-	respBody := &MuSeriesInfoResponse{}
-	if err = json.Unmarshal(resp, respBody); err != nil {
+	operation := func() error {
+		resp, statusCode, err := muGetRequest(
+			"https://api.mangaupdates.com/v1/series/"+strconv.FormatInt(seriesId, 10),
+			b.MuToken,
+		)
+
+		if err != nil {
+			return fmt.Errorf(
+				"Failed to fetch series info: %s, %s, %d",
+				err.Error(),
+				string(resp),
+				seriesId,
+			)
+		}
+
+		if statusCode == 200 {
+			respBody = &MuSeriesInfoResponse{}
+			if err := json.Unmarshal(resp, respBody); err != nil {
+				return fmt.Errorf("Failed to unmarshal series info: %s", err.Error())
+			}
+			return nil
+		} else if statusCode >= 500 && statusCode < 600 {
+			return fmt.Errorf("Series info server error: %d", statusCode)
+		} else {
+			return backoff.Permanent(fmt.Errorf("Series info client error: %d", statusCode))
+		}
+	}
+
+	backoffConfig := backoff.NewExponentialBackOff()
+	backoffConfig.InitialInterval = 5 * time.Second
+	backoffConfig.MaxInterval = 1 * time.Minute
+	backoffConfig.MaxElapsedTime = 4 * time.Minute
+	backoffConfig.Multiplier = 2
+	backoffConfig.RandomizationFactor = 0.5
+
+	retryPolicy := backoff.WithMaxRetries(backoffConfig, 10)
+
+	err := backoff.Retry(operation, retryPolicy)
+	if err != nil {
 		return nil, fmt.Errorf(
-			"Failed to unmarshal response: %s, %s, %d",
-			err.Error(),
-			string(resp),
+			"Failed to get series info after retries: %v, Series ID: %d",
+			err,
 			seriesId,
 		)
+	}
+	if respBody == nil {
+		return nil, fmt.Errorf("MuGetSeriesInfo: respBody is nil after successful unmarshal")
 	}
 
 	return respBody, nil

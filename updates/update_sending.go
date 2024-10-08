@@ -136,6 +136,7 @@ func notify(b *mubot.Bot, entry utils.MangaEntry) {
 	}
 
 	serverWant, userWant, err := getWantLists(b, entry, scanGroups)
+	b.Logger.Info("Attempting to notify want lists")
 	if err != nil {
 		b.Logger.Error(fmt.Sprintf("Failed to get want lists: %s", err.Error()))
 	}

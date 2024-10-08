@@ -63,6 +63,10 @@ func userMangaAddHandler(
 		)
 	}
 
+	return e.Respond(
+		discord.InteractionResponseTypeCreateMessage,
+		discord.NewMessageCreateBuilder().SetEmbeds(errorMangaSetupNeededEmbed()).Build(),
+	)
 }
 
 func serverMangaAddHandler(e *handler.ComponentEvent, b *mubot.Bot, title string) error {
@@ -75,4 +79,21 @@ func serverMangaAddHandler(e *handler.ComponentEvent, b *mubot.Bot, title string
 			discord.NewMessageCreateBuilder().SetEmbeds(errorMangaSetupNeededEmbed()).Build(),
 		)
 	}
+
+	searchResults, searchResultsFormatted := searchResultsEmbed(b, "Add Manga", title)
+	if searchResultsFormatted == nil {
+		return e.Respond(
+			discord.InteractionResponseTypeCreateMessage,
+			discord.NewMessageCreateBuilder().SetEmbeds(searchResults).Build(),
+		)
+	}
+	dropdownSearchResults := dropdownSearchResultsComponents("manga", "add", searchResultsFormatted)
+
+	return e.Respond(
+		discord.InteractionResponseTypeCreateMessage,
+		discord.MessageCreate{
+			Embeds:     []discord.Embed{searchResults},
+			Components: dropdownSearchResults,
+		},
+	)
 }
