@@ -9,6 +9,7 @@ import (
 var CommandList = []discord.ApplicationCommandCreate{
 	pingCommand,
 	mangaCommand,
+	serverCommand,
 }
 
 func CommandHandlers(b *mubot.Bot) *handler.Mux {
@@ -28,6 +29,12 @@ func CommandHandlers(b *mubot.Bot) *handler.Mux {
 			} else {
 				return serverMangaAddHandler(e, b, e.Vars["title"])
 			}
+		})
+	})
+
+	h.Route("/server", func(h handler.Router) {
+		h.Command("/setup", func(e *handler.CommandEvent) error {
+			return serverSetupHandler(e, b)
 		})
 	})
 

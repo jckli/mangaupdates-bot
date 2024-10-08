@@ -47,6 +47,8 @@ func main() {
 				mu.Config.DevServerID,
 			),
 		)
+		_, err = client.Rest().
+			SetGuildCommands(client.ApplicationID(), mu.Config.DevServerID, commands.CommandList)
 	} else {
 		mu.Logger.Info(
 			"Running in global mode. Syncing commands globally.",
