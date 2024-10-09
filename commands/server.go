@@ -37,7 +37,6 @@ func serverSetupHandler(e *handler.CommandEvent, b *mubot.Bot) error {
 			discord.NewMessageCreateBuilder().SetEmbeds(errorTechnicalErrorEmbed()).Build(),
 		)
 	}
-	fmt.Println(server)
 
 	if !e.Member().Permissions.Has(discord.PermissionAdministrator) {
 		return e.Respond(

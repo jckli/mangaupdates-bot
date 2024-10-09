@@ -2,18 +2,22 @@ package utils
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
+	"sync"
+	"time"
 
 	"github.com/jckli/mangaupdates-bot/mubot"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 var (
-	dbName = os.Getenv("MONGO_DB_NAME")
+	dbName   = os.Getenv("MONGO_DB_NAME")
+	serverMu sync.Mutex
+	userMu   sync.Mutex
 )
 
 func DbConnect() (*mongo.Client, error) {
@@ -36,33 +40,146 @@ func DbDisconnect(b *mubot.Bot) error {
 	return nil
 }
 
+func dbGetNextID(ctx context.Context, collection *mongo.Collection, mu *sync.Mutex) (int32, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	expectedID := int32(0)
+
+	// Create a cursor to iterate over _id's in ascending order
+	findOptions := options.Find().
+		SetSort(bson.D{{Key: "_id", Value: 1}}).
+		SetProjection(bson.D{{Key: "_id", Value: 1}})
+
+	cursor, err := collection.Find(ctx, bson.D{}, findOptions)
+	if err != nil {
+		return 0, fmt.Errorf("Failed to find _id's: %w", err)
+	}
+	defer cursor.Close(ctx)
+
+	for cursor.Next(ctx) {
+		var result struct {
+			ID int32 `bson:"_id"`
+		}
+		if err := cursor.Decode(&result); err != nil {
+			return 0, fmt.Errorf("Failed to decode _id: %w", err)
+		}
+
+		if result.ID == expectedID {
+			expectedID++
+		} else if result.ID > expectedID {
+			break
+		}
+	}
+
+	if err := cursor.Err(); err != nil {
+		return 0, fmt.Errorf("Cursor error: %w", err)
+	}
+
+	return expectedID, nil
+}
+
 func DbAddServer(b *mubot.Bot, serverName string, serverId, channelId int64) error {
 	collection := b.MongoClient.Database(dbName).Collection("servers")
 
-	doc := bson.M{
-		"_id":        primitive.NewObjectID(),
-		"serverid":   serverId,
-		"serverName": serverName,
-		"channelid":  channelId,
-		"manga":      []interface{}{},
+	const maxRetries = 5
+
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		newID, err := dbGetNextID(ctx, collection, &serverMu)
+		if err != nil {
+			return fmt.Errorf("Error getting next server ID: %w", err)
+		}
+
+		doc := bson.M{
+			"_id":        newID,
+			"serverid":   serverId,
+			"serverName": serverName,
+			"channelid":  channelId,
+			"manga":      []interface{}{},
+		}
+
+		_, err = collection.InsertOne(ctx, doc)
+		if err != nil {
+			var writeException mongo.WriteException
+			if errors.As(err, &writeException) {
+				duplicateKey := false
+				for _, we := range writeException.WriteErrors {
+					if we.Code == 11000 {
+						duplicateKey = true
+						break
+					}
+				}
+				if duplicateKey {
+					b.Logger.Error(fmt.Sprintf(
+						"Duplicate _id %d detected for servers. Retrying (Attempt %d/%d)...",
+						newID,
+						attempt+1,
+						maxRetries,
+					))
+					continue
+				}
+			}
+			return fmt.Errorf("Failed to insert server: %w", err)
+		}
+
+		return nil
 	}
 
-	_, err := collection.InsertOne(context.TODO(), doc)
-	return err
+	return fmt.Errorf("Failed to insert server after %d attempts due to duplicate _id", maxRetries)
 }
 
 func DbAddUser(b *mubot.Bot, username string, userId int64) error {
 	collection := b.MongoClient.Database(dbName).Collection("users")
 
-	doc := bson.M{
-		"_id":      primitive.NewObjectID(),
-		"userid":   userId,
-		"username": username,
-		"manga":    []interface{}{},
+	const maxRetries = 5
+
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		newID, err := dbGetNextID(ctx, collection, &userMu)
+		if err != nil {
+			return fmt.Errorf("Error getting next user ID: %w", err)
+		}
+
+		doc := bson.M{
+			"_id":      newID,
+			"userid":   userId,
+			"username": username,
+			"manga":    []interface{}{},
+		}
+
+		_, err = collection.InsertOne(ctx, doc)
+		if err != nil {
+			var writeException mongo.WriteException
+			if errors.As(err, &writeException) {
+				duplicateKey := false
+				for _, we := range writeException.WriteErrors {
+					if we.Code == 11000 { // Duplicate Key Error Code
+						duplicateKey = true
+						break
+					}
+				}
+				if duplicateKey {
+					b.Logger.Error(fmt.Sprintf(
+						"Duplicate _id %d detected for users. Retrying (Attempt %d/%d)...",
+						newID,
+						attempt+1,
+						maxRetries,
+					))
+					continue
+				}
+			}
+			return fmt.Errorf("Failed to insert user: %w", err)
+		}
+
+		return nil
 	}
 
-	_, err := collection.InsertOne(context.TODO(), doc)
-	return err
+	return fmt.Errorf("Failed to insert user after %d attempts due to duplicate _id", maxRetries)
 }
 
 func DbRemoveServer(b *mubot.Bot, serverId int64) error {
