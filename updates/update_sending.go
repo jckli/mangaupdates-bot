@@ -243,7 +243,7 @@ func sendServerUpdate(
 	}
 
 	_, err := b.Client.Rest().
-		CreateMessage(snowflake.MustParse(server.ChannelId), discord.MessageCreate{
+		CreateMessage(snowflake.MustParse(strconv.FormatInt(server.ChannelId, 10)), discord.MessageCreate{
 			Embeds: []discord.Embed{embed.Build()},
 		})
 	if err != nil {
@@ -296,7 +296,8 @@ func sendUserUpdate(
 		embed.AddField("Scanlator Link(s)", strings.Join(scanGroupLinks, ", "), true)
 	}
 
-	userChannel, err := b.Client.Rest().CreateDMChannel((snowflake.MustParse(user.UserId)))
+	userChannel, err := b.Client.Rest().
+		CreateDMChannel((snowflake.MustParse(strconv.FormatInt(user.UserId, 10))))
 	if err != nil {
 		sendError := fmt.Sprintf("Failed to create DM channel: %s", err.Error())
 		b.Logger.Error(sendError)

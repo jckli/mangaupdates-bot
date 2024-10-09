@@ -30,15 +30,22 @@ var serverCommand = discord.SlashCommandCreate{
 func serverSetupHandler(e *handler.CommandEvent, b *mubot.Bot) error {
 	channel := e.SlashCommandInteractionData().Channel("channel")
 	serverId := int64(*e.GuildID())
-	server, notInGuild := e.Guild()
-	if notInGuild {
+	server, inGuild := e.Guild()
+	if !inGuild {
 		return e.Respond(
 			discord.InteractionResponseTypeCreateMessage,
 			discord.NewMessageCreateBuilder().SetEmbeds(errorTechnicalErrorEmbed()).Build(),
 		)
 	}
+	fmt.Println(server)
 
-	dbServer, err := utils.DbGetServer(b, int64(serverId))
+	if !e.Member().Permissions.Has(discord.PermissionAdministrator) {
+		return e.Respond(
+			discord.InteractionResponseTypeCreateMessage,
+			discord.NewMessageCreateBuilder().SetEmbeds(errorNoPermissionsEmbed()).Build(),
+		)
+	}
+	exists, err := utils.DbServerCheckExists(b, serverId)
 	if err != nil {
 		b.Logger.Error(fmt.Sprintf("Error getting server in serverSetupHandler: %s", err.Error()))
 		return e.Respond(
@@ -46,13 +53,7 @@ func serverSetupHandler(e *handler.CommandEvent, b *mubot.Bot) error {
 			discord.NewMessageCreateBuilder().SetEmbeds(errorTechnicalErrorEmbed()).Build(),
 		)
 	}
-	if !e.Member().Permissions.Has(discord.PermissionAdministrator) {
-		return e.Respond(
-			discord.InteractionResponseTypeCreateMessage,
-			discord.NewMessageCreateBuilder().SetEmbeds(errorNoPermissionsEmbed()).Build(),
-		)
-	}
-	if dbServer != nil {
+	if exists {
 		return e.Respond(
 			discord.InteractionResponseTypeCreateMessage,
 			discord.NewMessageCreateBuilder().SetEmbeds(errorServerAlreadySetupEmbed()).Build(),

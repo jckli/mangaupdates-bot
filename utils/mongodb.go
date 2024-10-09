@@ -151,9 +151,9 @@ func DbServersWanted(
 		}
 
 		manga := result.Manga[0]
-		if manga.GroupId != "" {
+		if manga.GroupId != 0 {
 			for _, group := range *groupList {
-				if manga.GroupId == group.Record.Name {
+				if manga.GroupId == int64(group.Record.GroupID) {
 					results = append(results, result)
 					break
 				}
@@ -201,9 +201,9 @@ func DbUsersWanted(
 		}
 
 		manga := result.Manga[0]
-		if manga.GroupId != "" {
+		if manga.GroupId != 0 {
 			for _, group := range *groupList {
-				if manga.GroupId == group.Record.Name {
+				if manga.GroupId == int64(group.Record.GroupID) {
 					results = append(results, result)
 					break
 				}
@@ -218,4 +218,84 @@ func DbUsersWanted(
 	}
 
 	return results, nil
+}
+
+func DbServerAddManga(b *mubot.Bot, serverId int64, manga MDbManga) error {
+	collection := b.MongoClient.Database(dbName).Collection("servers")
+
+	_, err := collection.UpdateOne(
+		context.TODO(),
+		bson.M{"serverid": serverId},
+		bson.M{"$push": bson.M{"manga": manga}},
+	)
+
+	return err
+}
+
+func DbUserAddManga(b *mubot.Bot, userId int64, manga MDbManga) error {
+	collection := b.MongoClient.Database(dbName).Collection("users")
+
+	_, err := collection.UpdateOne(
+		context.TODO(),
+		bson.M{"userid": userId},
+		bson.M{"$push": bson.M{"manga": manga}},
+	)
+
+	return err
+}
+
+func DbServerCheckMangaExists(b *mubot.Bot, serverId, mangaId int64) (bool, error) {
+	collection := b.MongoClient.Database(dbName).Collection("servers")
+
+	count, err := collection.CountDocuments(
+		context.TODO(),
+		bson.M{"serverid": serverId, "manga.id": mangaId},
+	)
+	if err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
+}
+
+func DbUserCheckMangaExists(b *mubot.Bot, userId, mangaId int64) (bool, error) {
+	collection := b.MongoClient.Database(dbName).Collection("users")
+
+	count, err := collection.CountDocuments(
+		context.TODO(),
+		bson.M{"userid": userId, "manga.id": mangaId},
+	)
+	if err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
+}
+
+func DbServerCheckExists(b *mubot.Bot, serverId int64) (bool, error) {
+	collection := b.MongoClient.Database(dbName).Collection("servers")
+
+	count, err := collection.CountDocuments(
+		context.TODO(),
+		bson.M{"serverid": serverId},
+	)
+	if err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
+}
+
+func DbUserCheckExists(b *mubot.Bot, userId int64) (bool, error) {
+	collection := b.MongoClient.Database(dbName).Collection("users")
+
+	count, err := collection.CountDocuments(
+		context.TODO(),
+		bson.M{"userid": userId},
+	)
+	if err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
 }

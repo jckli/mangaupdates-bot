@@ -1,8 +1,10 @@
 package utils
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"golang.org/x/net/html"
 	"os"
 	"strconv"
 	"strings"
@@ -44,6 +46,29 @@ func MuConvertOldId(oldID int64) string {
 func MuConvertNewId(newID string) (int64, error) {
 	const base = 36
 	return strconv.ParseInt(newID, base, 64)
+}
+
+func MuCleanupDescription(htmlStr string) (string, error) {
+	doc, err := html.Parse(strings.NewReader(htmlStr))
+	if err != nil {
+		return "", err
+	}
+
+	var buf bytes.Buffer
+	var f func(*html.Node)
+	f = func(n *html.Node) {
+		if n.Type == html.TextNode {
+			buf.WriteString(n.Data)
+		} else if n.Type == html.ElementNode && strings.ToLower(n.Data) == "br" {
+			buf.WriteString("\n")
+		}
+		for c := n.FirstChild; c != nil; c = c.NextSibling {
+			f(c)
+		}
+	}
+	f(doc)
+
+	return buf.String(), nil
 }
 
 func MuLogin() (*MuLoginResponse, error) {

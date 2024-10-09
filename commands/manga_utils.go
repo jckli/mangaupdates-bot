@@ -2,6 +2,8 @@ package commands
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/disgoorg/disgo/discord"
 	"github.com/jckli/mangaupdates-bot/mubot"
@@ -22,11 +24,11 @@ func selectServerOrUserComponents(command, subcommand, title string) []discord.C
 		discord.ActionRowComponent{
 			discord.NewSecondaryButton(
 				"Server",
-				"/"+command+"/"+subcommand+"/server/"+title,
+				"/"+command+"/"+subcommand+"/mode/server/"+title,
 			),
 			discord.NewSecondaryButton(
 				"User (DMs)",
-				"/"+command+"/"+subcommand+"/user"+title,
+				"/"+command+"/"+subcommand+"/mode/user/"+title,
 			),
 		},
 	}
@@ -69,8 +71,11 @@ func searchResultsEmbed(
 
 	allResults := []searchResultsFormatted{}
 	for i, result := range searchResults.Results {
+		if i >= 25 {
+			break
+		}
 		description += fmt.Sprintf(
-			"%d. %s (%d, Rating: %.2f)\n",
+			"%d. %s (%s, Rating: %.2f)\n",
 			i+1,
 			result.Record.Title,
 			result.Record.Year,
@@ -94,25 +99,111 @@ func searchResultsEmbed(
 }
 
 func dropdownSearchResultsComponents(
-	command, subcommand string,
+	command, subcommand, mode string,
 	results []searchResultsFormatted,
 ) []discord.ContainerComponent {
 	options := []discord.StringSelectMenuOption{}
 	for i, result := range results {
 		options = append(options, discord.StringSelectMenuOption{
-			Label:       fmt.Sprintf("%d. %s", i, result.Title),
-			Description: fmt.Sprintf("%d, Rating: %.2f", result.Year, result.Rating),
-			Value:       string(result.Id),
+			Label:       fmt.Sprintf("%d. %s", i+1, result.Title),
+			Description: fmt.Sprintf("%s, Rating: %.2f", result.Year, result.Rating),
+			Value:       strconv.Itoa(result.Id),
 		})
 
 	}
 
 	return []discord.ContainerComponent{
 		discord.ActionRowComponent{
-			discord.NewStringSelectMenu(
-				"/"+command+"/"+subcommand+"/select",
-				"Select a Manga",
-				options...),
+			discord.StringSelectMenuComponent{
+				CustomID:    "/" + command + "/" + subcommand + "/select/" + mode,
+				Placeholder: "Select a Manga",
+				Options:     options,
+			},
 		},
 	}
+}
+
+func confirmMangaEmbed(b *mubot.Bot, embedTitle string, mangaId int64) discord.Embed {
+	seriesInfo, err := utils.MuGetSeriesInfo(b, mangaId)
+	if err != nil {
+		b.Logger.Error(
+			fmt.Sprintf("Failed to get series info (searchMangaAddHandler): %s", err.Error()),
+		)
+		return discord.NewEmbedBuilder().
+			SetTitle("Error").
+			SetDescription("Could not get series info, please try again later.").
+			SetColor(0xff4f4f).
+			Build()
+	}
+
+	description, err := utils.MuCleanupDescription(seriesInfo.Description)
+	if err != nil {
+		b.Logger.Error(
+			fmt.Sprintf("Failed to cleanup description (searchMangaAddHandler): %s", err.Error()),
+		)
+		return errorTechnicalErrorEmbed()
+	}
+
+	authorArray := []string{}
+	for _, author := range seriesInfo.Authors {
+		authorArray = append(authorArray, author.Name)
+	}
+	authorString := strings.Join(authorArray, ", ")
+
+	embed := discord.NewEmbedBuilder().
+		SetColor(0x3083e3).
+		SetTitle(embedTitle).
+		SetDescription(fmt.Sprintf("**Did you mean to add `%s`?**", seriesInfo.Title)).
+		AddField("Description", description, false).
+		AddField("Author(s)", authorString, true).
+		AddField("Year", seriesInfo.Year, true).
+		SetImage(seriesInfo.Image.URL.Original).
+		Build()
+
+	return embed
+}
+
+func selectConfirmMangaComponents(
+	command, subcommand, mode, mangaId string,
+) []discord.ContainerComponent {
+
+	return []discord.ContainerComponent{
+		discord.ActionRowComponent{
+			discord.NewDangerButton(
+				"Cancel",
+				"/"+command+"/"+subcommand+"/confirm/select/"+mode+"/"+mangaId+"/cancel",
+			),
+			discord.NewSuccessButton(
+				"Confirm",
+				"/"+command+"/"+subcommand+"/confirm/select/"+mode+"/"+mangaId+"/confirm",
+			),
+		},
+	}
+}
+
+func cancelMangaEmbed(embedTitle string) discord.Embed {
+	embed := discord.NewEmbedBuilder().
+		SetTitle(embedTitle).
+		SetDescription("Successfully cancelled.").
+		SetColor(0xff4f4f).
+		Build()
+	return embed
+}
+
+func successMangaAddEmbed(embedTitle, mangaTitle string) discord.Embed {
+	embed := discord.NewEmbedBuilder().
+		SetTitle(embedTitle).
+		SetDescription(fmt.Sprintf("Successfully added `%s` to your manga list.", mangaTitle)).
+		SetColor(0x3083e3).
+		Build()
+	return embed
+}
+
+func mangaExistsEmbed(embedTitle string) discord.Embed {
+	embed := discord.NewEmbedBuilder().
+		SetTitle(embedTitle).
+		SetDescription("This manga is already in your list.").
+		SetColor(0xff4f4f).
+		Build()
+	return embed
 }

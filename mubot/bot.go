@@ -9,6 +9,7 @@ import (
 
 	"github.com/disgoorg/disgo"
 	"github.com/disgoorg/disgo/bot"
+	"github.com/disgoorg/disgo/cache"
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
 	"github.com/disgoorg/disgo/gateway"
@@ -59,6 +60,9 @@ func (b *Bot) Setup(listeners ...bot.EventListener) bot.Client {
 			gateway.WithIntents(
 				gateway.IntentGuilds,
 			),
+		),
+		bot.WithCacheConfigOpts(
+			cache.WithCaches(cache.FlagGuilds),
 		),
 		bot.WithEventListeners(listeners...),
 	)
