@@ -11,7 +11,7 @@ import (
 
 var serverCommand = discord.SlashCommandCreate{
 	Name:        "server",
-	Description: "Interact with the server",
+	Description: "Modify server settings",
 	Options: []discord.ApplicationCommandOption{
 		discord.ApplicationCommandOptionSubCommand{
 			Name:        "setup",

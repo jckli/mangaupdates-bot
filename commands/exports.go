@@ -10,6 +10,7 @@ var CommandList = []discord.ApplicationCommandCreate{
 	pingCommand,
 	mangaCommand,
 	serverCommand,
+	userCommand,
 }
 
 func CommandHandlers(b *mubot.Bot) *handler.Mux {
@@ -41,7 +42,7 @@ func CommandHandlers(b *mubot.Bot) *handler.Mux {
 				id := e.Vars["id"]
 				decision := e.Vars["decision"]
 				if decision == "cancel" {
-					return cancelMangaAddHandler(e, b)
+					return cancelMangaAddHandler(e)
 				} else {
 					return confirmMangaAddHandler(e, b, mode, id)
 				}
@@ -52,6 +53,12 @@ func CommandHandlers(b *mubot.Bot) *handler.Mux {
 	h.Route("/server", func(h handler.Router) {
 		h.Command("/setup", func(e *handler.CommandEvent) error {
 			return serverSetupHandler(e, b)
+		})
+	})
+
+	h.Route("/user", func(h handler.Router) {
+		h.Command("/setup", func(e *handler.CommandEvent) error {
+			return userSetupHandler(e, b)
 		})
 	})
 
