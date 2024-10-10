@@ -95,64 +95,102 @@ func notify(b *mubot.Bot, entry utils.MangaEntry) {
 		scanGroups []utils.MuSearchGroupsGroup
 	)
 
-	if entry.Link != "" {
-		idRegex := regexp.MustCompile(`id=([0-9]+)`)
-		pathRegex := regexp.MustCompile(`series/([^/]+)`)
-		var mangaId int64
-		if matches := idRegex.FindStringSubmatch(entry.Link); len(matches) > 1 {
-			strMangaId := matches[1]
-			mangaId, err = strconv.ParseInt(strMangaId, 10, 64)
-			if err != nil {
-				b.Logger.Error(fmt.Sprintf("Failed to convert new ID: %s", err.Error()))
+	errChan := make(chan error, 3)
+	defer close(errChan)
+
+	go func() {
+		if entry.Link != "" {
+			idRegex := regexp.MustCompile(`id=([0-9]+)`)
+			pathRegex := regexp.MustCompile(`series/([^/]+)`)
+
+			var mangaId int64
+			if matches := idRegex.FindStringSubmatch(entry.Link); len(matches) > 1 {
+				strMangaId := matches[1]
+				mangaId, err = strconv.ParseInt(strMangaId, 10, 64)
+				if err != nil {
+					errChan <- fmt.Errorf("failed to convert new ID: %s", err.Error())
+					return
+				}
+			} else if matches := pathRegex.FindStringSubmatch(entry.Link); len(matches) > 1 {
+				strMangaId := matches[1]
+				mangaId, err = utils.MuConvertNewId(strMangaId)
+				if err != nil {
+					errChan <- fmt.Errorf("failed to convert new ID: %s", err.Error())
+					return
+				}
+			} else {
+				errChan <- fmt.Errorf("failed to get manga ID from URL: %s", entry.Link)
 				return
 			}
-		} else if matches := pathRegex.FindStringSubmatch(entry.Link); len(matches) > 1 {
-			strMangaId := matches[1]
-			mangaId, err = utils.MuConvertNewId(strMangaId)
+			entry.NewId = mangaId
+
+			var seriesInfo *utils.MuSeriesInfoResponse
+			seriesInfo, err = utils.MuGetSeriesInfo(b, mangaId)
 			if err != nil {
-				b.Logger.Error(fmt.Sprintf("Failed to convert new ID: %s", err.Error()))
+				errChan <- fmt.Errorf("failed to get series info: %s", err.Error())
 				return
 			}
-		} else {
-			b.Logger.Error(fmt.Sprintf("Failed to get manga ID from URL: %s", entry.Link))
+			image = seriesInfo.Image.URL.Original
+		}
+		errChan <- nil
+	}()
+
+	go func() {
+		if entry.ScanGroup != "" {
+			scanGroups, err = getScanGroups(b, entry.ScanGroup)
+			if err != nil {
+				errChan <- fmt.Errorf("failed to get scan groups: %s", err.Error())
+				return
+			}
+		}
+		errChan <- nil
+	}()
+
+	for i := 0; i < 2; i++ {
+		if err := <-errChan; err != nil {
+			b.Logger.Error(err.Error())
 			return
 		}
-		entry.NewId = mangaId
-		var seriesInfo *utils.MuSeriesInfoResponse
-		seriesInfo, err = utils.MuGetSeriesInfo(b, mangaId)
-		if err != nil {
-			b.Logger.Error(fmt.Sprintf("Failed to get series info: %s", err.Error()))
-			return
-		}
-		image = seriesInfo.Image.URL.Original
 	}
 
-	if entry.ScanGroup != "" {
-		scanGroups, err = getScanGroups(b, entry.ScanGroup)
+	serverWantChan := make(chan []utils.MDbServer)
+	userWantChan := make(chan []utils.MDbUser)
+	go func() {
+		serverWant, userWant, err := getWantLists(b, entry, scanGroups)
 		if err != nil {
-			b.Logger.Error(fmt.Sprintf("Failed to get scan groups: %s", err.Error()))
-			return
+			b.Logger.Error(fmt.Sprintf("Failed to get want lists: %s", err.Error()))
 		}
-	}
+		serverWantChan <- serverWant
+		userWantChan <- userWant
+	}()
 
-	serverWant, userWant, err := getWantLists(b, entry, scanGroups)
-	if err != nil {
-		b.Logger.Error(fmt.Sprintf("Failed to get want lists: %s", err.Error()))
-	}
+	serverWant := <-serverWantChan
+	userWant := <-userWantChan
 	if serverWant == nil && userWant == nil {
 		return
 	}
 
+	var wg sync.WaitGroup
 	if serverWant != nil {
+		wg.Add(len(serverWant))
 		for _, server := range serverWant {
-			sendServerUpdate(b, entry, server, image, scanGroups, errorChannel)
+			go func(server utils.MDbServer) {
+				defer wg.Done()
+				sendServerUpdate(b, entry, server, image, scanGroups, errorChannel)
+			}(server)
 		}
 	}
 	if userWant != nil {
+		wg.Add(len(userWant))
 		for _, user := range userWant {
-			sendUserUpdate(b, entry, user, image, scanGroups, errorChannel)
+			go func(user utils.MDbUser) {
+				defer wg.Done()
+				sendUserUpdate(b, entry, user, image, scanGroups, errorChannel)
+			}(user)
 		}
 	}
+
+	wg.Wait()
 
 	b.Logger.Info(fmt.Sprintf("Finished notifying for %s", entry.Title))
 	_, _ = b.Client.Rest().
@@ -173,7 +211,11 @@ func getScanGroups(b *mubot.Bot, scanGroup string) ([]utils.MuSearchGroupsGroup,
 			return nil, err
 		}
 
-		scanGroups = append(scanGroups, results.Results[0])
+		if len(results.Results) > 0 {
+			scanGroups = append(scanGroups, results.Results[0])
+		} else {
+			return nil, fmt.Errorf("No results found for group: %s", group)
+		}
 	}
 
 	return scanGroups, nil
@@ -186,6 +228,7 @@ func getWantLists(
 ) ([]utils.MDbServer, []utils.MDbUser, error) {
 	var serverErr error
 	var userErr error
+
 	serverWant, serverErr := utils.DbServersWanted(b, &scanGroups, &entry)
 	userWant, userErr := utils.DbUsersWanted(b, &scanGroups, &entry)
 
@@ -196,6 +239,7 @@ func getWantLists(
 			serverErr.Error(),
 		)
 	}
+	fmt.Println(entry, serverWant, userWant)
 	if userErr != nil {
 		return serverWant, nil, userErr
 	}
@@ -236,10 +280,10 @@ func sendServerUpdate(
 		scanGroupLinks := []string{}
 		for _, group := range scanGroups {
 			scanGroupNames = append(scanGroupNames, group.Record.Name)
-			scanGroupLinks = append(scanGroupLinks, group.Record.URL)
+			scanGroupLinks = append(scanGroupLinks, group.Record.Social.Site)
 		}
 		embed.AddField("Scanlator(s)", strings.Join(scanGroupNames, ", "), true)
-		embed.AddField("Scanlator Link(s)", strings.Join(scanGroupLinks, ", "), true)
+		embed.AddField("Scanlator Link(s)", strings.Join(scanGroupLinks, "\n"), false)
 	}
 
 	_, err := b.Client.Rest().
@@ -255,7 +299,7 @@ func sendServerUpdate(
 			})
 	} else {
 		_, _ = b.Client.Rest().CreateMessage(errorChannel, discord.MessageCreate{
-			Content: fmt.Sprintf("**SERVER**: Sent message to ID %s\nTitle: %s\nScanlator: %s\nLink: %s", server.ChannelId, entry.Title, entry.ScanGroup, entry.Link),
+			Content: fmt.Sprintf("**SERVER**: Sent message to ID `%d`\nTitle: `%s`\nScanlator: `%s`\nLink: `%s`", server.ChannelId, entry.Title, entry.ScanGroup, entry.Link),
 		})
 	}
 }
@@ -290,10 +334,10 @@ func sendUserUpdate(
 		scanGroupLinks := []string{}
 		for _, group := range scanGroups {
 			scanGroupNames = append(scanGroupNames, group.Record.Name)
-			scanGroupLinks = append(scanGroupLinks, group.Record.URL)
+			scanGroupLinks = append(scanGroupLinks, group.Record.Social.Site)
 		}
 		embed.AddField("Scanlator(s)", strings.Join(scanGroupNames, ", "), true)
-		embed.AddField("Scanlator Link(s)", strings.Join(scanGroupLinks, ", "), true)
+		embed.AddField("Scanlator Link(s)", strings.Join(scanGroupLinks, "\n"), false)
 	}
 
 	userChannel, err := b.Client.Rest().
@@ -316,7 +360,7 @@ func sendUserUpdate(
 			})
 	} else {
 		_, _ = b.Client.Rest().CreateMessage(errorChannel, discord.MessageCreate{
-			Content: fmt.Sprintf("**USER**: Sent message to ID %s\nTitle: %s\nScanlator: %s\nLink: %s", user.UserId, entry.Title, entry.ScanGroup, entry.Link),
+			Content: fmt.Sprintf("**USER**: Sent message to ID `%d`\nTitle: `%s`\nScanlator: `%s`\nLink: `%s`", user.UserId, entry.Title, entry.ScanGroup, entry.Link),
 		})
 	}
 }

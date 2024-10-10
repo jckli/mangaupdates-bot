@@ -72,6 +72,7 @@ func MuCleanupDescription(htmlStr string) (string, error) {
 }
 
 func MuLogin() (*MuLoginResponse, error) {
+
 	login := MuLoginRequest{
 		Username: username,
 		Password: password,
@@ -161,12 +162,12 @@ func MuGetSeriesInfo(b *mubot.Bot, seriesId int64) (*MuSeriesInfoResponse, error
 
 	backoffConfig := backoff.NewExponentialBackOff()
 	backoffConfig.InitialInterval = 5 * time.Second
-	backoffConfig.MaxInterval = 1 * time.Minute
-	backoffConfig.MaxElapsedTime = 4 * time.Minute
-	backoffConfig.Multiplier = 2
+	backoffConfig.MaxInterval = 2 * time.Minute
+	backoffConfig.MaxElapsedTime = 5 * time.Minute
+	backoffConfig.Multiplier = 1.5
 	backoffConfig.RandomizationFactor = 0.5
 
-	retryPolicy := backoff.WithMaxRetries(backoffConfig, 10)
+	retryPolicy := backoff.WithMaxRetries(backoffConfig, 20)
 
 	err := backoff.Retry(operation, retryPolicy)
 	if err != nil {
@@ -184,25 +185,66 @@ func MuGetSeriesInfo(b *mubot.Bot, seriesId int64) (*MuSeriesInfoResponse, error
 }
 
 func MuPostSearchGroups(b *mubot.Bot, groupName string) (*MuSearchGroupsResponse, error) {
-	resp, err := muPostRequest(
-		"https://api.mangaupdates.com/v1/groups/search",
-		b.MuToken,
-		MuSearchGroupsRequest{
-			Search:  groupName,
-			PerPage: 10,
-		},
-	)
+	var respBody *MuSearchGroupsResponse
 
-	respBody := &MuSearchGroupsResponse{}
-	if err = json.Unmarshal(resp, respBody); err != nil {
-		return nil, err
+	operation := func() error {
+		resp, statusCode, err := muPostRequest(
+			"https://api.mangaupdates.com/v1/groups/search",
+			b.MuToken,
+			MuSearchGroupsRequest{
+				Search:  groupName,
+				PerPage: 10,
+			},
+		)
+		if err != nil {
+			return fmt.Errorf(
+				"Failed to post search groups: %s, %s, %s",
+				err.Error(),
+				string(resp),
+				groupName,
+			)
+		}
+
+		if statusCode == 200 {
+			respBody = &MuSearchGroupsResponse{}
+			if err = json.Unmarshal(resp, respBody); err != nil {
+				return fmt.Errorf("Failed to unmarshal search groups: %s", err.Error())
+			}
+			return nil
+		} else if statusCode >= 500 && statusCode < 600 {
+			return fmt.Errorf("Search groups server error: %d", statusCode)
+		} else {
+			fmt.Println(string(resp))
+			return backoff.Permanent(fmt.Errorf("Search groups client error: %d", statusCode))
+		}
+	}
+
+	backoffConfig := backoff.NewExponentialBackOff()
+	backoffConfig.InitialInterval = 5 * time.Second
+	backoffConfig.MaxInterval = 2 * time.Minute
+	backoffConfig.MaxElapsedTime = 5 * time.Minute
+	backoffConfig.Multiplier = 1.5
+	backoffConfig.RandomizationFactor = 0.5
+
+	retryPolicy := backoff.WithMaxRetries(backoffConfig, 20)
+
+	err := backoff.Retry(operation, retryPolicy)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"Failed to get search groups after retries: %v, Group Name: %s",
+			err,
+			groupName,
+		)
+	}
+	if respBody == nil {
+		return nil, fmt.Errorf("MuGetSeriesInfo: respBody is nil after successful unmarshal")
 	}
 
 	return respBody, nil
 }
 
 func MuPostSearchSeries(b *mubot.Bot, seriesName string) (*MuSearchSeriesResponse, error) {
-	resp, err := muPostRequest(
+	resp, _, err := muPostRequest(
 		"https://api.mangaupdates.com/v1/series/search",
 		b.MuToken,
 		MuSearchSeriesRequest{

@@ -52,7 +52,7 @@ func muGetRequest(url, token string) ([]byte, int, error) {
 	return bodyCopy, statusCode, nil
 }
 
-func muPostRequest(url, token string, body interface{}) ([]byte, error) {
+func muPostRequest(url, token string, body interface{}) ([]byte, int, error) {
 	req := fasthttp.AcquireRequest()
 	defer fasthttp.ReleaseRequest(req)
 	req.Header.SetMethod("POST")
@@ -62,7 +62,7 @@ func muPostRequest(url, token string, body interface{}) ([]byte, error) {
 
 	jsonBody, err := json.Marshal(body)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	req.SetBody(jsonBody)
 
@@ -71,11 +71,13 @@ func muPostRequest(url, token string, body interface{}) ([]byte, error) {
 
 	err = client.Do(req, resp)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	bodyCopy := make([]byte, len(resp.Body()))
 	copy(bodyCopy, resp.Body())
 
-	return bodyCopy, nil
+	statusCode := resp.StatusCode()
+
+	return bodyCopy, statusCode, nil
 }

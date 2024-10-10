@@ -162,18 +162,13 @@ type MuSeriesInfoResponse struct {
 
 type MuSearchGroupsRequest struct {
 	Search  string `json:"search"`
-	AddedBy int    `json:"added_by"`
-	Page    int    `json:"page"`
-	PerPage int    `json:"per_page"`
-	Letter  string `json:"letter"`
-	Active  bool   `json:"active"`
-	Pending bool   `json:"pending"`
+	PerPage int    `json:"perpage"`
 }
 
 type MuSearchGroupsResponse struct {
 	TotalHits int                   `json:"total_hits"`
 	Page      int                   `json:"page"`
-	PerPage   int                   `json:"per_page"`
+	PerPage   int                   `json:"perpage"`
 	Results   []MuSearchGroupsGroup `json:"results"`
 }
 
