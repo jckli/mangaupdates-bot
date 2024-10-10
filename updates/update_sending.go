@@ -239,7 +239,6 @@ func getWantLists(
 			serverErr.Error(),
 		)
 	}
-	fmt.Println(entry, serverWant, userWant)
 	if userErr != nil {
 		return serverWant, nil, userErr
 	}
