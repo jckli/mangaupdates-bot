@@ -260,7 +260,7 @@ func sendServerUpdate(
 	bu, ok := b.Client.Caches().SelfUser()
 	embed := discord.NewEmbedBuilder().
 		SetTitlef("New %s Chapter!", entry.Title).
-		SetDescriptionf("Chapter `%s` has been released!", entry.Chapter).
+		SetDescriptionf("Chapter `%s` has been released for `%s`!", entry.Chapter, entry.Title).
 		SetColor(0x3083e3)
 	if ok {
 		embed.SetAuthor(bu.Username, "", *bu.AvatarURL())
@@ -314,7 +314,7 @@ func sendUserUpdate(
 	bu, ok := b.Client.Caches().SelfUser()
 	embed := discord.NewEmbedBuilder().
 		SetTitlef("New %s Chapter!", entry.Title).
-		SetDescriptionf("Chapter `%s` has been released!", entry.Chapter).
+		SetDescriptionf("Chapter `%s` has been released for `%s`!", entry.Chapter, entry.Title).
 		SetColor(0x3083e3)
 	if ok {
 		embed.SetAuthor(bu.Username, "", *bu.AvatarURL())
