@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"golang.org/x/net/html"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"golang.org/x/net/html"
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/jckli/mangaupdates-bot/mubot"
@@ -140,7 +141,7 @@ func MuGetSeriesInfo(b *mubot.Bot, seriesId int64) (*MuSeriesInfoResponse, error
 
 		if err != nil {
 			return fmt.Errorf(
-				"Failed to fetch series info: %s, %s, %d",
+				"failed to fetch series info: %s, %s, %d",
 				err.Error(),
 				string(resp),
 				seriesId,
@@ -150,13 +151,13 @@ func MuGetSeriesInfo(b *mubot.Bot, seriesId int64) (*MuSeriesInfoResponse, error
 		if statusCode == 200 {
 			respBody = &MuSeriesInfoResponse{}
 			if err := json.Unmarshal(resp, respBody); err != nil {
-				return fmt.Errorf("Failed to unmarshal series info: %s", err.Error())
+				return fmt.Errorf("failed to unmarshal series info: %s", err.Error())
 			}
 			return nil
 		} else if statusCode >= 500 && statusCode < 600 {
-			return fmt.Errorf("Series info server error: %d", statusCode)
+			return fmt.Errorf("series info server error: %d", statusCode)
 		} else {
-			return backoff.Permanent(fmt.Errorf("Series info client error: %d", statusCode))
+			return backoff.Permanent(fmt.Errorf("series info client error: %d", statusCode))
 		}
 	}
 
@@ -172,7 +173,7 @@ func MuGetSeriesInfo(b *mubot.Bot, seriesId int64) (*MuSeriesInfoResponse, error
 	err := backoff.Retry(operation, retryPolicy)
 	if err != nil {
 		return nil, fmt.Errorf(
-			"Failed to get series info after retries: %v, Series ID: %d",
+			"failed to get series info after retries: %v, Series ID: %d",
 			err,
 			seriesId,
 		)
@@ -198,7 +199,7 @@ func MuPostSearchGroups(b *mubot.Bot, groupName string) (*MuSearchGroupsResponse
 		)
 		if err != nil {
 			return fmt.Errorf(
-				"Failed to post search groups: %s, %s, %s",
+				"failed to post search groups: %s, %s, %s",
 				err.Error(),
 				string(resp),
 				groupName,
@@ -208,14 +209,14 @@ func MuPostSearchGroups(b *mubot.Bot, groupName string) (*MuSearchGroupsResponse
 		if statusCode == 200 {
 			respBody = &MuSearchGroupsResponse{}
 			if err = json.Unmarshal(resp, respBody); err != nil {
-				return fmt.Errorf("Failed to unmarshal search groups: %s", err.Error())
+				return fmt.Errorf("failed to unmarshal search groups: %s", err.Error())
 			}
 			return nil
 		} else if statusCode >= 500 && statusCode < 600 {
-			return fmt.Errorf("Search groups server error: %d", statusCode)
+			return fmt.Errorf("search groups server error: %d", statusCode)
 		} else {
 			fmt.Println(string(resp))
-			return backoff.Permanent(fmt.Errorf("Search groups client error: %d", statusCode))
+			return backoff.Permanent(fmt.Errorf("search groups client error: %d", statusCode))
 		}
 	}
 
@@ -231,7 +232,7 @@ func MuPostSearchGroups(b *mubot.Bot, groupName string) (*MuSearchGroupsResponse
 	err := backoff.Retry(operation, retryPolicy)
 	if err != nil {
 		return nil, fmt.Errorf(
-			"Failed to get search groups after retries: %v, Group Name: %s",
+			"failed to get search groups after retries: %v, Group Name: %s",
 			err,
 			groupName,
 		)
@@ -244,7 +245,7 @@ func MuPostSearchGroups(b *mubot.Bot, groupName string) (*MuSearchGroupsResponse
 }
 
 func MuPostSearchSeries(b *mubot.Bot, seriesName string) (*MuSearchSeriesResponse, error) {
-	resp, _, err := muPostRequest(
+	resp, _, _ := muPostRequest(
 		"https://api.mangaupdates.com/v1/series/search",
 		b.MuToken,
 		MuSearchSeriesRequest{
@@ -254,7 +255,7 @@ func MuPostSearchSeries(b *mubot.Bot, seriesName string) (*MuSearchSeriesRespons
 	)
 
 	respBody := &MuSearchSeriesResponse{}
-	if err = json.Unmarshal(resp, respBody); err != nil {
+	if err := json.Unmarshal(resp, respBody); err != nil {
 		return nil, err
 	}
 
