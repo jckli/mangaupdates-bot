@@ -34,7 +34,7 @@ func serverSetupHandler(e *handler.CommandEvent, b *mubot.Bot) error {
 	if !inGuild {
 		return e.Respond(
 			discord.InteractionResponseTypeCreateMessage,
-			discord.NewMessageCreateBuilder().SetEmbeds(errorTechnicalErrorEmbed()).Build(),
+			discord.NewMessageCreateBuilder().SetEmbeds(utils.DcErrorTechnicalErrorEmbed()).Build(),
 		)
 	}
 
@@ -49,7 +49,7 @@ func serverSetupHandler(e *handler.CommandEvent, b *mubot.Bot) error {
 		b.Logger.Error(fmt.Sprintf("Error getting server in serverSetupHandler: %s", err.Error()))
 		return e.Respond(
 			discord.InteractionResponseTypeCreateMessage,
-			discord.NewMessageCreateBuilder().SetEmbeds(errorTechnicalErrorEmbed()).Build(),
+			discord.NewMessageCreateBuilder().SetEmbeds(utils.DcErrorTechnicalErrorEmbed()).Build(),
 		)
 	}
 	if exists {
@@ -64,7 +64,7 @@ func serverSetupHandler(e *handler.CommandEvent, b *mubot.Bot) error {
 		b.Logger.Error(fmt.Sprintf("Error adding server in serverSetupHandler: %s", err.Error()))
 		return e.Respond(
 			discord.InteractionResponseTypeCreateMessage,
-			discord.NewMessageCreateBuilder().SetEmbeds(errorTechnicalErrorEmbed()).Build(),
+			discord.NewMessageCreateBuilder().SetEmbeds(utils.DcErrorTechnicalErrorEmbed()).Build(),
 		)
 	}
 

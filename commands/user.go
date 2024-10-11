@@ -28,7 +28,7 @@ func userSetupHandler(e *handler.CommandEvent, b *mubot.Bot) error {
 		b.Logger.Error(fmt.Sprintf("Error getting user in userSetupHandler: %s", err.Error()))
 		return e.Respond(
 			discord.InteractionResponseTypeCreateMessage,
-			discord.NewMessageCreateBuilder().SetEmbeds(errorTechnicalErrorEmbed()).Build(),
+			discord.NewMessageCreateBuilder().SetEmbeds(utils.DcErrorTechnicalErrorEmbed()).Build(),
 		)
 	}
 	if exists {
@@ -43,7 +43,7 @@ func userSetupHandler(e *handler.CommandEvent, b *mubot.Bot) error {
 		b.Logger.Error(fmt.Sprintf("Error adding user in userSetupHandler: %s", err.Error()))
 		return e.Respond(
 			discord.InteractionResponseTypeCreateMessage,
-			discord.NewMessageCreateBuilder().SetEmbeds(errorTechnicalErrorEmbed()).Build(),
+			discord.NewMessageCreateBuilder().SetEmbeds(utils.DcErrorTechnicalErrorEmbed()).Build(),
 		)
 	}
 
