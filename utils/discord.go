@@ -1,10 +1,10 @@
-package commands
+package utils
 
 import (
 	"github.com/disgoorg/disgo/discord"
 )
 
-func errorTechnicalErrorEmbed() discord.Embed {
+func DcErrorTechnicalErrorEmbed() discord.Embed {
 	embed := discord.NewEmbedBuilder().
 		SetTitle("Error").
 		SetDescription("Something went wrong. Please ask for assistance in the support server.").

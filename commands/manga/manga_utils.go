@@ -1,4 +1,4 @@
-package commands
+package manga
 
 import (
 	"fmt"
@@ -141,7 +141,7 @@ func confirmMangaEmbed(b *mubot.Bot, embedTitle string, mangaId int64) discord.E
 		b.Logger.Error(
 			fmt.Sprintf("Failed to cleanup description (searchMangaAddHandler): %s", err.Error()),
 		)
-		return errorTechnicalErrorEmbed()
+		return utils.DcErrorTechnicalErrorEmbed()
 	}
 
 	authorArray := []string{}

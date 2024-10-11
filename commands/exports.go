@@ -3,12 +3,13 @@ package commands
 import (
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/handler"
+	"github.com/jckli/mangaupdates-bot/commands/manga"
 	"github.com/jckli/mangaupdates-bot/mubot"
 )
 
 var CommandList = []discord.ApplicationCommandCreate{
 	pingCommand,
-	mangaCommand,
+	manga.MangaCommand,
 	serverCommand,
 	userCommand,
 }
@@ -20,20 +21,20 @@ func CommandHandlers(b *mubot.Bot) *handler.Mux {
 
 	h.Route("/manga", func(h handler.Router) {
 		h.Command("/add", func(e *handler.CommandEvent) error {
-			return mangaAddHandler(e, b)
+			return manga.MangaAddHandler(e, b)
 		})
 		h.Component("/add/mode/{mode}/{title}", func(e *handler.ComponentEvent) error {
 			mode := e.Vars["mode"]
 			if mode == "user" {
-				adapter := &ComponentEventAdapter{Event: e}
-				return userMangaAddHandler(adapter, b, e.Vars["title"])
+				adapter := &manga.ComponentEventAdapter{Event: e}
+				return manga.MangaAddUserHandler(adapter, b, e.Vars["title"])
 			} else {
-				return serverMangaAddHandler(e, b, e.Vars["title"])
+				return manga.MangaAddServerHandler(e, b, e.Vars["title"])
 			}
 		})
 		h.Component("/add/select/{mode}", func(e *handler.ComponentEvent) error {
 			mode := e.Vars["mode"]
-			return searchMangaAddHandler(e, b, mode)
+			return manga.MangaAddSearchHandler(e, b, mode)
 		})
 		h.Component(
 			"/add/confirm/select/{mode}/{id}/{decision}",
@@ -42,9 +43,9 @@ func CommandHandlers(b *mubot.Bot) *handler.Mux {
 				id := e.Vars["id"]
 				decision := e.Vars["decision"]
 				if decision == "cancel" {
-					return cancelMangaAddHandler(e)
+					return manga.MangaAddCancelHandler(e)
 				} else {
-					return confirmMangaAddHandler(e, b, mode, id)
+					return manga.MangaAddConfirmHandler(e, b, mode, id)
 				}
 			},
 		)

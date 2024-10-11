@@ -1,4 +1,4 @@
-package commands
+package manga
 
 import (
 	"errors"
@@ -12,31 +12,13 @@ import (
 	"github.com/jckli/mangaupdates-bot/utils"
 )
 
-var mangaCommand = discord.SlashCommandCreate{
-	Name:        "manga",
-	Description: "Interact with manga",
-	Options: []discord.ApplicationCommandOption{
-		discord.ApplicationCommandOptionSubCommand{
-			Name:        "add",
-			Description: "Add a manga to your list",
-			Options: []discord.ApplicationCommandOption{
-				discord.ApplicationCommandOptionString{
-					Name:        "title",
-					Description: "The title of the manga",
-					Required:    true,
-				},
-			},
-		},
-	},
-}
-
-func mangaAddHandler(e *handler.CommandEvent, b *mubot.Bot) error {
+func MangaAddHandler(e *handler.CommandEvent, b *mubot.Bot) error {
 	title := e.SlashCommandInteractionData().String("title")
 
 	_, inGuild := e.Guild()
 	if !inGuild {
 		adapter := &CommandEventAdapter{Event: e}
-		return userMangaAddHandler(adapter, b, title)
+		return MangaAddUserHandler(adapter, b, title)
 	} else {
 		return e.Respond(
 			discord.InteractionResponseTypeCreateMessage,
@@ -53,7 +35,7 @@ func mangaAddHandler(e *handler.CommandEvent, b *mubot.Bot) error {
 	}
 }
 
-func userMangaAddHandler(
+func MangaAddUserHandler(
 	e EventHandler,
 	b *mubot.Bot,
 	title string,
@@ -67,7 +49,7 @@ func userMangaAddHandler(
 		)
 		return e.Respond(
 			discord.InteractionResponseTypeCreateMessage,
-			discord.NewMessageCreateBuilder().SetEmbeds(errorTechnicalErrorEmbed()).Build(),
+			discord.NewMessageCreateBuilder().SetEmbeds(utils.DcErrorTechnicalErrorEmbed()).Build(),
 		)
 	}
 	if !exists {
@@ -102,7 +84,7 @@ func userMangaAddHandler(
 	return err
 }
 
-func serverMangaAddHandler(e *handler.ComponentEvent, b *mubot.Bot, title string) error {
+func MangaAddServerHandler(e *handler.ComponentEvent, b *mubot.Bot, title string) error {
 	serverId := int64(*e.GuildID())
 
 	exists, err := utils.DbServerCheckExists(b, serverId)
@@ -115,7 +97,7 @@ func serverMangaAddHandler(e *handler.ComponentEvent, b *mubot.Bot, title string
 		)
 		return e.UpdateMessage(
 			discord.MessageUpdate{
-				Embeds:     &[]discord.Embed{errorTechnicalErrorEmbed()},
+				Embeds:     &[]discord.Embed{utils.DcErrorTechnicalErrorEmbed()},
 				Components: &[]discord.ContainerComponent{},
 			},
 		)
@@ -162,7 +144,7 @@ func serverMangaAddHandler(e *handler.ComponentEvent, b *mubot.Bot, title string
 	return err
 }
 
-func searchMangaAddHandler(e *handler.ComponentEvent, b *mubot.Bot, mode string) error {
+func MangaAddSearchHandler(e *handler.ComponentEvent, b *mubot.Bot, mode string) error {
 	mangaId := e.StringSelectMenuInteractionData().Values[0]
 
 	intMangaId, err := strconv.ParseInt(mangaId, 10, 64)
@@ -170,7 +152,7 @@ func searchMangaAddHandler(e *handler.ComponentEvent, b *mubot.Bot, mode string)
 		b.Logger.Error(fmt.Sprintf("Failed to parse manga ID (searchMangaAddHandler): %s", mangaId))
 		return e.UpdateMessage(
 			discord.MessageUpdate{
-				Embeds:     &[]discord.Embed{errorTechnicalErrorEmbed()},
+				Embeds:     &[]discord.Embed{utils.DcErrorTechnicalErrorEmbed()},
 				Components: &[]discord.ContainerComponent{},
 			},
 		)
@@ -192,7 +174,7 @@ func searchMangaAddHandler(e *handler.ComponentEvent, b *mubot.Bot, mode string)
 	return err
 }
 
-func cancelMangaAddHandler(e *handler.ComponentEvent) error {
+func MangaAddCancelHandler(e *handler.ComponentEvent) error {
 	return e.UpdateMessage(
 		discord.MessageUpdate{
 			Embeds:     &[]discord.Embed{cancelMangaEmbed("Add Manga")},
@@ -201,7 +183,7 @@ func cancelMangaAddHandler(e *handler.ComponentEvent) error {
 	)
 }
 
-func confirmMangaAddHandler(e *handler.ComponentEvent, b *mubot.Bot, mode, mangaId string) error {
+func MangaAddConfirmHandler(e *handler.ComponentEvent, b *mubot.Bot, mode, mangaId string) error {
 	intMangaId, err := strconv.ParseInt(mangaId, 10, 64)
 	if err != nil {
 		b.Logger.Error(
@@ -209,19 +191,19 @@ func confirmMangaAddHandler(e *handler.ComponentEvent, b *mubot.Bot, mode, manga
 		)
 		return e.UpdateMessage(
 			discord.MessageUpdate{
-				Embeds: &[]discord.Embed{errorTechnicalErrorEmbed()},
+				Embeds: &[]discord.Embed{utils.DcErrorTechnicalErrorEmbed()},
 			},
 		)
 	}
 
 	if mode == "user" {
-		return userConfirmMangaAddHandler(e, b, intMangaId)
+		return MangaAddUserConfirmHandler(e, b, intMangaId)
 	} else {
-		return serverConfirmMangaAddHandler(e, b, intMangaId)
+		return MangaAddServerConfirmHandler(e, b, intMangaId)
 	}
 }
 
-func userConfirmMangaAddHandler(e *handler.ComponentEvent, b *mubot.Bot, mangaId int64) error {
+func MangaAddUserConfirmHandler(e *handler.ComponentEvent, b *mubot.Bot, mangaId int64) error {
 	userId := int64(e.User().ID)
 
 	exists, err := utils.DbUserCheckMangaExists(b, userId, mangaId)
@@ -231,7 +213,7 @@ func userConfirmMangaAddHandler(e *handler.ComponentEvent, b *mubot.Bot, mangaId
 		)
 		return e.UpdateMessage(
 			discord.MessageUpdate{
-				Embeds:     &[]discord.Embed{errorTechnicalErrorEmbed()},
+				Embeds:     &[]discord.Embed{utils.DcErrorTechnicalErrorEmbed()},
 				Components: &[]discord.ContainerComponent{},
 			},
 		)
@@ -252,7 +234,7 @@ func userConfirmMangaAddHandler(e *handler.ComponentEvent, b *mubot.Bot, mangaId
 		)
 		return e.UpdateMessage(
 			discord.MessageUpdate{
-				Embeds:     &[]discord.Embed{errorTechnicalErrorEmbed()},
+				Embeds:     &[]discord.Embed{utils.DcErrorTechnicalErrorEmbed()},
 				Components: &[]discord.ContainerComponent{},
 			},
 		)
@@ -270,7 +252,7 @@ func userConfirmMangaAddHandler(e *handler.ComponentEvent, b *mubot.Bot, mangaId
 		)
 		return e.UpdateMessage(
 			discord.MessageUpdate{
-				Embeds:     &[]discord.Embed{errorTechnicalErrorEmbed()},
+				Embeds:     &[]discord.Embed{utils.DcErrorTechnicalErrorEmbed()},
 				Components: &[]discord.ContainerComponent{},
 			},
 		)
@@ -284,7 +266,7 @@ func userConfirmMangaAddHandler(e *handler.ComponentEvent, b *mubot.Bot, mangaId
 	)
 }
 
-func serverConfirmMangaAddHandler(e *handler.ComponentEvent, b *mubot.Bot, mangaId int64) error {
+func MangaAddServerConfirmHandler(e *handler.ComponentEvent, b *mubot.Bot, mangaId int64) error {
 	serverId := int64(*e.GuildID())
 
 	exists, err := utils.DbServerCheckMangaExists(b, serverId, mangaId)
@@ -297,7 +279,7 @@ func serverConfirmMangaAddHandler(e *handler.ComponentEvent, b *mubot.Bot, manga
 		)
 		return e.UpdateMessage(
 			discord.MessageUpdate{
-				Embeds:     &[]discord.Embed{errorTechnicalErrorEmbed()},
+				Embeds:     &[]discord.Embed{utils.DcErrorTechnicalErrorEmbed()},
 				Components: &[]discord.ContainerComponent{},
 			},
 		)
@@ -321,7 +303,7 @@ func serverConfirmMangaAddHandler(e *handler.ComponentEvent, b *mubot.Bot, manga
 		)
 		return e.UpdateMessage(
 			discord.MessageUpdate{
-				Embeds:     &[]discord.Embed{errorTechnicalErrorEmbed()},
+				Embeds:     &[]discord.Embed{utils.DcErrorTechnicalErrorEmbed()},
 				Components: &[]discord.ContainerComponent{},
 			},
 		)
@@ -339,7 +321,7 @@ func serverConfirmMangaAddHandler(e *handler.ComponentEvent, b *mubot.Bot, manga
 		)
 		return e.UpdateMessage(
 			discord.MessageUpdate{
-				Embeds:     &[]discord.Embed{errorTechnicalErrorEmbed()},
+				Embeds:     &[]discord.Embed{utils.DcErrorTechnicalErrorEmbed()},
 				Components: &[]discord.ContainerComponent{},
 			},
 		)
