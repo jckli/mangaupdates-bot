@@ -207,3 +207,56 @@ func mangaExistsEmbed(embedTitle string) discord.Embed {
 		Build()
 	return embed
 }
+
+func userMangaSearchResultsEmbed(
+	b *mubot.Bot,
+	embedTitle string, userId int64,
+) (discord.Embed, []searchResultsFormatted) {
+	user, err := utils.DbGetUser(b, userId)
+	if err != nil {
+		embed := discord.NewEmbedBuilder().
+			SetTitle("Error").
+			SetDescription("Failed to get user manga list. Try again later").
+			SetColor(0xff4f4f).
+			Build()
+		return embed, nil
+	}
+
+	description := "Select a manga from your manga list:\n"
+	if len(user.Manga) == 0 {
+		description = "No manga found in your list."
+		return discord.NewEmbedBuilder().
+			SetTitle(embedTitle).
+			SetDescription(description).
+			SetColor(0x3083e3).
+			Build(), nil
+	}
+
+	allResults := []searchResultsFormatted{}
+	for i, result := range user.Manga {
+		if i >= 25 {
+			break
+		}
+		description += fmt.Sprintf(
+			"%d. %s (%s, Rating: %.2f)\n",
+			i+1,
+			result.Record.Title,
+			result.Record.Year,
+			result.Record.BayesianRating,
+		)
+
+		allResults = append(allResults, searchResultsFormatted{
+			Title:  result.Record.Title,
+			Year:   result.Record.Year,
+			Rating: result.Record.BayesianRating,
+			Id:     result.Record.SeriesID,
+		})
+	}
+
+	embed := discord.NewEmbedBuilder().
+		SetTitle(embedTitle).
+		SetDescription(description).
+		SetColor(0x3083e3).
+		Build()
+	return embed, allResults
+}

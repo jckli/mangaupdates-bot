@@ -20,6 +20,8 @@ func CommandHandlers(b *mubot.Bot) *handler.Mux {
 	h.Command("/ping", PingHandler)
 
 	h.Route("/manga", func(h handler.Router) {
+
+		// manga add
 		h.Command("/add", func(e *handler.CommandEvent) error {
 			return manga.MangaAddHandler(e, b)
 		})
@@ -49,6 +51,20 @@ func CommandHandlers(b *mubot.Bot) *handler.Mux {
 				}
 			},
 		)
+
+		// manga remove
+		h.Command("/remove", func(e *handler.CommandEvent) error {
+			return manga.MangaRemoveHandler(e, b)
+		})
+		h.Component("/remove/mode/{mode}", func(e *handler.ComponentEvent) error {
+			mode := e.Vars["mode"]
+			if mode == "user" {
+				adapter := &manga.ComponentEventAdapter{Event: e}
+				return manga.MangaRemoveUserHandler(adapter, b)
+			} else {
+				return manga.MangaRemoveServerHandler(e, b)
+			}
+		})
 	})
 
 	h.Route("/server", func(h handler.Router) {

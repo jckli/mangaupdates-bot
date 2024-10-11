@@ -198,19 +198,19 @@ func DbRemoveUser(b *mubot.Bot, userId int64) error {
 	return err
 }
 
-func DbGetServer(b *mubot.Bot, serverId int64) (bson.M, error) {
+func DbGetServer(b *mubot.Bot, serverId int64) (MDbServer, error) {
 	collection := b.MongoClient.Database(dbName).Collection("servers")
 
-	var result bson.M
+	var result MDbServer
 	err := collection.FindOne(context.TODO(), bson.M{"serverid": serverId}).Decode(&result)
 
 	return result, err
 }
 
-func DbGetUser(b *mubot.Bot, userId int64) (bson.M, error) {
+func DbGetUser(b *mubot.Bot, userId int64) (MDbUser, error) {
 	collection := b.MongoClient.Database(dbName).Collection("users")
 
-	var result bson.M
+	var result MDbUser
 	err := collection.FindOne(context.TODO(), bson.M{"userid": userId}).Decode(&result)
 
 	return result, err
