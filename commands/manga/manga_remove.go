@@ -2,6 +2,7 @@ package manga
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/handler"
@@ -94,7 +95,66 @@ func MangaRemoveUserSearchHandler(
 	b *mubot.Bot,
 	page int,
 ) error {
-	return nil
+	userId := int64(e.User().ID)
+
+	user, err := utils.DbGetUser(b, userId)
+	if err != nil {
+		b.Logger.Error(
+			fmt.Sprintf(
+				"Failed to get user (MangaRemoveUserHandler): %s",
+				err.Error(),
+			),
+		)
+		return e.Respond(
+			discord.InteractionResponseTypeCreateMessage,
+			discord.NewMessageCreateBuilder().SetEmbeds(utils.DcErrorTechnicalErrorEmbed()).Build(),
+		)
+	}
+
+	parsed := parsePaginationMangaList(user.Manga, page)
+
+	searchResults, searchResultsFormatted := dbMangaSearchResultsEmbed(
+		"Remove Manga",
+		parsed.MangaList,
+		page,
+	)
+	if searchResultsFormatted == nil {
+		return e.Respond(
+			discord.InteractionResponseTypeCreateMessage,
+			discord.NewMessageCreateBuilder().SetEmbeds(searchResults).Build(),
+		)
+	}
+	dropdownSearchResults := dropdownDbMangaSearchResultsComponents(
+		"manga",
+		"remove",
+		"user",
+		searchResultsFormatted,
+	)
+
+	if !parsed.Pagination {
+		return e.Respond(
+			discord.InteractionResponseTypeCreateMessage,
+			discord.MessageCreate{
+				Embeds:     []discord.Embed{searchResults},
+				Components: dropdownSearchResults,
+			},
+		)
+	}
+
+	pagination := paginationMangaSearchResultsComponents(
+		"manga",
+		"remove",
+		"user",
+		parsed,
+	)
+	components := append(dropdownSearchResults, pagination...)
+	return e.Respond(
+		discord.InteractionResponseTypeCreateMessage,
+		discord.MessageCreate{
+			Embeds:     []discord.Embed{searchResults},
+			Components: components,
+		},
+	)
 }
 
 func MangaRemoveServerSearchHandler(
@@ -157,12 +217,111 @@ func MangaRemoveServerSearchHandler(
 		"server",
 		parsed,
 	)
-
 	components := append(dropdownSearchResults, pagination...)
 	return e.UpdateMessage(
 		discord.MessageUpdate{
 			Embeds:     &[]discord.Embed{searchResults},
 			Components: &components,
+		},
+	)
+}
+
+func MangaRemoveSelectHandler(
+	e *handler.ComponentEvent,
+	b *mubot.Bot,
+	mode string,
+) error {
+	mangaId := e.StringSelectMenuInteractionData().Values[0]
+
+	intMangaId, err := strconv.ParseInt(mangaId, 10, 64)
+	if err != nil {
+		b.Logger.Error(
+			fmt.Sprintf("Failed to parse manga ID (MangaRemoveSelectHandler): %s", mangaId),
+		)
+		return e.UpdateMessage(
+			discord.MessageUpdate{
+				Embeds:     &[]discord.Embed{utils.DcErrorTechnicalErrorEmbed()},
+				Components: &[]discord.ContainerComponent{},
+			},
+		)
+	}
+
+	components := selectConfirmMangaComponents("manga", "remove", mode, mangaId)
+	err = e.UpdateMessage(
+		discord.MessageUpdate{
+			Embeds:     &[]discord.Embed{confirmMangaEmbed(b, "Remove Manga", intMangaId)},
+			Components: &components,
+		},
+	)
+
+	return err
+}
+
+func MangaRemoveCancelHandler(e *handler.ComponentEvent) error {
+	return e.UpdateMessage(
+		discord.MessageUpdate{
+			Embeds:     &[]discord.Embed{cancelMangaEmbed("Remove Manga")},
+			Components: &[]discord.ContainerComponent{},
+		},
+	)
+}
+
+func MangaRemoveConfirmHandler(
+	e *handler.ComponentEvent,
+	b *mubot.Bot,
+	mode,
+	mangaId string,
+) error {
+	intMangaId, err := strconv.ParseInt(mangaId, 10, 64)
+	if err != nil {
+		b.Logger.Error(
+			fmt.Sprintf("Failed to parse manga ID (MangaRemoveConfirmHandler): %s", mangaId),
+		)
+		return e.UpdateMessage(
+			discord.MessageUpdate{
+				Embeds:     &[]discord.Embed{utils.DcErrorTechnicalErrorEmbed()},
+				Components: &[]discord.ContainerComponent{},
+			},
+		)
+	}
+
+	if mode == "user" {
+		userId := int64(e.User().ID)
+		err = utils.DbUserRemoveManga(b, userId, intMangaId)
+		if err != nil {
+			b.Logger.Error(
+				fmt.Sprintf(
+					"Failed to remove manga from user (MangaRemoveConfirmHandler): %s",
+					err.Error(),
+				),
+			)
+			return e.UpdateMessage(
+				discord.MessageUpdate{
+					Embeds:     &[]discord.Embed{utils.DcErrorTechnicalErrorEmbed()},
+					Components: &[]discord.ContainerComponent{},
+				},
+			)
+		}
+	} else {
+		serverId := int64(*e.GuildID())
+		err = utils.DbServerRemoveManga(b, serverId, intMangaId)
+		if err != nil {
+			b.Logger.Error(
+				fmt.Sprintf("Failed to remove manga from server (MangaRemoveConfirmHandler): %s", err.Error()),
+			)
+			return e.UpdateMessage(
+				discord.MessageUpdate{
+					Embeds:     &[]discord.Embed{utils.DcErrorTechnicalErrorEmbed()},
+					Components: &[]discord.ContainerComponent{},
+				},
+			)
+		}
+	}
+
+	return e.UpdateMessage(
+		discord.MessageUpdate{
+			Embeds:     &[]discord.Embed{successMangaRemoveEmbed("Remove Manga")},
+			Components: &[]discord.ContainerComponent{},
 		},
 	)
 }

@@ -416,3 +416,27 @@ func DbUserCheckExists(b *mubot.Bot, userId int64) (bool, error) {
 
 	return count > 0, nil
 }
+
+func DbServerRemoveManga(b *mubot.Bot, serverId, mangaId int64) error {
+	collection := b.MongoClient.Database(dbName).Collection("servers")
+
+	_, err := collection.UpdateOne(
+		context.TODO(),
+		bson.M{"serverid": serverId},
+		bson.M{"$pull": bson.M{"manga": bson.M{"id": mangaId}}},
+	)
+
+	return err
+}
+
+func DbUserRemoveManga(b *mubot.Bot, userId, mangaId int64) error {
+	collection := b.MongoClient.Database(dbName).Collection("users")
+
+	_, err := collection.UpdateOne(
+		context.TODO(),
+		bson.M{"userid": userId},
+		bson.M{"$pull": bson.M{"manga": bson.M{"id": mangaId}}},
+	)
+
+	return err
+}

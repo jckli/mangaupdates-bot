@@ -38,7 +38,7 @@ func CommandHandlers(b *mubot.Bot) *handler.Mux {
 		})
 		h.Component("/add/select/{mode}", func(e *handler.ComponentEvent) error {
 			mode := e.Vars["mode"]
-			return manga.MangaAddSearchHandler(e, b, mode)
+			return manga.MangaAddSelectHandler(e, b, mode)
 		})
 		h.Component(
 			"/add/confirm/select/{mode}/{id}/{decision}",
@@ -78,6 +78,26 @@ func CommandHandlers(b *mubot.Bot) *handler.Mux {
 				return manga.MangaRemoveServerSearchHandler(e, b, pageInt)
 			}
 		})
+		h.Component(
+			"/remove/select/{mode}",
+			func(e *handler.ComponentEvent) error {
+				mode := e.Vars["mode"]
+				return manga.MangaRemoveSelectHandler(e, b, mode)
+			},
+		)
+		h.Component(
+			"/remove/confirm/select/{mode}/{id}/{decision}",
+			func(e *handler.ComponentEvent) error {
+				mode := e.Vars["mode"]
+				id := e.Vars["id"]
+				decision := e.Vars["decision"]
+				if decision == "cancel" {
+					return manga.MangaRemoveCancelHandler(e)
+				} else {
+					return manga.MangaRemoveConfirmHandler(e, b, mode, id)
+				}
+			},
+		)
 	})
 
 	h.Route("/server", func(h handler.Router) {

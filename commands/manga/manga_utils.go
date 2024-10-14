@@ -159,7 +159,7 @@ func confirmMangaEmbed(b *mubot.Bot, embedTitle string, mangaId int64) discord.E
 	embed := discord.NewEmbedBuilder().
 		SetColor(0x3083e3).
 		SetTitle(embedTitle).
-		SetDescription(fmt.Sprintf("**Did you mean to add `%s`?**", seriesInfo.Title)).
+		SetDescription(fmt.Sprintf("**Is `%s` the correct manga?**", seriesInfo.Title)).
 		AddField("Description", description, false).
 		AddField("Author(s)", authorString, true).
 		AddField("Year", seriesInfo.Year, true).
@@ -219,7 +219,7 @@ func dbMangaSearchResultsEmbed(
 	userManga []utils.MDbManga,
 	page int,
 ) (discord.Embed, []dbMangaSearchResultsFormatted) {
-	description := "Select a manga you want to remove from the manga list:\n"
+	description := "Select a manga you want to remove from your manga list:\n"
 	if len(userManga) == 0 {
 		description = "No manga found in your list."
 		return discord.NewEmbedBuilder().
@@ -347,4 +347,13 @@ func parsePaginationMangaList(
 		MaxPage:     totalPages,
 		MangaList:   mangaList[startIndex:endIndex],
 	}
+}
+
+func successMangaRemoveEmbed(embedTitle string) discord.Embed {
+	embed := discord.NewEmbedBuilder().
+		SetTitle(embedTitle).
+		SetDescription("Manga successfully removed from your manga list.").
+		SetColor(0x3083e3).
+		Build()
+	return embed
 }

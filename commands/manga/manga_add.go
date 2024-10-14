@@ -1,13 +1,11 @@
 package manga
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/handler"
-	"github.com/disgoorg/disgo/rest"
 	"github.com/jckli/mangaupdates-bot/mubot"
 	"github.com/jckli/mangaupdates-bot/utils"
 )
@@ -144,7 +142,7 @@ func MangaAddServerHandler(e *handler.ComponentEvent, b *mubot.Bot, title string
 	return err
 }
 
-func MangaAddSearchHandler(e *handler.ComponentEvent, b *mubot.Bot, mode string) error {
+func MangaAddSelectHandler(e *handler.ComponentEvent, b *mubot.Bot, mode string) error {
 	mangaId := e.StringSelectMenuInteractionData().Values[0]
 
 	intMangaId, err := strconv.ParseInt(mangaId, 10, 64)
@@ -166,10 +164,12 @@ func MangaAddSearchHandler(e *handler.ComponentEvent, b *mubot.Bot, mode string)
 		},
 	)
 
-	var customErr rest.Error
-	if errors.As(err, &customErr) {
-		fmt.Println(string(customErr.RsBody))
-	}
+	/*
+		var customErr rest.Error
+		if errors.As(err, &customErr) {
+			fmt.Println(string(customErr.RsBody))
+		}
+	*/
 
 	return err
 }
