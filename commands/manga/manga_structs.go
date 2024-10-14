@@ -4,6 +4,7 @@ import (
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/handler"
 	"github.com/disgoorg/disgo/rest"
+	"github.com/jckli/mangaupdates-bot/utils"
 )
 
 type EventHandler interface {
@@ -70,4 +71,18 @@ type searchResultsFormatted struct {
 	Year   string
 	Rating float64
 	Id     int
+}
+
+type dbMangaSearchResultsFormatted struct {
+	Title string
+	Id    int64
+}
+
+type parsedPaginationMangaList struct {
+	Pagination  bool
+	PrevPage    int
+	CurrentPage int
+	NextPage    int
+	MaxPage     int
+	MangaList   []utils.MDbManga
 }

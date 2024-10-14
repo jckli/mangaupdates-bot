@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"strconv"
+
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/handler"
 	"github.com/jckli/mangaupdates-bot/commands/manga"
@@ -63,6 +65,17 @@ func CommandHandlers(b *mubot.Bot) *handler.Mux {
 				return manga.MangaRemoveUserHandler(adapter, b)
 			} else {
 				return manga.MangaRemoveServerHandler(e, b)
+			}
+		})
+		h.Component("/remove/search/mode/{mode}/{page}", func(e *handler.ComponentEvent) error {
+			mode := e.Vars["mode"]
+			page := e.Vars["page"]
+			pageInt, _ := strconv.Atoi(page)
+			if mode == "user" {
+				adapter := &manga.ComponentEventAdapter{Event: e}
+				return manga.MangaRemoveUserSearchHandler(adapter, b, pageInt)
+			} else {
+				return manga.MangaRemoveServerSearchHandler(e, b, pageInt)
 			}
 		})
 	})

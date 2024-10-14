@@ -19,5 +19,9 @@ var MangaCommand = discord.SlashCommandCreate{
 				},
 			},
 		},
+		discord.ApplicationCommandOptionSubCommand{
+			Name:        "remove",
+			Description: "Remove a manga from your list",
+		},
 	},
 }

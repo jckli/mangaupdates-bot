@@ -53,7 +53,7 @@ func searchResultsEmbed(
 	if err != nil {
 		embed := discord.NewEmbedBuilder().
 			SetTitle("Error").
-			SetDescription("Failed to search for series. Try again later").
+			SetDescription("Failed to search for series. Try again later.").
 			SetColor(0xff4f4f).
 			Build()
 		return embed, nil
@@ -77,13 +77,13 @@ func searchResultsEmbed(
 		description += fmt.Sprintf(
 			"%d. %s (%s, Rating: %.2f)\n",
 			i+1,
-			result.Record.Title,
+			utils.ParseHTMLEntities(result.Record.Title),
 			result.Record.Year,
 			result.Record.BayesianRating,
 		)
 
 		allResults = append(allResults, searchResultsFormatted{
-			Title:  result.Record.Title,
+			Title:  utils.ParseHTMLEntities(result.Record.Title),
 			Year:   result.Record.Year,
 			Rating: result.Record.BayesianRating,
 			Id:     result.Record.SeriesID,
@@ -104,12 +104,18 @@ func dropdownSearchResultsComponents(
 ) []discord.ContainerComponent {
 	options := []discord.StringSelectMenuOption{}
 	for i, result := range results {
+		description := result.Year
+		if result.Rating != 0 {
+			if description != "" {
+				description += ", "
+			}
+			description += fmt.Sprintf("Rating: %.2f", result.Rating)
+		}
 		options = append(options, discord.StringSelectMenuOption{
-			Label:       fmt.Sprintf("%d. %s", i+1, result.Title),
-			Description: fmt.Sprintf("%s, Rating: %.2f", result.Year, result.Rating),
+			Label:       fmt.Sprintf("%d. %s", i+1, utils.TruncateString(result.Title, 50)),
+			Description: description,
 			Value:       strconv.Itoa(result.Id),
 		})
-
 	}
 
 	return []discord.ContainerComponent{
@@ -208,22 +214,13 @@ func mangaExistsEmbed(embedTitle string) discord.Embed {
 	return embed
 }
 
-func userMangaSearchResultsEmbed(
-	b *mubot.Bot,
-	embedTitle string, userId int64,
-) (discord.Embed, []searchResultsFormatted) {
-	user, err := utils.DbGetUser(b, userId)
-	if err != nil {
-		embed := discord.NewEmbedBuilder().
-			SetTitle("Error").
-			SetDescription("Failed to get user manga list. Try again later").
-			SetColor(0xff4f4f).
-			Build()
-		return embed, nil
-	}
-
-	description := "Select a manga from your manga list:\n"
-	if len(user.Manga) == 0 {
+func dbMangaSearchResultsEmbed(
+	embedTitle string,
+	userManga []utils.MDbManga,
+	page int,
+) (discord.Embed, []dbMangaSearchResultsFormatted) {
+	description := "Select a manga you want to remove from the manga list:\n"
+	if len(userManga) == 0 {
 		description = "No manga found in your list."
 		return discord.NewEmbedBuilder().
 			SetTitle(embedTitle).
@@ -232,24 +229,22 @@ func userMangaSearchResultsEmbed(
 			Build(), nil
 	}
 
-	allResults := []searchResultsFormatted{}
-	for i, result := range user.Manga {
+	allResults := []dbMangaSearchResultsFormatted{}
+	for i, result := range userManga {
 		if i >= 25 {
 			break
 		}
-		description += fmt.Sprintf(
-			"%d. %s (%s, Rating: %.2f)\n",
-			i+1,
-			result.Record.Title,
-			result.Record.Year,
-			result.Record.BayesianRating,
+		n := (page-1)*25 + i + 1
+		str := fmt.Sprintf(
+			"%d. %s\n",
+			n,
+			result.Title,
 		)
+		description += str
 
-		allResults = append(allResults, searchResultsFormatted{
-			Title:  result.Record.Title,
-			Year:   result.Record.Year,
-			Rating: result.Record.BayesianRating,
-			Id:     result.Record.SeriesID,
+		allResults = append(allResults, dbMangaSearchResultsFormatted{
+			Title: str,
+			Id:    result.Id,
 		})
 	}
 
@@ -259,4 +254,97 @@ func userMangaSearchResultsEmbed(
 		SetColor(0x3083e3).
 		Build()
 	return embed, allResults
+}
+
+func dropdownDbMangaSearchResultsComponents(
+	command, subcommand, mode string,
+	results []dbMangaSearchResultsFormatted,
+) []discord.ContainerComponent {
+	options := []discord.StringSelectMenuOption{}
+	for _, result := range results {
+		options = append(options, discord.StringSelectMenuOption{
+			Label: utils.TruncateString(result.Title, 50),
+			Value: strconv.Itoa(int(result.Id)),
+		})
+	}
+
+	return []discord.ContainerComponent{
+		discord.ActionRowComponent{
+			discord.StringSelectMenuComponent{
+				CustomID:    "/" + command + "/" + subcommand + "/select/" + mode,
+				Placeholder: "Select a Manga",
+				Options:     options,
+			},
+		},
+	}
+}
+
+func paginationMangaSearchResultsComponents(
+	command, subcommand, mode string,
+	p parsedPaginationMangaList,
+) []discord.ContainerComponent {
+	return []discord.ContainerComponent{
+		discord.ActionRowComponent{
+			discord.NewDangerButton(
+				"",
+				"/"+command+"/"+subcommand+"/search/mode/"+mode+"/"+strconv.Itoa(p.PrevPage),
+			).
+				WithEmoji(discord.ComponentEmoji{Name: "◀"}).
+				WithDisabled(p.PrevPage == -1),
+			discord.NewSecondaryButton(fmt.Sprintf("%d/%d", p.CurrentPage, p.MaxPage), "page-counter").
+				WithDisabled(true),
+			discord.NewSuccessButton(
+				"",
+				"/"+command+"/"+subcommand+"/search/mode/"+mode+"/"+strconv.Itoa(p.NextPage),
+			).
+				WithEmoji(discord.ComponentEmoji{Name: "▶"}).
+				WithDisabled(p.NextPage == -1),
+		},
+	}
+}
+
+func parsePaginationMangaList(
+	mangaList []utils.MDbManga,
+	page int,
+) parsedPaginationMangaList {
+	const pageSize = 25
+	totalMangas := len(mangaList)
+	totalPages := (totalMangas + pageSize - 1) / pageSize
+
+	if totalMangas <= pageSize {
+		return parsedPaginationMangaList{
+			Pagination:  false,
+			PrevPage:    -1,
+			CurrentPage: 1,
+			NextPage:    -1,
+			MaxPage:     1,
+			MangaList:   mangaList,
+		}
+	}
+
+	startIndex := (page - 1) * pageSize
+	endIndex := startIndex + pageSize
+	if endIndex > totalMangas {
+		endIndex = totalMangas
+	}
+	var prevPage, nextPage int
+	if page > 1 {
+		prevPage = page - 1
+	} else {
+		prevPage = -1
+	}
+	if page < totalPages {
+		nextPage = page + 1
+	} else {
+		nextPage = -1
+	}
+
+	return parsedPaginationMangaList{
+		Pagination:  true,
+		PrevPage:    prevPage,
+		CurrentPage: page,
+		NextPage:    nextPage,
+		MaxPage:     totalPages,
+		MangaList:   mangaList[startIndex:endIndex],
+	}
 }

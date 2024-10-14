@@ -53,7 +53,7 @@ func MangaRemoveUserHandler(
 		)
 	}
 
-	return nil
+	return MangaRemoveUserSearchHandler(e, b, 1)
 }
 
 func MangaRemoveServerHandler(
@@ -86,5 +86,83 @@ func MangaRemoveServerHandler(
 		)
 	}
 
+	return MangaRemoveServerSearchHandler(e, b, 1)
+}
+
+func MangaRemoveUserSearchHandler(
+	e EventHandler,
+	b *mubot.Bot,
+	page int,
+) error {
 	return nil
+}
+
+func MangaRemoveServerSearchHandler(
+	e *handler.ComponentEvent,
+	b *mubot.Bot,
+	page int,
+) error {
+	serverId := int64(*e.GuildID())
+
+	server, err := utils.DbGetServer(b, serverId)
+	if err != nil {
+		b.Logger.Error(
+			fmt.Sprintf(
+				"Failed to get server (MangaRemoveServerHandler): %s",
+				err.Error(),
+			),
+		)
+		return e.UpdateMessage(
+			discord.MessageUpdate{
+				Embeds:     &[]discord.Embed{utils.DcErrorTechnicalErrorEmbed()},
+				Components: &[]discord.ContainerComponent{},
+			},
+		)
+	}
+
+	parsed := parsePaginationMangaList(server.Manga, page)
+
+	searchResults, searchResultsFormatted := dbMangaSearchResultsEmbed(
+		"Remove Manga",
+		parsed.MangaList,
+		page,
+	)
+	if searchResultsFormatted == nil {
+		return e.UpdateMessage(
+			discord.MessageUpdate{
+				Embeds:     &[]discord.Embed{searchResults},
+				Components: &[]discord.ContainerComponent{},
+			},
+		)
+	}
+	dropdownSearchResults := dropdownDbMangaSearchResultsComponents(
+		"manga",
+		"remove",
+		"server",
+		searchResultsFormatted,
+	)
+
+	if !parsed.Pagination {
+		return e.UpdateMessage(
+			discord.MessageUpdate{
+				Embeds:     &[]discord.Embed{searchResults},
+				Components: &dropdownSearchResults,
+			},
+		)
+	}
+
+	pagination := paginationMangaSearchResultsComponents(
+		"manga",
+		"remove",
+		"server",
+		parsed,
+	)
+
+	components := append(dropdownSearchResults, pagination...)
+	return e.UpdateMessage(
+		discord.MessageUpdate{
+			Embeds:     &[]discord.Embed{searchResults},
+			Components: &components,
+		},
+	)
 }
