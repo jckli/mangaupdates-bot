@@ -6,7 +6,7 @@ import (
 
 var MangaCommand = discord.SlashCommandCreate{
 	Name:        "manga",
-	Description: "Interact with manga",
+	Description: "Interact with your manga list",
 	Options: []discord.ApplicationCommandOption{
 		discord.ApplicationCommandOptionSubCommand{
 			Name:        "add",
@@ -22,6 +22,10 @@ var MangaCommand = discord.SlashCommandCreate{
 		discord.ApplicationCommandOptionSubCommand{
 			Name:        "remove",
 			Description: "Remove a manga from your list",
+		},
+		discord.ApplicationCommandOptionSubCommand{
+			Name:        "list",
+			Description: "List all manga you have added",
 		},
 	},
 }

@@ -56,14 +56,40 @@ func MuCleanupDescription(htmlStr string) (string, error) {
 	}
 
 	var buf bytes.Buffer
+	const maxLength = 1024
+	var stop bool
+
 	var f func(*html.Node)
 	f = func(n *html.Node) {
-		if n.Type == html.TextNode {
-			buf.WriteString(n.Data)
-		} else if n.Type == html.ElementNode && strings.ToLower(n.Data) == "br" {
-			buf.WriteString("\n")
+		if stop {
+			return
 		}
-		for c := n.FirstChild; c != nil; c = c.NextSibling {
+		if n.Type == html.TextNode {
+			remaining := maxLength - buf.Len()
+			if remaining <= 0 {
+				stop = true
+				return
+			}
+			text := n.Data
+			if len(text) > remaining {
+				buf.WriteString(text[:remaining])
+				stop = true
+				return
+			}
+			buf.WriteString(text)
+		} else if n.Type == html.ElementNode && strings.ToLower(n.Data) == "br" {
+			if buf.Len() < maxLength {
+				buf.WriteString("\n")
+				if buf.Len() >= maxLength {
+					stop = true
+					return
+				}
+			} else {
+				stop = true
+				return
+			}
+		}
+		for c := n.FirstChild; c != nil && !stop; c = c.NextSibling {
 			f(c)
 		}
 	}

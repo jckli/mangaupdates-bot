@@ -98,6 +98,32 @@ func CommandHandlers(b *mubot.Bot) *handler.Mux {
 				}
 			},
 		)
+
+		// manga list
+		h.Command("/list", func(e *handler.CommandEvent) error {
+			return manga.MangaListHandler(e, b)
+		})
+		h.Component("/list/mode/{mode}", func(e *handler.ComponentEvent) error {
+			mode := e.Vars["mode"]
+			if mode == "user" {
+				adapter := &manga.ComponentEventAdapter{Event: e}
+				return manga.MangaListUserHandler(adapter, b)
+			} else {
+				return manga.MangaListServerHandler(e, b)
+			}
+		})
+		h.Component("/list/p/mode/{mode}/{page}", func(e *handler.ComponentEvent) error {
+
+			mode := e.Vars["mode"]
+			page := e.Vars["page"]
+			pageInt, _ := strconv.Atoi(page)
+			if mode == "user" {
+				adapter := &manga.ComponentEventAdapter{Event: e}
+				return manga.MangaListUserListHandler(adapter, b, pageInt)
+			} else {
+				return manga.MangaListServerListHandler(e, b, pageInt)
+			}
+		})
 	})
 
 	h.Route("/server", func(h handler.Router) {

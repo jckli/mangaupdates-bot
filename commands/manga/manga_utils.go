@@ -303,6 +303,67 @@ func paginationMangaSearchResultsComponents(
 	}
 }
 
+func dbMangaListEmbed(
+	embedTitle string,
+	userManga []utils.MDbManga,
+) (*discord.EmbedBuilder, []dbMangaSearchResultsFormatted) {
+	description := ""
+	if len(userManga) == 0 {
+		description = "No manga found in your list."
+		return discord.NewEmbedBuilder().
+			SetTitle(embedTitle).
+			SetDescription(description).
+			SetColor(0x3083e3), nil
+	}
+
+	allResults := []dbMangaSearchResultsFormatted{}
+	for i, result := range userManga {
+		if i >= 25 {
+			break
+		}
+		str := fmt.Sprintf(
+			"• %s\n",
+			result.Title,
+		)
+		description += str
+
+		allResults = append(allResults, dbMangaSearchResultsFormatted{
+			Title: str,
+			Id:    result.Id,
+		})
+	}
+
+	embed := discord.NewEmbedBuilder().
+		SetTitle(embedTitle).
+		SetDescription(description).
+		SetColor(0x3083e3)
+	return embed, allResults
+}
+
+func paginationMangaListComponents(
+	command, subcommand, mode string,
+	p parsedPaginationMangaList,
+) []discord.ContainerComponent {
+	return []discord.ContainerComponent{
+		discord.ActionRowComponent{
+			discord.NewDangerButton(
+				"",
+				"/"+command+"/"+subcommand+"/p/mode/"+mode+"/"+strconv.Itoa(p.PrevPage),
+			).
+				WithEmoji(discord.ComponentEmoji{Name: "◀"}).
+				WithDisabled(p.PrevPage == -1),
+			discord.NewSecondaryButton(fmt.Sprintf("%d/%d", p.CurrentPage, p.MaxPage), "page-counter").
+				WithDisabled(true),
+			discord.NewSuccessButton(
+				"",
+				"/"+command+"/"+subcommand+"/p/mode/"+mode+"/"+strconv.Itoa(p.NextPage),
+			).
+				WithEmoji(discord.ComponentEmoji{Name: "▶"}).
+				WithDisabled(p.NextPage == -1),
+		},
+	}
+}
+
 func parsePaginationMangaList(
 	mangaList []utils.MDbManga,
 	page int,

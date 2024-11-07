@@ -18,6 +18,7 @@ type EventHandler interface {
 		messageUpdate discord.MessageUpdate,
 		opts ...rest.RequestOpt,
 	) (*discord.Message, error)
+	SelfUser() (discord.OAuth2User, bool)
 }
 
 type CommandEventAdapter struct {
@@ -43,6 +44,10 @@ func (c *CommandEventAdapter) UpdateInteractionResponse(
 	return c.Event.UpdateInteractionResponse(messageUpdate, opts...)
 }
 
+func (c *CommandEventAdapter) SelfUser() (discord.OAuth2User, bool) {
+	return c.Event.Client().Caches().SelfUser()
+}
+
 type ComponentEventAdapter struct {
 	Event *handler.ComponentEvent
 }
@@ -64,6 +69,10 @@ func (c *ComponentEventAdapter) UpdateInteractionResponse(
 	opts ...rest.RequestOpt,
 ) (*discord.Message, error) {
 	return c.Event.UpdateInteractionResponse(messageUpdate, opts...)
+}
+
+func (c *ComponentEventAdapter) SelfUser() (discord.OAuth2User, bool) {
+	return c.Event.Client().Caches().SelfUser()
 }
 
 type searchResultsFormatted struct {
