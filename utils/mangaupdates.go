@@ -215,7 +215,6 @@ func MuPostSearchGroups(b *mubot.Bot, groupName string) (*MuSearchGroupsResponse
 		} else if statusCode >= 500 && statusCode < 600 {
 			return fmt.Errorf("search groups server error: %d", statusCode)
 		} else {
-			fmt.Println(string(resp))
 			return backoff.Permanent(fmt.Errorf("search groups client error: %d", statusCode))
 		}
 	}
@@ -232,31 +231,71 @@ func MuPostSearchGroups(b *mubot.Bot, groupName string) (*MuSearchGroupsResponse
 	err := backoff.Retry(operation, retryPolicy)
 	if err != nil {
 		return nil, fmt.Errorf(
-			"failed to get search groups after retries: %v, Group Name: %s",
+			"failed to get search groups after retries: %v, group name: %s",
 			err,
 			groupName,
 		)
 	}
 	if respBody == nil {
-		return nil, fmt.Errorf("MuGetSeriesInfo: respBody is nil after successful unmarshal")
+		return nil, fmt.Errorf("MuPostSearchGroups: respBody is nil after successful unmarshal")
 	}
 
 	return respBody, nil
 }
 
 func MuPostSearchSeries(b *mubot.Bot, seriesName string) (*MuSearchSeriesResponse, error) {
-	resp, _, _ := muPostRequest(
-		"https://api.mangaupdates.com/v1/series/search",
-		b.MuToken,
-		MuSearchSeriesRequest{
-			Search:  seriesName,
-			PerPage: 10,
-		},
-	)
+	var respBody *MuSearchSeriesResponse
 
-	respBody := &MuSearchSeriesResponse{}
-	if err := json.Unmarshal(resp, respBody); err != nil {
-		return nil, err
+	operation := func() error {
+		resp, statusCode, err := muPostRequest(
+			"https://api.mangaupdates.com/v1/series/search",
+			b.MuToken,
+			MuSearchSeriesRequest{
+				Search:  seriesName,
+				PerPage: 10,
+			},
+		)
+		if err != nil {
+			return fmt.Errorf(
+				"failed to post search series: %s, %s, %s",
+				err.Error(),
+				string(resp),
+				seriesName,
+			)
+		}
+
+		if statusCode == 200 {
+			respBody = &MuSearchSeriesResponse{}
+			if err := json.Unmarshal(resp, respBody); err != nil {
+				return fmt.Errorf("failed to unmarshal search series: %s", err.Error())
+			}
+			return nil
+		} else if statusCode >= 500 && statusCode < 600 {
+			return fmt.Errorf("search series server error: %d", statusCode)
+		} else {
+			return backoff.Permanent(fmt.Errorf("search series client error: %d", statusCode))
+		}
+	}
+
+	backoffConfig := backoff.NewExponentialBackOff()
+	backoffConfig.InitialInterval = 5 * time.Second
+	backoffConfig.MaxInterval = 2 * time.Minute
+	backoffConfig.MaxElapsedTime = 5 * time.Minute
+	backoffConfig.Multiplier = 1.5
+	backoffConfig.RandomizationFactor = 0.5
+
+	retryPolicy := backoff.WithMaxRetries(backoffConfig, 20)
+
+	err := backoff.Retry(operation, retryPolicy)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"failed to get search series after retries: %v, series name: %s",
+			err,
+			seriesName,
+		)
+	}
+	if respBody == nil {
+		return nil, fmt.Errorf("MuPostSearchSeries: respBody is nil after successful unmarshal")
 	}
 
 	return respBody, nil
