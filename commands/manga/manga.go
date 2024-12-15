@@ -27,5 +27,15 @@ var MangaCommand = discord.SlashCommandCreate{
 			Name:        "list",
 			Description: "List all manga you have added",
 		},
+		discord.ApplicationCommandOptionSubCommandGroup{
+			Name:        "set",
+			Description: "Set a manga's properties",
+			Options: []discord.ApplicationCommandOptionSubCommand{
+				{
+					Name:        "scanlator",
+					Description: "Set a manga's scanlator",
+				},
+			},
+		},
 	},
 }
