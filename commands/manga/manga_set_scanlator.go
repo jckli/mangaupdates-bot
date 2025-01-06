@@ -438,6 +438,29 @@ func MangaSetScanlatorGroupConfirmHandler(
 
 	if mode == "user" {
 		userId := int64(e.User().ID)
+		exists, err := utils.DbUserCheckGroupExists(b, userId, intMangaId, intGroupId)
+		if err != nil {
+			b.Logger.Error(
+				fmt.Sprintf(
+					"Failed to check group exists from user (MangaSetScanlatorGroupConfirmHandler): %s",
+					err.Error(),
+				),
+			)
+			return e.UpdateMessage(
+				discord.MessageUpdate{
+					Embeds:     &[]discord.Embed{utils.DcErrorTechnicalErrorEmbed()},
+					Components: &[]discord.ContainerComponent{},
+				},
+			)
+		}
+		if exists {
+			return e.UpdateMessage(
+				discord.MessageUpdate{
+					Embeds:     &[]discord.Embed{groupExistsEmbed("Set Scanlator")},
+					Components: &[]discord.ContainerComponent{},
+				},
+			)
+		}
 		err = utils.DbUserAddGroup(b, userId, intMangaId, intGroupId, groupInfo.Name)
 		if err != nil {
 			b.Logger.Error(
@@ -455,6 +478,30 @@ func MangaSetScanlatorGroupConfirmHandler(
 		}
 	} else {
 		serverId := int64(*e.GuildID())
+		exists, err := utils.DbServerCheckGroupExists(b, serverId, intMangaId, intGroupId)
+		if err != nil {
+			b.Logger.Error(
+				fmt.Sprintf(
+					"Failed to check group exists from server (MangaSetScanlatorGroupConfirmHandler): %s",
+					err.Error(),
+				),
+			)
+			return e.UpdateMessage(
+				discord.MessageUpdate{
+					Embeds:     &[]discord.Embed{utils.DcErrorTechnicalErrorEmbed()},
+					Components: &[]discord.ContainerComponent{},
+				},
+			)
+		}
+		if exists {
+			return e.UpdateMessage(
+				discord.MessageUpdate{
+					Embeds:     &[]discord.Embed{groupExistsEmbed("Set Scanlator")},
+					Components: &[]discord.ContainerComponent{},
+				},
+			)
+		}
+
 		err = utils.DbServerAddGroup(b, serverId, intMangaId, intGroupId, groupInfo.Name)
 		if err != nil {
 			b.Logger.Error(

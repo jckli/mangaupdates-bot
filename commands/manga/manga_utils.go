@@ -682,6 +682,15 @@ func selectConfirmGroupComponents(
 	}
 }
 
+func groupExistsEmbed(embedTitle string) discord.Embed {
+	embed := discord.NewEmbedBuilder().
+		SetTitle(embedTitle).
+		SetDescription("This scanlator group is already added for this manga.").
+		SetColor(0xff4f4f).
+		Build()
+	return embed
+}
+
 func successMangaSetScanlatorEmbed(embedTitle, mangaName, groupName string) discord.Embed {
 	embed := discord.NewEmbedBuilder().
 		SetTitle(embedTitle).
