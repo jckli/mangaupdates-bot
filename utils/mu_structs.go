@@ -173,60 +173,8 @@ type MuSearchGroupsResponse struct {
 }
 
 type MuSearchGroupsGroup struct {
-	Record struct {
-		GroupID int    `json:"group_id"`
-		Name    string `json:"name"`
-		URL     string `json:"url"`
-		Social  struct {
-			Site     string `json:"site"`
-			Facebook string `json:"facebook"`
-			Twitter  string `json:"twitter"`
-			IRC      struct {
-				Channel string `json:"channel"`
-				Server  string `json:"server"`
-			} `json:"irc"`
-			Forum   string `json:"forum"`
-			Discord string `json:"discord"`
-		} `json:"social"`
-		Active  bool   `json:"active"`
-		Notes   string `json:"notes"`
-		AddedBy struct {
-			UserID   int    `json:"user_id"`
-			Username string `json:"username"`
-			URL      string `json:"url"`
-			Avatar   struct {
-				ID     int    `json:"id"`
-				URL    string `json:"url"`
-				Height int    `json:"height"`
-				Width  int    `json:"width"`
-			} `json:"avatar"`
-			TimeJoined struct {
-				Timestamp int    `json:"timestamp"`
-				AsRFC3339 string `json:"as_rfc3339"`
-				AsString  string `json:"as_string"`
-			} `json:"time_joined"`
-			Signature     string `json:"signature"`
-			ForumTitle    string `json:"forum_title"`
-			FoldingAtHome bool   `json:"folding_at_home"`
-			Profile       struct {
-				Upgrade struct {
-					Requested bool   `json:"requested"`
-					Reason    string `json:"reason"`
-				} `json:"upgrade"`
-			} `json:"profile"`
-			Stats struct {
-				ForumPosts      int `json:"forum_posts"`
-				AddedAuthors    int `json:"added_authors"`
-				AddedGroups     int `json:"added_groups"`
-				AddedPublishers int `json:"added_publishers"`
-				AddedReleases   int `json:"added_releases"`
-				AddedSeries     int `json:"added_series"`
-			} `json:"stats"`
-			UserGroup     string `json:"user_group"`
-			UserGroupName string `json:"user_group_name"`
-		} `json:"added_by"`
-	} `json:"record"`
-	HitName string `json:"hit_name"`
+	Record  MuGroup `json:"record"`
+	HitName string  `json:"hit_name"`
 }
 
 type MuSearchSeriesRequest struct {
@@ -354,4 +302,90 @@ type MuSearchSeriesResponse struct {
 			} `json:"user_list"`
 		} `json:"metadata"`
 	} `json:"results"`
+}
+
+type MuSeriesGroupsResponse struct {
+	GroupList   []MuGroup `json:"group_list"`
+	ReleaseList []struct {
+		ID      int    `json:"id"`
+		Title   string `json:"title"`
+		Volume  string `json:"volume"`
+		Chapter string `json:"chapter"`
+		Groups  []struct {
+			Name    string `json:"name"`
+			GroupID int    `json:"group_id"`
+			URL     string `json:"url"`
+		} `json:"groups"`
+		ReleaseDate string `json:"release_date"`
+		TimeAdded   struct {
+			Timestamp int    `json:"timestamp"`
+			AsRFC3339 string `json:"as_rfc3339"`
+			AsString  string `json:"as_string"`
+		} `json:"time_added"`
+	} `json:"release_list"`
+}
+
+type MuGroup struct {
+	GroupID int    `json:"group_id"`
+	Name    string `json:"name"`
+	URL     string `json:"url"`
+	Social  struct {
+		Site     string `json:"site"`
+		Facebook string `json:"facebook"`
+		Twitter  string `json:"twitter"`
+		IRC      struct {
+			Channel string `json:"channel"`
+			Server  string `json:"server"`
+		} `json:"irc"`
+		Forum   string `json:"forum"`
+		Discord string `json:"discord"`
+	} `json:"social"`
+	Active  bool   `json:"active"`
+	Notes   string `json:"notes"`
+	AddedBy struct {
+		UserID   int    `json:"user_id"`
+		Username string `json:"username"`
+		URL      string `json:"url"`
+		Avatar   struct {
+			ID     int    `json:"id"`
+			URL    string `json:"url"`
+			Height int    `json:"height"`
+			Width  int    `json:"width"`
+		} `json:"avatar"`
+		TimeJoined struct {
+			Timestamp int    `json:"timestamp"`
+			AsRFC3339 string `json:"as_rfc3339"`
+			AsString  string `json:"as_string"`
+		} `json:"time_joined"`
+		Signature     string `json:"signature"`
+		ForumTitle    string `json:"forum_title"`
+		FoldingAtHome bool   `json:"folding_at_home"`
+		Profile       struct {
+			Upgrade struct {
+				Requested bool   `json:"requested"`
+				Reason    string `json:"reason"`
+			} `json:"upgrade"`
+		} `json:"profile"`
+		Stats struct {
+			ForumPosts      int `json:"forum_posts"`
+			AddedAuthors    int `json:"added_authors"`
+			AddedGroups     int `json:"added_groups"`
+			AddedPublishers int `json:"added_publishers"`
+			AddedReleases   int `json:"added_releases"`
+			AddedSeries     int `json:"added_series"`
+		} `json:"stats"`
+		UserGroup     string `json:"user_group"`
+		UserGroupName string `json:"user_group_name"`
+	} `json:"added_by"`
+}
+
+type MuGroupInfoResponse struct {
+	MuGroup    `json:",inline"`
+	Associated []struct {
+		Name string `json:"name"`
+	} `json:"associated"`
+	Admin struct {
+		Approved bool `json:"approved"`
+		Hold     bool `json:"hold"`
+	} `json:"admin"`
 }

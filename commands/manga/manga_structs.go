@@ -95,3 +95,12 @@ type parsedPaginationMangaList struct {
 	MaxPage     int
 	MangaList   []utils.MDbManga
 }
+
+type parsedPaginationGroupList struct {
+	Pagination  bool
+	PrevPage    int
+	CurrentPage int
+	NextPage    int
+	MaxPage     int
+	GroupList   []utils.MuGroup
+}

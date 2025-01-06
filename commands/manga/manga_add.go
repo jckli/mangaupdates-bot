@@ -177,7 +177,7 @@ func MangaAddSelectHandler(e *handler.ComponentEvent, b *mubot.Bot, mode string)
 func MangaAddCancelHandler(e *handler.ComponentEvent) error {
 	return e.UpdateMessage(
 		discord.MessageUpdate{
-			Embeds:     &[]discord.Embed{cancelMangaEmbed("Add Manga")},
+			Embeds:     &[]discord.Embed{cancelEmbed("Add Manga")},
 			Components: &[]discord.ContainerComponent{},
 		},
 	)

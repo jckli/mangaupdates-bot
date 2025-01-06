@@ -1,10 +1,17 @@
 package utils
 
 type MDbManga struct {
-	Title     string `bson:"title"`
-	Id        int64  `bson:"id"`
-	GroupName string `bson:"groupName"`
-	GroupId   int64  `bson:"groupid"`
+	Title      string              `bson:"title"`
+	Id         int64               `bson:"id"`
+	GroupName  string              `bson:"groupName"`
+	GroupId    int64               `bson:"groupid"`
+	Scanlators []MDbMangaScanlator `bson:"scanlators"`
+}
+
+type MDbMangaNew struct {
+	Title      string              `bson:"title"`
+	Id         int64               `bson:"id"`
+	Scanlators []MDbMangaScanlator `bson:"scanlators"`
 }
 
 type MDbServer struct {
@@ -22,7 +29,7 @@ type MDbUser struct {
 	Manga    []MDbManga `bson:"manga"`
 }
 
-type MDbCounter struct {
-	ID  string `bson:"_id"`
-	Seq int32  `bson:"seq"`
+type MDbMangaScanlator struct {
+	Name string `bson:"name"`
+	Id   int64  `bson:"id"`
 }

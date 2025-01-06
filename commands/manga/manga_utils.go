@@ -34,6 +34,23 @@ func selectServerOrUserComponents(command, subcommand, title string) []discord.C
 	}
 }
 
+func selectServerOrUserNestedComponents(
+	command, subcommand, nested, title string,
+) []discord.ContainerComponent {
+	return []discord.ContainerComponent{
+		discord.ActionRowComponent{
+			discord.NewSecondaryButton(
+				"Server",
+				"/"+command+"/"+subcommand+"/"+nested+"/mode/server/"+title,
+			),
+			discord.NewSecondaryButton(
+				"User (DMs)",
+				"/"+command+"/"+subcommand+"/"+nested+"/mode/user/"+title,
+			),
+		},
+	}
+}
+
 func selectServerOrUserEmbed(embedTitle, embedDescription string) discord.Embed {
 	embed := discord.NewEmbedBuilder().
 		SetTitle(embedTitle).
@@ -187,7 +204,7 @@ func selectConfirmMangaComponents(
 	}
 }
 
-func cancelMangaEmbed(embedTitle string) discord.Embed {
+func cancelEmbed(embedTitle string) discord.Embed {
 	embed := discord.NewEmbedBuilder().
 		SetTitle(embedTitle).
 		SetDescription("Successfully cancelled.").
@@ -219,7 +236,7 @@ func dbMangaSearchResultsEmbed(
 	userManga []utils.MDbManga,
 	page int,
 ) (discord.Embed, []dbMangaSearchResultsFormatted) {
-	description := "Select a manga you want to remove from your manga list:\n"
+	description := "Select a manga from your manga list:\n"
 	if len(userManga) == 0 {
 		description = "No manga found in your list."
 		return discord.NewEmbedBuilder().
@@ -279,6 +296,29 @@ func dropdownDbMangaSearchResultsComponents(
 	}
 }
 
+func dropdownDbMangaSearchResultsNestedComponents(
+	command, subcommand, nested, mode string,
+	results []dbMangaSearchResultsFormatted,
+) []discord.ContainerComponent {
+	options := []discord.StringSelectMenuOption{}
+	for _, result := range results {
+		options = append(options, discord.StringSelectMenuOption{
+			Label: utils.TruncateString(result.Title, 50),
+			Value: strconv.Itoa(int(result.Id)),
+		})
+	}
+
+	return []discord.ContainerComponent{
+		discord.ActionRowComponent{
+			discord.StringSelectMenuComponent{
+				CustomID:    "/" + command + "/" + subcommand + "/" + nested + "/manga/select/" + mode,
+				Placeholder: "Select a Manga",
+				Options:     options,
+			},
+		},
+	}
+}
+
 func paginationMangaSearchResultsComponents(
 	command, subcommand, mode string,
 	p parsedPaginationMangaList,
@@ -296,6 +336,34 @@ func paginationMangaSearchResultsComponents(
 			discord.NewSuccessButton(
 				"",
 				"/"+command+"/"+subcommand+"/search/mode/"+mode+"/"+strconv.Itoa(p.NextPage),
+			).
+				WithEmoji(discord.ComponentEmoji{Name: "▶"}).
+				WithDisabled(p.NextPage == -1),
+		},
+	}
+}
+
+func paginationMangaSearchResultsNestedComponents(
+	command, subcommand, nested, mode string,
+	p parsedPaginationMangaList,
+) []discord.ContainerComponent {
+	return []discord.ContainerComponent{
+		discord.ActionRowComponent{
+			discord.NewDangerButton(
+				"",
+				"/"+command+"/"+subcommand+"/"+nested+"/search/mode/"+mode+"/"+strconv.Itoa(
+					p.PrevPage,
+				),
+			).
+				WithEmoji(discord.ComponentEmoji{Name: "◀"}).
+				WithDisabled(p.PrevPage == -1),
+			discord.NewSecondaryButton(fmt.Sprintf("%d/%d", p.CurrentPage, p.MaxPage), "page-counter").
+				WithDisabled(true),
+			discord.NewSuccessButton(
+				"",
+				"/"+command+"/"+subcommand+"/"+nested+"/search/mode/"+mode+"/"+strconv.Itoa(
+					p.NextPage,
+				),
 			).
 				WithEmoji(discord.ComponentEmoji{Name: "▶"}).
 				WithDisabled(p.NextPage == -1),
@@ -414,6 +482,210 @@ func successMangaRemoveEmbed(embedTitle string) discord.Embed {
 	embed := discord.NewEmbedBuilder().
 		SetTitle(embedTitle).
 		SetDescription("Manga successfully removed from your manga list.").
+		SetColor(0x3083e3).
+		Build()
+	return embed
+}
+
+func parsePaginationSeriesGroups(
+	seriesGroups []utils.MuGroup,
+	page int,
+) parsedPaginationGroupList {
+	const pageSize = 25
+	totalMangas := len(seriesGroups)
+	totalPages := (totalMangas + pageSize - 1) / pageSize
+
+	if totalMangas <= pageSize {
+		return parsedPaginationGroupList{
+			Pagination:  false,
+			PrevPage:    -1,
+			CurrentPage: 1,
+			NextPage:    -1,
+			MaxPage:     1,
+			GroupList:   seriesGroups,
+		}
+	}
+
+	startIndex := (page - 1) * pageSize
+	endIndex := startIndex + pageSize
+	if endIndex > totalMangas {
+		endIndex = totalMangas
+	}
+	var prevPage, nextPage int
+	if page > 1 {
+		prevPage = page - 1
+	} else {
+		prevPage = -1
+	}
+	if page < totalPages {
+		nextPage = page + 1
+	} else {
+		nextPage = -1
+	}
+
+	return parsedPaginationGroupList{
+		Pagination:  true,
+		PrevPage:    prevPage,
+		CurrentPage: page,
+		NextPage:    nextPage,
+		MaxPage:     totalPages,
+		GroupList:   seriesGroups[startIndex:endIndex],
+	}
+}
+
+func paginationGroupListNestedComponents(
+	command, subcommand, nested, mode, mangaId string,
+	p parsedPaginationGroupList,
+) []discord.ContainerComponent {
+	return []discord.ContainerComponent{
+		discord.ActionRowComponent{
+			discord.NewDangerButton(
+				"",
+				"/"+command+"/"+subcommand+"/"+nested+"/groups/p/"+mangaId+"/mode/"+mode+"/"+strconv.Itoa(
+					p.PrevPage,
+				),
+			).
+				WithEmoji(discord.ComponentEmoji{Name: "◀"}).
+				WithDisabled(p.PrevPage == -1),
+			discord.NewSecondaryButton(fmt.Sprintf("%d/%d", p.CurrentPage, p.MaxPage), "page-counter").
+				WithDisabled(true),
+			discord.NewSuccessButton(
+				"",
+				"/"+command+"/"+subcommand+"/"+nested+"/groups/p/"+mangaId+"/mode/"+mode+"/"+strconv.Itoa(
+					p.NextPage,
+				),
+			).
+				WithEmoji(discord.ComponentEmoji{Name: "▶"}).
+				WithDisabled(p.NextPage == -1),
+		},
+	}
+}
+
+func selectSeriesGroupEmbed(
+	embedTitle string,
+	seriesGroup []utils.MuGroup,
+) (*discord.EmbedBuilder, []dbMangaSearchResultsFormatted) {
+	description := ""
+	if len(seriesGroup) == 0 {
+		description = "No groups found scanlating this manga."
+		return discord.NewEmbedBuilder().
+			SetTitle(embedTitle).
+			SetDescription(description).
+			SetColor(0x3083e3), nil
+	}
+
+	allResults := []dbMangaSearchResultsFormatted{}
+	for i, result := range seriesGroup {
+		if i >= 25 {
+			break
+		}
+		str := fmt.Sprintf(
+			"• %s\n",
+			result.Name,
+		)
+		description += str
+
+		allResults = append(allResults, dbMangaSearchResultsFormatted{
+			Title: result.Name,
+			Id:    int64(result.GroupID),
+		})
+	}
+
+	embed := discord.NewEmbedBuilder().
+		SetTitle(embedTitle).
+		SetDescription(description).
+		SetColor(0x3083e3)
+	return embed, allResults
+}
+
+func dropdownSeriesGroupsNestedComponents(
+	command, subcommand, nested, mode, mangaId string,
+	results []dbMangaSearchResultsFormatted,
+) []discord.ContainerComponent {
+	options := []discord.StringSelectMenuOption{}
+	for _, result := range results {
+		options = append(options, discord.StringSelectMenuOption{
+			Label: utils.TruncateString(result.Title, 50),
+			Value: strconv.Itoa(int(result.Id)),
+		})
+	}
+
+	return []discord.ContainerComponent{
+		discord.ActionRowComponent{
+			discord.StringSelectMenuComponent{
+				CustomID:    "/" + command + "/" + subcommand + "/" + nested + "/groups/select/" + mode + "/" + mangaId,
+				Placeholder: "Select a Scanlator Group",
+				Options:     options,
+			},
+		},
+	}
+}
+
+func confirmGroupEmbed(b *mubot.Bot, embedTitle string, groupId int64) discord.Embed {
+	groupInfo, err := utils.MuGetGroupInfo(b, groupId)
+	if err != nil {
+		b.Logger.Error(
+			fmt.Sprintf("Failed to get series info (searchMangaAddHandler): %s", err.Error()),
+		)
+		return discord.NewEmbedBuilder().
+			SetTitle("Error").
+			SetDescription("Could not get series info, please try again later.").
+			SetColor(0xff4f4f).
+			Build()
+	}
+
+	activeStatement := "*A group is designated as inactive if it hasn't released in the past 6 months*"
+
+	var active string
+	if groupInfo.Active {
+		active = "Yes"
+	} else {
+		active = "No"
+	}
+
+	embed := discord.NewEmbedBuilder().
+		SetColor(0x3083e3).
+		SetTitle(embedTitle).
+		SetDescription(fmt.Sprintf("**Is `%s` the correct group?**", groupInfo.Name)).
+		AddField("Active", fmt.Sprintf("%s (%s)", active, activeStatement), false)
+
+	if groupInfo.Social.Site != "" {
+		embed.AddField("Website", groupInfo.Social.Site, true)
+	}
+
+	if groupInfo.Social.Discord != "" {
+		embed.AddField("Discord", groupInfo.Social.Discord, true)
+	}
+
+	if groupInfo.Social.Twitter != "" {
+		embed.AddField("Twitter", groupInfo.Social.Twitter, true)
+	}
+
+	return embed.Build()
+}
+
+func selectConfirmGroupComponents(
+	command, subcommand, nested, mode, mangaId, groupId string,
+) []discord.ContainerComponent {
+
+	return []discord.ContainerComponent{
+		discord.ActionRowComponent{
+			discord.NewDangerButton(
+				"Cancel",
+				"/"+command+"/"+subcommand+"/"+nested+"/confirm/select/"+mode+"/"+mangaId+"/"+groupId+"/cancel",
+			),
+			discord.NewSuccessButton(
+				"Confirm",
+				"/"+command+"/"+subcommand+"/"+nested+"/confirm/select/"+mode+"/"+mangaId+"/"+groupId+"/confirm",
+			),
+		},
+	}
+}
+
+func successMangaSetScanlatorEmbed(embedTitle, mangaName, groupName string) discord.Embed {
+	embed := discord.NewEmbedBuilder().
+		SetTitle(embedTitle).
+		SetDescription(fmt.Sprintf("Scanlator group, `%s`, successfully added for the manga `%s`.", groupName, mangaName)).
 		SetColor(0x3083e3).
 		Build()
 	return embed

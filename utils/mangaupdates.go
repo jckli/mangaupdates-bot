@@ -326,3 +326,113 @@ func MuPostSearchSeries(b *mubot.Bot, seriesName string) (*MuSearchSeriesRespons
 
 	return respBody, nil
 }
+
+func MuGetSeriesGroups(b *mubot.Bot, seriesId int64) (*MuSeriesGroupsResponse, error) {
+	var respBody *MuSeriesGroupsResponse
+
+	operation := func() error {
+		resp, statusCode, err := muGetRequest(
+			"https://api.mangaupdates.com/v1/series/"+strconv.FormatInt(seriesId, 10)+"/groups",
+			b.MuToken,
+		)
+
+		if err != nil {
+			return fmt.Errorf(
+				"failed to fetch series groups: %s, %s, %d",
+				err.Error(),
+				string(resp),
+				seriesId,
+			)
+		}
+
+		if statusCode == 200 {
+			respBody = &MuSeriesGroupsResponse{}
+			if err := json.Unmarshal(resp, respBody); err != nil {
+				return fmt.Errorf("failed to unmarshal series groups: %s", err.Error())
+			}
+			return nil
+		} else if statusCode >= 500 && statusCode < 600 {
+			return fmt.Errorf("series groups server error: %d", statusCode)
+		} else {
+			return backoff.Permanent(fmt.Errorf("series groups client error: %d", statusCode))
+		}
+	}
+
+	backoffConfig := backoff.NewExponentialBackOff()
+	backoffConfig.InitialInterval = 5 * time.Second
+	backoffConfig.MaxInterval = 2 * time.Minute
+	backoffConfig.MaxElapsedTime = 5 * time.Minute
+	backoffConfig.Multiplier = 1.5
+	backoffConfig.RandomizationFactor = 0.5
+
+	retryPolicy := backoff.WithMaxRetries(backoffConfig, 20)
+
+	err := backoff.Retry(operation, retryPolicy)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"failed to get series groups after retries: %v, series id: %d",
+			err,
+			seriesId,
+		)
+	}
+	if respBody == nil {
+		return nil, fmt.Errorf("MuGetSeriesGroups: respBody is nil after successful unmarshal")
+	}
+
+	return respBody, nil
+}
+
+func MuGetGroupInfo(b *mubot.Bot, groupId int64) (*MuGroupInfoResponse, error) {
+	var respBody *MuGroupInfoResponse
+
+	operation := func() error {
+		resp, statusCode, err := muGetRequest(
+			"https://api.mangaupdates.com/v1/groups/"+strconv.FormatInt(groupId, 10),
+			b.MuToken,
+		)
+
+		if err != nil {
+			return fmt.Errorf(
+				"failed to fetch group info: %s, %s, %d",
+				err.Error(),
+				string(resp),
+				groupId,
+			)
+		}
+
+		if statusCode == 200 {
+			respBody = &MuGroupInfoResponse{}
+			if err := json.Unmarshal(resp, respBody); err != nil {
+				return fmt.Errorf("failed to unmarshal group info: %s", err.Error())
+			}
+			return nil
+		} else if statusCode >= 500 && statusCode < 600 {
+			return fmt.Errorf("series info server error: %d", statusCode)
+		} else {
+			return backoff.Permanent(fmt.Errorf("series info client error: %d", statusCode))
+		}
+	}
+
+	backoffConfig := backoff.NewExponentialBackOff()
+	backoffConfig.InitialInterval = 5 * time.Second
+	backoffConfig.MaxInterval = 2 * time.Minute
+	backoffConfig.MaxElapsedTime = 5 * time.Minute
+	backoffConfig.Multiplier = 1.5
+	backoffConfig.RandomizationFactor = 0.5
+
+	retryPolicy := backoff.WithMaxRetries(backoffConfig, 20)
+
+	err := backoff.Retry(operation, retryPolicy)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"failed to get group info after retries: %v, group id: %d",
+			err,
+			groupId,
+		)
+	}
+	if respBody == nil {
+		return nil, fmt.Errorf("MuGetGroupInfo: respBody is nil after successful unmarshal")
+	}
+
+	return respBody, nil
+}
