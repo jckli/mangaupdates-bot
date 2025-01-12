@@ -395,10 +395,15 @@ func DbUsersWanted(
 func DbServerAddManga(b *mubot.Bot, serverId int64, manga MDbManga) error {
 	collection := b.MongoClient.Database(dbName).Collection("servers")
 
+	doc := bson.M{
+		"title": manga.Title,
+		"id":    manga.Id,
+	}
+
 	_, err := collection.UpdateOne(
 		context.TODO(),
 		bson.M{"serverid": serverId},
-		bson.M{"$push": bson.M{"manga": manga}},
+		bson.M{"$push": bson.M{"manga": doc}},
 	)
 
 	return err
@@ -407,10 +412,15 @@ func DbServerAddManga(b *mubot.Bot, serverId int64, manga MDbManga) error {
 func DbUserAddManga(b *mubot.Bot, userId int64, manga MDbManga) error {
 	collection := b.MongoClient.Database(dbName).Collection("users")
 
+	doc := bson.M{
+		"title": manga.Title,
+		"id":    manga.Id,
+	}
+
 	_, err := collection.UpdateOne(
 		context.TODO(),
 		bson.M{"userid": userId},
-		bson.M{"$push": bson.M{"manga": manga}},
+		bson.M{"$push": bson.M{"manga": doc}},
 	)
 
 	return err
@@ -566,13 +576,17 @@ func DbServerCheckGroupExists(b *mubot.Bot, serverId, mangaId, groupId int64) (b
 			},
 		},
 	}
-
 	var tempResult bson.M
-	findErr := collection.FindOne(context.TODO(), oldStyleFilter).Decode(&tempResult)
-	if findErr == nil {
+	tempErr := collection.FindOne(context.TODO(), oldStyleFilter).Decode(&tempResult)
+	if tempErr != nil {
+		if tempErr != mongo.ErrNoDocuments {
+			return false, tempErr
+		}
+	}
+	if len(tempResult) > 0 {
 		refactorChan := make(chan error, 1)
 		go func() {
-			_, refactorErr := DbUserRefactorGroupToScanlator(b, groupId)
+			_, refactorErr := DbServerRefactorGroupToScanlator(b, groupId)
 			refactorChan <- refactorErr
 		}()
 		refactorErr := <-refactorChan
@@ -580,6 +594,7 @@ func DbServerCheckGroupExists(b *mubot.Bot, serverId, mangaId, groupId int64) (b
 			return false, refactorErr
 		}
 	}
+
 	filter := bson.M{
 		"serverid": serverId,
 		"manga": bson.M{
@@ -626,8 +641,13 @@ func DbUserCheckGroupExists(b *mubot.Bot, userId, mangaId, groupId int64) (bool,
 	}
 
 	var tempResult bson.M
-	findErr := collection.FindOne(context.TODO(), oldStyleFilter).Decode(&tempResult)
-	if findErr == nil {
+	tempErr := collection.FindOne(context.TODO(), oldStyleFilter).Decode(&tempResult)
+	if tempErr != nil {
+		if tempErr != mongo.ErrNoDocuments {
+			return false, tempErr
+		}
+	}
+	if len(tempResult) > 0 {
 		refactorChan := make(chan error, 1)
 		go func() {
 			_, refactorErr := DbUserRefactorGroupToScanlator(b, groupId)
@@ -637,6 +657,7 @@ func DbUserCheckGroupExists(b *mubot.Bot, userId, mangaId, groupId int64) (bool,
 		if refactorErr != nil {
 			return false, refactorErr
 		}
+		return true, nil
 	}
 	filter := bson.M{
 		"userid": userId,
@@ -689,11 +710,16 @@ func DbServerRefactorGroupToScanlator(b *mubot.Bot, groupId int64) (bool, error)
 								bson.D{
 									{"title", "$$m.title"},
 									{"id", "$$m.id"},
-									{"scanlators", bson.A{
-										bson.D{
-											{"name", "$$m.groupName"},
-											{"id", "$$m.groupid"},
-										},
+									{"scanlators", bson.D{
+										{"$concatArrays", bson.A{
+											"$$m.scanlators",
+											bson.A{
+												bson.D{
+													{"name", "$$m.groupName"},
+													{"id", "$$m.groupid"},
+												},
+											},
+										}},
 									}},
 								},
 								"$$m",
@@ -731,11 +757,16 @@ func DbUserRefactorGroupToScanlator(b *mubot.Bot, groupId int64) (bool, error) {
 								bson.D{
 									{"title", "$$m.title"},
 									{"id", "$$m.id"},
-									{"scanlators", bson.A{
-										bson.D{
-											{"name", "$$m.groupName"},
-											{"id", "$$m.groupid"},
-										},
+									{"scanlators", bson.D{
+										{"$concatArrays", bson.A{
+											"$$m.scanlators",
+											bson.A{
+												bson.D{
+													{"name", "$$m.groupName"},
+													{"id", "$$m.groupid"},
+												},
+											},
+										}},
 									}},
 								},
 								"$$m",
