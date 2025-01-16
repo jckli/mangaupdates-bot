@@ -363,45 +363,110 @@ func DbUsersWanted(
 	collection := b.MongoClient.Database(dbName).Collection("users")
 
 	var filter bson.M
-	if &entry.NewId != nil {
+	var projection bson.M
+	switch {
+	case entry.NewId != 0:
 		filter = bson.M{"manga.id": entry.NewId}
-	} else if entry.Title != "" {
+		projection = bson.M{
+			"userid":   1,
+			"username": 1,
+			"manga": bson.M{
+				"$elemMatch": bson.M{"id": entry.NewId},
+			},
+		}
+	case entry.Title != "":
 		filter = bson.M{"manga.title": entry.Title}
-	} else {
+		projection = bson.M{
+			"userid":   1,
+			"username": 1,
+			"manga": bson.M{
+				"$elemMatch": bson.M{"title": entry.Title},
+			},
+		}
+	default:
 		return nil, fmt.Errorf("No entry to search for")
 	}
 
-	cursor, err := collection.Find(context.TODO(), filter)
+	var results []MDbUser
+	count, err := collection.CountDocuments(context.TODO(), filter)
+	if err != nil {
+		return nil, err
+	}
+	if count == 0 {
+		return results, nil
+	}
+
+	groupIDs := make(map[int64]bool)
+	for _, g := range *groupList {
+		if g.Record.GroupID != 0 {
+			groupIDs[int64(g.Record.GroupID)] = true
+		}
+	}
+
+	cursor, err := collection.Find(context.TODO(), filter, options.Find().SetProjection(projection))
 	if err != nil {
 		return nil, err
 	}
 	defer cursor.Close(context.TODO())
 
-	var results []MDbUser
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+
 	for cursor.Next(context.Background()) {
 		var result MDbUser
-		err := cursor.Decode(&result)
-		if err != nil {
+		if err := cursor.Decode(&result); err != nil {
 			return nil, err
 		}
+		wg.Add(1)
+		go func(result MDbUser) {
+			defer wg.Done()
 
-		manga := result.Manga[0]
-		if manga.GroupId != 0 {
-			for _, group := range *groupList {
-				if manga.GroupId == int64(group.Record.GroupID) {
+			manga := result.Manga[0]
+
+			if manga.GroupId != 0 {
+				_, procErr := DbUserRefactorGroupToScanlator(b, manga.GroupId)
+				if procErr != nil {
+					b.Logger.Warn(
+						fmt.Sprintf(
+							"failed to refactor user (%d), group (%d): %s",
+							result.UserId,
+							manga.GroupId,
+							procErr,
+						),
+					)
+				}
+				scanlator := MDbMangaScanlator{
+					Name: "",
+					Id:   manga.GroupId,
+				}
+				manga.Scanlators = append(manga.Scanlators, scanlator)
+			}
+			if len(manga.Scanlators) == 0 {
+				mu.Lock()
+				results = append(results, result)
+				mu.Unlock()
+				return
+			}
+			for _, scan := range manga.Scanlators {
+				if groupIDs[scan.Id] {
+					mu.Lock()
 					results = append(results, result)
+					mu.Unlock()
 					break
 				}
 			}
-		} else {
-			results = append(results, result)
-		}
+		}(result)
+
 	}
 
+	wg.Wait()
+
+	if err := cursor.Err(); err != nil {
+		return nil, err
+	}
 	if len(results) == 0 {
 		return nil, nil
 	}
-
 	return results, nil
 }
 
@@ -772,7 +837,7 @@ func DbUserRefactorGroupToScanlator(b *mubot.Bot, groupId int64) (bool, error) {
 									{"id", "$$m.id"},
 									{"scanlators", bson.D{
 										{"$concatArrays", bson.A{
-											"$$m.scanlators",
+											bson.D{{"$ifNull", bson.A{"$$m.scanlators", bson.A{}}}},
 											bson.A{
 												bson.D{
 													{"name", "$$m.groupName"},
