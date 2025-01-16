@@ -245,100 +245,113 @@ func DbServersWanted(
 	collection := b.MongoClient.Database(dbName).Collection("servers")
 
 	var filter bson.M
-	if entry.NewId != 0 {
+	var projection bson.M
+	switch {
+	case entry.NewId != 0:
 		filter = bson.M{"manga.id": entry.NewId}
-	} else if entry.Title != "" {
+		projection = bson.M{
+			"serverid":   1,
+			"serverName": 1,
+			"channelid":  1,
+			"manga": bson.M{
+				"$elemMatch": bson.M{"id": entry.NewId},
+			},
+		}
+	case entry.Title != "":
 		filter = bson.M{"manga.title": entry.Title}
-	} else {
+		projection = bson.M{
+			"serverid":   1,
+			"serverName": 1,
+			"channelid":  1,
+			"manga": bson.M{
+				"$elemMatch": bson.M{"title": entry.Title},
+			},
+		}
+	default:
 		return nil, fmt.Errorf("No entry to search for")
 	}
 
-	// Precompute group IDs for efficient lookup
-	groupIDs := make([]int64, 0, len(*groupList))
-	for _, group := range *groupList {
-		groupIDs = append(groupIDs, int64(group.Record.GroupID))
+	var results []MDbServer
+	count, err := collection.CountDocuments(context.TODO(), filter)
+	if err != nil {
+		return nil, err
+	}
+	if count == 0 {
+		return results, nil
 	}
 
-	extendedFilter := bson.M{
-		"$and": []bson.M{
-			filter,
-			{
-				"$or": []bson.M{
-					{"manga.groupid": bson.M{"$in": groupIDs}},
-					{"manga.scanlators.id": bson.M{"$in": groupIDs}},
-					{
-						"manga.groupid":    bson.M{"$exists": false},
-						"manga.scanlators": bson.M{"$exists": false},
-					},
-				},
-			},
-		},
+	groupIDs := make(map[int64]bool)
+	for _, g := range *groupList {
+		if g.Record.GroupID != 0 {
+			groupIDs[int64(g.Record.GroupID)] = true
+		}
 	}
-	cursor, err := collection.Find(
-		context.TODO(),
-		extendedFilter,
-		options.Find().SetProjection(bson.M{
-			"serverid": 1,
-			"manga":    1,
-		}),
-	)
+
+	cursor, err := collection.Find(context.TODO(), filter, options.Find().SetProjection(projection))
 	if err != nil {
 		return nil, err
 	}
 	defer cursor.Close(context.TODO())
 
-	var results []MDbServer
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+
 	for cursor.Next(context.Background()) {
-		var server MDbServer
-		err := cursor.Decode(&server)
-		if err != nil {
+		var result MDbServer
+		if err := cursor.Decode(&result); err != nil {
 			return nil, err
 		}
+		wg.Add(1)
+		go func(result MDbServer) {
+			defer wg.Done()
 
-		// Iterate through all manga items in the server
-		for _, manga := range server.Manga {
-			// Check if manga matches the entry criteria
-			if entry.NewId != 0 && manga.Id != entry.NewId {
-				continue
-			}
-			if entry.Title != "" && manga.Title != entry.Title {
-				continue
-			}
+			manga := result.Manga[0]
 
-			// Check for groupId match
 			if manga.GroupId != 0 {
-				if containsInt64(groupIDs, manga.GroupId) {
-					results = append(results, server)
+				_, procErr := DbServerRefactorGroupToScanlator(b, manga.GroupId)
+				if procErr != nil {
+					b.Logger.Warn(
+						fmt.Sprintf(
+							"failed to refactor server (%d), group (%d): %s",
+							result.ServerId,
+							manga.GroupId,
+							procErr,
+						),
+					)
+				}
+				scanlator := MDbMangaScanlator{
+					Name: "",
+					Id:   manga.GroupId,
+				}
+				manga.Scanlators = append(manga.Scanlators, scanlator)
+
+			}
+			if len(manga.Scanlators) == 0 {
+				mu.Lock()
+				results = append(results, result)
+				mu.Unlock()
+				return
+			}
+			for _, scan := range manga.Scanlators {
+				if groupIDs[scan.Id] {
+					mu.Lock()
+					results = append(results, result)
+					mu.Unlock()
 					break
 				}
 			}
+		}(result)
 
-			// Check for scanlator Id match
-			if len(manga.Scanlators) > 0 {
-				for _, scanlator := range manga.Scanlators {
-					if containsInt64(groupIDs, scanlator.Id) {
-						results = append(results, server)
-						break
-					}
-				}
-			}
-
-			// If neither groupId nor scanlators exist, include the server
-			if manga.GroupId == 0 && len(manga.Scanlators) == 0 {
-				results = append(results, server)
-				break
-			}
-		}
 	}
+
+	wg.Wait()
 
 	if err := cursor.Err(); err != nil {
 		return nil, err
 	}
-
 	if len(results) == 0 {
 		return nil, nil
 	}
-
 	return results, nil
 }
 
@@ -712,7 +725,7 @@ func DbServerRefactorGroupToScanlator(b *mubot.Bot, groupId int64) (bool, error)
 									{"id", "$$m.id"},
 									{"scanlators", bson.D{
 										{"$concatArrays", bson.A{
-											"$$m.scanlators",
+											bson.D{{"$ifNull", bson.A{"$$m.scanlators", bson.A{}}}},
 											bson.A{
 												bson.D{
 													{"name", "$$m.groupName"},
