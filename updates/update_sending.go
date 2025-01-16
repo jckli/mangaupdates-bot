@@ -278,7 +278,10 @@ func sendServerUpdate(
 		scanGroupNames := []string{}
 		scanGroupLinks := []string{}
 		for _, group := range scanGroups {
-			scanGroupNames = append(scanGroupNames, group.Record.Name)
+			scanGroupNames = append(
+				scanGroupNames,
+				fmt.Sprintf("[%s](%s)", group.Record.Name, group.Record.URL),
+			)
 			scanGroupLinks = append(scanGroupLinks, group.Record.Social.Site)
 		}
 		embed.AddField("Scanlator(s)", strings.Join(scanGroupNames, ", "), true)
@@ -332,7 +335,10 @@ func sendUserUpdate(
 		scanGroupNames := []string{}
 		scanGroupLinks := []string{}
 		for _, group := range scanGroups {
-			scanGroupNames = append(scanGroupNames, group.Record.Name)
+			scanGroupNames = append(
+				scanGroupNames,
+				fmt.Sprintf("[%s](%s)", group.Record.Name, group.Record.URL),
+			)
 			scanGroupLinks = append(scanGroupLinks, group.Record.Social.Site)
 		}
 		embed.AddField("Scanlator(s)", strings.Join(scanGroupNames, ", "), true)

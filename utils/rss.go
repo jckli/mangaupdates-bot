@@ -58,7 +58,7 @@ func RssParseFeed() ([]MangaEntry, error) {
 	}
 
 	mangaList := []MangaEntry{}
-	chapterRegex := regexp.MustCompile(`(v.\d{1,} )?c.\d{1,}(\.\d)?(-\d{1,}(\.\d)?)?`)
+	chapterRegex := regexp.MustCompile(`(v\.\d+\s)?c\.\d+[a-z]?(\.\d+)?(-\d+(\.\d+)?)?`)
 	scanGroupRegex := regexp.MustCompile(`\[(.*?)\]`)
 
 	for _, entry := range feed.Items {
