@@ -126,57 +126,59 @@ func CommandHandlers(b *mubot.Bot) *handler.Mux {
 		})
 
 		// manga set
-		h.Route("/set", func(h handler.Router) {
-			h.Command("/scanlator", func(e *handler.CommandEvent) error {
-				return manga.MangaSetScanlatorHandler(e, b)
+		h.Route("/scanlator", func(h handler.Router) {
+
+			// manga scanlator add
+			h.Command("/add", func(e *handler.CommandEvent) error {
+				return manga.MangaScanlatorAddHandler(e, b)
 			})
-			h.Component("/scanlator/mode/{mode}", func(e *handler.ComponentEvent) error {
+			h.Component("/add/mode/{mode}", func(e *handler.ComponentEvent) error {
 				mode := e.Vars["mode"]
 				if mode == "user" {
 					adapter := &manga.ComponentEventAdapter{Event: e}
-					return manga.MangaSetScanlatorUserHandler(adapter, b)
+					return manga.MangaScanlatorAddUserHandler(adapter, b)
 				} else {
-					return manga.MangaSetScanlatorServerHandler(e, b)
+					return manga.MangaScanlatorAddServerHandler(e, b)
 				}
 			})
 			h.Component(
-				"/scanlator/search/mode/{mode}/{page}",
+				"/add/search/mode/{mode}/{page}",
 				func(e *handler.ComponentEvent) error {
 					mode := e.Vars["mode"]
 					page := e.Vars["page"]
 					pageInt, _ := strconv.Atoi(page)
 					if mode == "user" {
 						adapter := &manga.ComponentEventAdapter{Event: e}
-						return manga.MangaSetScanlatorUserSearchHandler(adapter, b, pageInt)
+						return manga.MangaScanlatorAddUserSearchHandler(adapter, b, pageInt)
 					} else {
-						return manga.MangaSetScanlatorServerSearchHandler(e, b, pageInt)
+						return manga.MangaScanlatorAddServerSearchHandler(e, b, pageInt)
 					}
 				},
 			)
-			h.Component("/scanlator/manga/select/{mode}", func(e *handler.ComponentEvent) error {
+			h.Component("/add/manga/select/{mode}", func(e *handler.ComponentEvent) error {
 				mode := e.Vars["mode"]
-				return manga.MangaSetScanlatorMangaSelectHandler(e, b, mode)
+				return manga.MangaScanlatorAddMangaSelectHandler(e, b, mode)
 			})
 			h.Component(
-				"/scanlator/groups/p/{mangaId}/mode/{mode}/{page}",
+				"/add/groups/p/{mangaId}/mode/{mode}/{page}",
 				func(e *handler.ComponentEvent) error {
 					id := e.Vars["mangaId"]
 					mode := e.Vars["mode"]
 					page := e.Vars["page"]
 					pageInt, _ := strconv.Atoi(page)
-					return manga.MangaSetScanlatorGroupHandler(e, b, pageInt, mode, id)
+					return manga.MangaScanlatorAddGroupHandler(e, b, pageInt, mode, id)
 				},
 			)
 			h.Component(
-				"/scanlator/groups/select/{mode}/{mangaId}",
+				"/add/groups/select/{mode}/{mangaId}",
 				func(e *handler.ComponentEvent) error {
 					mode := e.Vars["mode"]
 					id := e.Vars["mangaId"]
-					return manga.MangaSetScanlatorGroupSelectHandler(e, b, mode, id)
+					return manga.MangaScanlatorAddGroupSelectHandler(e, b, mode, id)
 				},
 			)
 			h.Component(
-				"/scanlator/confirm/select/{mode}/{mangaId}/{groupId}/{decision}",
+				"/add/confirm/select/{mode}/{mangaId}/{groupId}/{decision}",
 
 				func(e *handler.ComponentEvent) error {
 					mode := e.Vars["mode"]
@@ -184,14 +186,93 @@ func CommandHandlers(b *mubot.Bot) *handler.Mux {
 					groupId := e.Vars["groupId"]
 					decision := e.Vars["decision"]
 					if decision == "cancel" {
-						return manga.MangaSetScanlatorGroupCancelHandler(e)
+						return manga.MangaScanlatorAddGroupCancelHandler(e)
 					} else {
-						return manga.MangaSetScanlatorGroupConfirmHandler(e, b, mode, mangaId, groupId)
+						return manga.MangaScanlatorAddGroupConfirmHandler(e, b, mode, mangaId, groupId)
+					}
+				},
+			)
+
+			// manga scanlator remove
+			h.Command("/remove", func(e *handler.CommandEvent) error {
+				return manga.MangaScanlatorRemoveHandler(e, b)
+			})
+			h.Component("/remove/mode/{mode}", func(e *handler.ComponentEvent) error {
+				mode := e.Vars["mode"]
+				if mode == "user" {
+					adapter := &manga.ComponentEventAdapter{Event: e}
+					return manga.MangaScanlatorRemoveUserHandler(adapter, b)
+				} else {
+					return manga.MangaScanlatorRemoveServerHandler(e, b)
+				}
+			})
+			h.Component(
+				"/remove/search/mode/{mode}/{page}",
+				func(e *handler.ComponentEvent) error {
+					mode := e.Vars["mode"]
+					page := e.Vars["page"]
+					pageInt, _ := strconv.Atoi(page)
+					if mode == "user" {
+						adapter := &manga.ComponentEventAdapter{Event: e}
+						return manga.MangaScanlatorRemoveUserSearchHandler(adapter, b, pageInt)
+					} else {
+						return manga.MangaScanlatorRemoveServerSearchHandler(e, b, pageInt)
+					}
+				},
+			)
+			h.Component("/remove/manga/select/{mode}", func(e *handler.ComponentEvent) error {
+				mode := e.Vars["mode"]
+				mangaId := e.StringSelectMenuInteractionData().Values[0]
+				if mode == "user" {
+					return manga.MangaScanlatorRemoveUserGroupHandler(e, b, 1, mangaId)
+				} else {
+					return manga.MangaScanlatorRemoveServerGroupHandler(e, b, 1, mangaId)
+				}
+			})
+			h.Component(
+				"/remove/groups/p/{mangaId}/mode/{mode}/{page}",
+				func(e *handler.ComponentEvent) error {
+					id := e.Vars["mangaId"]
+					mode := e.Vars["mode"]
+					page := e.Vars["page"]
+					pageInt, _ := strconv.Atoi(page)
+					if mode == "user" {
+						return manga.MangaScanlatorRemoveUserGroupHandler(e, b, pageInt, id)
+					} else {
+						return manga.MangaScanlatorRemoveServerGroupHandler(e, b, pageInt, id)
+					}
+				},
+			)
+			h.Component(
+				"/remove/groups/select/{mode}/{mangaId}",
+				func(e *handler.ComponentEvent) error {
+					mode := e.Vars["mode"]
+					id := e.Vars["mangaId"]
+					return manga.MangaScanlatorRemoveGroupSelectHandler(e, b, mode, id)
+				},
+			)
+			h.Component(
+				"/remove/confirm/select/{mode}/{mangaId}/{groupId}/{decision}",
+
+				func(e *handler.ComponentEvent) error {
+					mode := e.Vars["mode"]
+					mangaId := e.Vars["mangaId"]
+					groupId := e.Vars["groupId"]
+					decision := e.Vars["decision"]
+					if decision == "cancel" {
+						return manga.MangaScanlatorRemoveGroupCancelHandler(e)
+					} else {
+						if mode == "user" {
+							return manga.MangaScanlatorRemoveUserGroupConfirmHandler(e, b, mangaId, groupId)
+						} else {
+							return manga.MangaScanlatorRemoveServerGroupConfirmHandler(e, b, mangaId, groupId)
+						}
 					}
 				},
 			)
 
 		})
+
 	})
 
 	h.Route("/server", func(h handler.Router) {

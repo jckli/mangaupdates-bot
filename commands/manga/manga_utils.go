@@ -13,7 +13,7 @@ import (
 func errorMangaSetupNeededEmbed() discord.Embed {
 	embed := discord.NewEmbedBuilder().
 		SetTitle("Error").
-		SetDescription("Please run the setup command first.").
+		SetDescription("Please run the setup command first. (`/server setup` or `/user setup`)").
 		SetColor(0xff4f4f).
 		Build()
 	return embed
@@ -695,6 +695,126 @@ func successMangaSetScanlatorEmbed(embedTitle, mangaName, groupName string) disc
 	embed := discord.NewEmbedBuilder().
 		SetTitle(embedTitle).
 		SetDescription(fmt.Sprintf("Scanlator group, `%s`, successfully added for the manga `%s`.", groupName, mangaName)).
+		SetColor(0x3083e3).
+		Build()
+	return embed
+}
+
+func parsePaginationDbScanlators(
+	seriesGroups []utils.MDbMangaScanlator,
+	page int,
+) parsedPaginationDbScanlators {
+	const pageSize = 25
+	totalMangas := len(seriesGroups)
+	totalPages := (totalMangas + pageSize - 1) / pageSize
+
+	if totalMangas <= pageSize {
+		return parsedPaginationDbScanlators{
+			Pagination:  false,
+			PrevPage:    -1,
+			CurrentPage: 1,
+			NextPage:    -1,
+			MaxPage:     1,
+			GroupList:   seriesGroups,
+		}
+	}
+
+	startIndex := (page - 1) * pageSize
+	endIndex := startIndex + pageSize
+	if endIndex > totalMangas {
+		endIndex = totalMangas
+	}
+	var prevPage, nextPage int
+	if page > 1 {
+		prevPage = page - 1
+	} else {
+		prevPage = -1
+	}
+	if page < totalPages {
+		nextPage = page + 1
+	} else {
+		nextPage = -1
+	}
+
+	return parsedPaginationDbScanlators{
+		Pagination:  true,
+		PrevPage:    prevPage,
+		CurrentPage: page,
+		NextPage:    nextPage,
+		MaxPage:     totalPages,
+		GroupList:   seriesGroups[startIndex:endIndex],
+	}
+}
+
+func selectDbScanlatorsEmbed(
+	embedTitle string,
+	seriesGroup []utils.MDbMangaScanlator,
+) (*discord.EmbedBuilder, []dbMangaSearchResultsFormatted) {
+	description := ""
+	if len(seriesGroup) == 0 {
+		description = "No groups found scanlating this manga."
+		return discord.NewEmbedBuilder().
+			SetTitle(embedTitle).
+			SetDescription(description).
+			SetColor(0x3083e3), nil
+	}
+
+	allResults := []dbMangaSearchResultsFormatted{}
+	for i, result := range seriesGroup {
+		if i >= 25 {
+			break
+		}
+		str := fmt.Sprintf(
+			"• %s\n",
+			result.Name,
+		)
+		description += str
+
+		allResults = append(allResults, dbMangaSearchResultsFormatted{
+			Title: result.Name,
+			Id:    int64(result.Id),
+		})
+	}
+
+	embed := discord.NewEmbedBuilder().
+		SetTitle(embedTitle).
+		SetDescription(description).
+		SetColor(0x3083e3)
+	return embed, allResults
+}
+
+func paginationDbScanlatorsNestedComponents(
+	command, subcommand, nested, mode, mangaId string,
+	p parsedPaginationDbScanlators,
+) []discord.ContainerComponent {
+	return []discord.ContainerComponent{
+		discord.ActionRowComponent{
+			discord.NewDangerButton(
+				"",
+				"/"+command+"/"+subcommand+"/"+nested+"/groups/p/"+mangaId+"/mode/"+mode+"/"+strconv.Itoa(
+					p.PrevPage,
+				),
+			).
+				WithEmoji(discord.ComponentEmoji{Name: "◀"}).
+				WithDisabled(p.PrevPage == -1),
+			discord.NewSecondaryButton(fmt.Sprintf("%d/%d", p.CurrentPage, p.MaxPage), "page-counter").
+				WithDisabled(true),
+			discord.NewSuccessButton(
+				"",
+				"/"+command+"/"+subcommand+"/"+nested+"/groups/p/"+mangaId+"/mode/"+mode+"/"+strconv.Itoa(
+					p.NextPage,
+				),
+			).
+				WithEmoji(discord.ComponentEmoji{Name: "▶"}).
+				WithDisabled(p.NextPage == -1),
+		},
+	}
+}
+
+func successMangaRemoveScanlatorEmbed(embedTitle, mangaName, groupName string) discord.Embed {
+	embed := discord.NewEmbedBuilder().
+		SetTitle(embedTitle).
+		SetDescription(fmt.Sprintf("Scanlator group, `%s`, successfully removed for the manga `%s`.", groupName, mangaName)).
 		SetColor(0x3083e3).
 		Build()
 	return embed

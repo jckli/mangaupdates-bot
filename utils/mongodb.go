@@ -640,7 +640,6 @@ func DbUserAddGroup(b *mubot.Bot, userId, mangaId, groupId int64, groupName stri
 	}
 
 	return nil
-
 }
 
 func DbServerCheckGroupExists(b *mubot.Bot, serverId, mangaId, groupId int64) (bool, error) {
@@ -768,6 +767,228 @@ func DbUserCheckGroupExists(b *mubot.Bot, userId, mangaId, groupId int64) (bool,
 	}
 
 	return len(result.Manga) > 0, nil
+}
+
+func DbServerGetManga(b *mubot.Bot, serverId, mangaId int64) (MDbManga, error) {
+	collection := b.MongoClient.Database(dbName).Collection("servers")
+
+	filter := bson.M{
+		"serverid": serverId,
+		"manga.id": mangaId,
+	}
+
+	condition := bson.D{{Key: "$and", Value: bson.A{
+		bson.D{
+			{
+				Key:   "$gt",
+				Value: bson.A{bson.D{{Key: "$ifNull", Value: bson.A{"$$m.groupName", ""}}}, ""},
+			},
+		},
+		bson.D{{Key: "$gt", Value: bson.A{"$$m.groupid", 0}}},
+	}}}
+
+	updatePipeline := mongo.Pipeline{
+		{{"$set", bson.D{
+			{Key: "manga", Value: bson.D{
+				{Key: "$map", Value: bson.D{
+					{Key: "input", Value: "$manga"},
+					{Key: "as", Value: "m"},
+					{Key: "in", Value: bson.D{
+						{Key: "$cond", Value: bson.A{
+							condition,
+							// When condition true: refactor manga.
+							bson.D{
+								{Key: "title", Value: "$$m.title"},
+								{Key: "id", Value: "$$m.id"},
+								{Key: "scanlators", Value: bson.D{
+									{Key: "$concatArrays", Value: bson.A{
+										bson.D{
+											{
+												Key:   "$ifNull",
+												Value: bson.A{"$$m.scanlators", bson.A{}},
+											},
+										},
+										bson.A{
+											bson.D{
+												{Key: "name", Value: "$$m.groupName"},
+												{Key: "id", Value: "$$m.groupid"},
+											},
+										},
+									}},
+								}},
+							},
+							"$$m",
+						}},
+					}},
+				}},
+			}},
+		}}},
+	}
+
+	// Use the $filter projection to only return the manga with matching id.
+	projection := bson.M{
+		"manga": bson.M{
+			"$filter": bson.M{
+				"input": "$manga",
+				"as":    "m",
+				"cond":  bson.M{"$eq": []interface{}{"$$m.id", mangaId}},
+			},
+		},
+	}
+
+	opts := options.FindOneAndUpdate().
+		SetReturnDocument(options.After).
+		SetProjection(projection)
+
+	var result struct {
+		Manga []MDbManga `bson:"manga"`
+	}
+	err := collection.FindOneAndUpdate(context.TODO(), filter, updatePipeline, opts).Decode(&result)
+	if err != nil {
+		return MDbManga{}, err
+	}
+	if len(result.Manga) == 0 {
+		return MDbManga{}, nil
+	}
+	return result.Manga[0], nil
+}
+
+func DbUserGetManga(b *mubot.Bot, userId, mangaId int64) (MDbManga, error) {
+	collection := b.MongoClient.Database(dbName).Collection("users")
+
+	filter := bson.M{
+		"userid":   userId,
+		"manga.id": mangaId,
+	}
+
+	condition := bson.D{{Key: "$and", Value: bson.A{
+		bson.D{
+			{
+				Key:   "$gt",
+				Value: bson.A{bson.D{{Key: "$ifNull", Value: bson.A{"$$m.groupName", ""}}}, ""},
+			},
+		},
+		bson.D{{Key: "$gt", Value: bson.A{"$$m.groupid", 0}}},
+	}}}
+
+	updatePipeline := mongo.Pipeline{
+		{{"$set", bson.D{
+			{Key: "manga", Value: bson.D{
+				{Key: "$map", Value: bson.D{
+					{Key: "input", Value: "$manga"},
+					{Key: "as", Value: "m"},
+					{Key: "in", Value: bson.D{
+						{Key: "$cond", Value: bson.A{
+							condition,
+							// When condition true: refactor manga.
+							bson.D{
+								{Key: "title", Value: "$$m.title"},
+								{Key: "id", Value: "$$m.id"},
+								{Key: "scanlators", Value: bson.D{
+									{Key: "$concatArrays", Value: bson.A{
+										bson.D{
+											{
+												Key:   "$ifNull",
+												Value: bson.A{"$$m.scanlators", bson.A{}},
+											},
+										},
+										bson.A{
+											bson.D{
+												{Key: "name", Value: "$$m.groupName"},
+												{Key: "id", Value: "$$m.groupid"},
+											},
+										},
+									}},
+								}},
+							},
+							"$$m",
+						}},
+					}},
+				}},
+			}},
+		}}},
+	}
+
+	// Use the $filter projection to only return the manga with matching id.
+	projection := bson.M{
+		"manga": bson.M{
+			"$filter": bson.M{
+				"input": "$manga",
+				"as":    "m",
+				"cond":  bson.M{"$eq": []interface{}{"$$m.id", mangaId}},
+			},
+		},
+	}
+
+	opts := options.FindOneAndUpdate().
+		SetReturnDocument(options.After).
+		SetProjection(projection)
+
+	var result struct {
+		Manga []MDbManga `bson:"manga"`
+	}
+	err := collection.FindOneAndUpdate(context.TODO(), filter, updatePipeline, opts).Decode(&result)
+	if err != nil {
+		return MDbManga{}, err
+	}
+	if len(result.Manga) == 0 {
+		return MDbManga{}, nil
+	}
+	return result.Manga[0], nil
+}
+
+func DbServerRemoveGroup(b *mubot.Bot, serverId, mangaId, groupId int64) (bool, error) {
+	collection := b.MongoClient.Database(dbName).Collection("servers")
+
+	filter := bson.M{
+		"serverid": serverId,
+		"manga.id": mangaId,
+	}
+
+	update := bson.D{{
+		Key: "$pull", Value: bson.M{
+			"manga.$[m].scanlators": bson.M{"id": groupId},
+		},
+	}}
+
+	opts := options.Update().SetArrayFilters(options.ArrayFilters{
+		Filters: []interface{}{
+			bson.M{"m.id": mangaId},
+		},
+	})
+
+	res, err := collection.UpdateOne(context.TODO(), filter, update, opts)
+	if err != nil {
+		return false, err
+	}
+	return res.ModifiedCount > 0, nil
+}
+
+func DbUserRemoveGroup(b *mubot.Bot, userId, mangaId, groupId int64) (bool, error) {
+	collection := b.MongoClient.Database(dbName).Collection("user")
+
+	filter := bson.M{
+		"userid":   userId,
+		"manga.id": mangaId,
+	}
+
+	update := bson.D{{
+		Key: "$pull", Value: bson.M{
+			"manga.$[m].scanlators": bson.M{"id": groupId},
+		},
+	}}
+
+	opts := options.Update().SetArrayFilters(options.ArrayFilters{
+		Filters: []interface{}{
+			bson.M{"m.id": mangaId},
+		},
+	})
+
+	res, err := collection.UpdateOne(context.TODO(), filter, update, opts)
+	if err != nil {
+		return false, err
+	}
+	return res.ModifiedCount > 0, nil
 }
 
 func DbServerRefactorGroupToScanlator(b *mubot.Bot, groupId int64) (bool, error) {

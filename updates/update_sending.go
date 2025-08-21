@@ -36,7 +36,7 @@ func StartRssCheck(b *mubot.Bot) {
 	}
 
 	go func() {
-		ticker := time.NewTicker(30 * time.Second)
+		ticker := time.NewTicker(60 * time.Minute)
 		defer ticker.Stop()
 		for {
 			select {

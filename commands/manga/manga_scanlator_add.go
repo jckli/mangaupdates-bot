@@ -10,28 +10,28 @@ import (
 	"github.com/jckli/mangaupdates-bot/utils"
 )
 
-func MangaSetScanlatorHandler(e *handler.CommandEvent, b *mubot.Bot) error {
+func MangaScanlatorAddHandler(e *handler.CommandEvent, b *mubot.Bot) error {
 	_, inGuild := e.Guild()
 	if !inGuild {
 		adapter := &CommandEventAdapter{Event: e}
-		return MangaSetScanlatorUserHandler(adapter, b)
+		return MangaScanlatorAddUserHandler(adapter, b)
 	} else {
 		return e.Respond(
 			discord.InteractionResponseTypeCreateMessage,
 			discord.MessageCreate{
 				Embeds: []discord.Embed{
 					selectServerOrUserEmbed(
-						"Set Scanlator",
-						"Would you like to set a manga's scanlator from this server or your DMs?",
+						"Add Scanlator",
+						"Would you like to add a manga's scanlator for this server or your DMs?",
 					),
 				},
-				Components: selectServerOrUserNestedComponents("manga", "set", "scanlator", ""),
+				Components: selectServerOrUserNestedComponents("manga", "scanlator", "add", ""),
 			},
 		)
 	}
 }
 
-func MangaSetScanlatorUserHandler(
+func MangaScanlatorAddUserHandler(
 	e EventHandler,
 	b *mubot.Bot,
 ) error {
@@ -41,7 +41,7 @@ func MangaSetScanlatorUserHandler(
 	if err != nil {
 		b.Logger.Error(
 			fmt.Sprintf(
-				"Failed to check if user exists (MangaSetScanlatorUserHandler): %s",
+				"Failed to check if user exists (MangaScanlatorAddUserHandler): %s",
 				err.Error(),
 			),
 		)
@@ -57,10 +57,10 @@ func MangaSetScanlatorUserHandler(
 		)
 	}
 
-	return MangaSetScanlatorUserSearchHandler(e, b, 1)
+	return MangaScanlatorAddUserSearchHandler(e, b, 1)
 }
 
-func MangaSetScanlatorServerHandler(
+func MangaScanlatorAddServerHandler(
 	e *handler.ComponentEvent,
 	b *mubot.Bot,
 ) error {
@@ -70,7 +70,7 @@ func MangaSetScanlatorServerHandler(
 	if err != nil {
 		b.Logger.Error(
 			fmt.Sprintf(
-				"Failed to check if server exists (MangaSetScanlatorServerHandler): %s",
+				"Failed to check if server exists (MangaScanlatorAddServerHandler): %s",
 				err.Error(),
 			),
 		)
@@ -90,10 +90,10 @@ func MangaSetScanlatorServerHandler(
 		)
 	}
 
-	return MangaSetScanlatorServerSearchHandler(e, b, 1)
+	return MangaScanlatorAddServerSearchHandler(e, b, 1)
 }
 
-func MangaSetScanlatorUserSearchHandler(
+func MangaScanlatorAddUserSearchHandler(
 	e EventHandler,
 	b *mubot.Bot,
 	page int,
@@ -104,7 +104,7 @@ func MangaSetScanlatorUserSearchHandler(
 	if err != nil {
 		b.Logger.Error(
 			fmt.Sprintf(
-				"Failed to get user (MangaSetScanlatorUserHandler): %s",
+				"Failed to get user (MangaScanlatorAddUserHandler): %s",
 				err.Error(),
 			),
 		)
@@ -117,7 +117,7 @@ func MangaSetScanlatorUserSearchHandler(
 	parsed := parsePaginationMangaList(user.Manga, page)
 
 	searchResults, searchResultsFormatted := dbMangaSearchResultsEmbed(
-		"Set Scanlator",
+		"Add Scanlator",
 		parsed.MangaList,
 		page,
 	)
@@ -129,8 +129,8 @@ func MangaSetScanlatorUserSearchHandler(
 	}
 	dropdownSearchResults := dropdownDbMangaSearchResultsNestedComponents(
 		"manga",
-		"set",
 		"scanlator",
+		"add",
 		"user",
 		searchResultsFormatted,
 	)
@@ -147,8 +147,8 @@ func MangaSetScanlatorUserSearchHandler(
 
 	pagination := paginationMangaSearchResultsNestedComponents(
 		"manga",
-		"set",
 		"scanlator",
+		"add",
 		"user",
 		parsed,
 	)
@@ -162,7 +162,7 @@ func MangaSetScanlatorUserSearchHandler(
 	)
 }
 
-func MangaSetScanlatorServerSearchHandler(
+func MangaScanlatorAddServerSearchHandler(
 	e *handler.ComponentEvent,
 	b *mubot.Bot,
 	page int,
@@ -173,7 +173,7 @@ func MangaSetScanlatorServerSearchHandler(
 	if err != nil {
 		b.Logger.Error(
 			fmt.Sprintf(
-				"Failed to get server (MangaSetScanlatorServerHandler): %s",
+				"Failed to get server (MangaScanlatorAddServerHandler): %s",
 				err.Error(),
 			),
 		)
@@ -188,7 +188,7 @@ func MangaSetScanlatorServerSearchHandler(
 	parsed := parsePaginationMangaList(server.Manga, page)
 
 	searchResults, searchResultsFormatted := dbMangaSearchResultsEmbed(
-		"Set Scanlator",
+		"Add Scanlator",
 		parsed.MangaList,
 		page,
 	)
@@ -202,8 +202,8 @@ func MangaSetScanlatorServerSearchHandler(
 	}
 	dropdownSearchResults := dropdownDbMangaSearchResultsNestedComponents(
 		"manga",
-		"set",
 		"scanlator",
+		"add",
 		"server",
 		searchResultsFormatted,
 	)
@@ -219,8 +219,8 @@ func MangaSetScanlatorServerSearchHandler(
 
 	pagination := paginationMangaSearchResultsNestedComponents(
 		"manga",
-		"set",
 		"scanlator",
+		"add",
 		"server",
 		parsed,
 	)
@@ -233,17 +233,17 @@ func MangaSetScanlatorServerSearchHandler(
 	)
 }
 
-func MangaSetScanlatorMangaSelectHandler(
+func MangaScanlatorAddMangaSelectHandler(
 	e *handler.ComponentEvent,
 	b *mubot.Bot,
 	mode string,
 ) error {
 	mangaId := e.StringSelectMenuInteractionData().Values[0]
 
-	return MangaSetScanlatorGroupHandler(e, b, 1, mode, mangaId)
+	return MangaScanlatorAddGroupHandler(e, b, 1, mode, mangaId)
 }
 
-func MangaSetScanlatorGroupHandler(
+func MangaScanlatorAddGroupHandler(
 	e *handler.ComponentEvent,
 	b *mubot.Bot,
 	page int,
@@ -254,7 +254,7 @@ func MangaSetScanlatorGroupHandler(
 	if err != nil {
 		b.Logger.Error(
 			fmt.Sprintf(
-				"Failed to parse manga ID (MangaSetScanlatorSelectGroupHandler): %s",
+				"Failed to parse manga ID (MangaScanlatorAddSelectGroupHandler): %s",
 				mangaId,
 			),
 		)
@@ -269,7 +269,7 @@ func MangaSetScanlatorGroupHandler(
 	if err != nil {
 		b.Logger.Error(
 			fmt.Sprintf(
-				"Failed to get manga (MangaSetScanlatorUserSelectGroupHandler): %s",
+				"Failed to get manga (MangaScanlatorAddSelectGroupHandler): %s",
 				err.Error(),
 			),
 		)
@@ -284,7 +284,7 @@ func MangaSetScanlatorGroupHandler(
 	parsed := parsePaginationSeriesGroups(groups.GroupList, page)
 
 	searchResults, searchResultsFormatted := selectSeriesGroupEmbed(
-		"Set Scanlator",
+		"Add Scanlator",
 		parsed.GroupList,
 	)
 	if searchResultsFormatted == nil {
@@ -299,8 +299,8 @@ func MangaSetScanlatorGroupHandler(
 
 	dropdownSearchResults := dropdownSeriesGroupsNestedComponents(
 		"manga",
-		"set",
 		"scanlator",
+		"add",
 		mode,
 		mangaId,
 		searchResultsFormatted,
@@ -317,8 +317,8 @@ func MangaSetScanlatorGroupHandler(
 
 	pagination := paginationGroupListNestedComponents(
 		"manga",
-		"set",
 		"scanlator",
+		"add",
 		mode,
 		mangaId,
 		parsed,
@@ -335,7 +335,7 @@ func MangaSetScanlatorGroupHandler(
 	return err
 }
 
-func MangaSetScanlatorGroupSelectHandler(
+func MangaScanlatorAddGroupSelectHandler(
 	e *handler.ComponentEvent,
 	b *mubot.Bot,
 	mode,
@@ -347,7 +347,7 @@ func MangaSetScanlatorGroupSelectHandler(
 	if err != nil {
 		b.Logger.Error(
 			fmt.Sprintf(
-				"Failed to parse group ID (MangaSetScanlatorGroupSelectHandler): %s",
+				"Failed to parse group ID (MangaScanlatorAddGroupSelectHandler): %s",
 				groupId,
 			),
 		)
@@ -359,10 +359,10 @@ func MangaSetScanlatorGroupSelectHandler(
 		)
 	}
 
-	components := selectConfirmGroupComponents("manga", "set", "scanlator", mode, mangaId, groupId)
+	components := selectConfirmGroupComponents("manga", "scanlator", "add", mode, mangaId, groupId)
 	err = e.UpdateMessage(
 		discord.MessageUpdate{
-			Embeds:     &[]discord.Embed{confirmGroupEmbed(b, "Set Scanlator", intGroupId)},
+			Embeds:     &[]discord.Embed{confirmGroupEmbed(b, "Add Scanlator", intGroupId)},
 			Components: &components,
 		},
 	)
@@ -370,18 +370,18 @@ func MangaSetScanlatorGroupSelectHandler(
 	return err
 }
 
-func MangaSetScanlatorGroupCancelHandler(
+func MangaScanlatorAddGroupCancelHandler(
 	e *handler.ComponentEvent,
 ) error {
 	return e.UpdateMessage(
 		discord.MessageUpdate{
-			Embeds:     &[]discord.Embed{cancelEmbed("Set Scanlator")},
+			Embeds:     &[]discord.Embed{cancelEmbed("Add Scanlator")},
 			Components: &[]discord.ContainerComponent{},
 		},
 	)
 }
 
-func MangaSetScanlatorGroupConfirmHandler(
+func MangaScanlatorAddGroupConfirmHandler(
 	e *handler.ComponentEvent,
 	b *mubot.Bot,
 	mode,
@@ -392,7 +392,7 @@ func MangaSetScanlatorGroupConfirmHandler(
 	if err != nil {
 		b.Logger.Error(
 			fmt.Sprintf(
-				"Failed to parse manga id (MangaSetScanlatorGroupConfirmHandler): %s",
+				"Failed to parse manga id (MangaScanlatorAddGroupConfirmHandler): %s",
 				mangaId,
 			),
 		)
@@ -408,7 +408,7 @@ func MangaSetScanlatorGroupConfirmHandler(
 	if err != nil {
 		b.Logger.Error(
 			fmt.Sprintf(
-				"Failed to parse group id (MangaSetScanlatorGroupConfirmHandler): %s",
+				"Failed to parse group id (MangaScanlatorAddGroupConfirmHandler): %s",
 				mangaId,
 			),
 		)
@@ -424,7 +424,7 @@ func MangaSetScanlatorGroupConfirmHandler(
 	if err != nil {
 		b.Logger.Error(
 			fmt.Sprintf(
-				"Failed to get group info (MangaSetScanlatorGroupConfirmHandler): %s",
+				"Failed to get group info (MangaScanlatorAddGroupConfirmHandler): %s",
 				mangaId,
 			),
 		)
@@ -442,7 +442,7 @@ func MangaSetScanlatorGroupConfirmHandler(
 		if err != nil {
 			b.Logger.Error(
 				fmt.Sprintf(
-					"Failed to check group exists from user (MangaSetScanlatorGroupConfirmHandler): %s",
+					"Failed to check group exists from user (MangaScanlatorAddGroupConfirmHandler): %s",
 					err.Error(),
 				),
 			)
@@ -456,7 +456,7 @@ func MangaSetScanlatorGroupConfirmHandler(
 		if exists {
 			return e.UpdateMessage(
 				discord.MessageUpdate{
-					Embeds:     &[]discord.Embed{groupExistsEmbed("Set Scanlator")},
+					Embeds:     &[]discord.Embed{groupExistsEmbed("Add Scanlator")},
 					Components: &[]discord.ContainerComponent{},
 				},
 			)
@@ -465,7 +465,7 @@ func MangaSetScanlatorGroupConfirmHandler(
 		if err != nil {
 			b.Logger.Error(
 				fmt.Sprintf(
-					"Failed to set scanlator from user (MangaSetScanlatorGroupConfirmHandler): %s",
+					"Failed to set scanlator from user (MangaScanlatorAddGroupConfirmHandler): %s",
 					err.Error(),
 				),
 			)
@@ -482,7 +482,7 @@ func MangaSetScanlatorGroupConfirmHandler(
 		if err != nil {
 			b.Logger.Error(
 				fmt.Sprintf(
-					"Failed to check group exists from server (MangaSetScanlatorGroupConfirmHandler): %s",
+					"Failed to check group exists from server (MangaScanlatorAddGroupConfirmHandler): %s",
 					err.Error(),
 				),
 			)
@@ -496,7 +496,7 @@ func MangaSetScanlatorGroupConfirmHandler(
 		if exists {
 			return e.UpdateMessage(
 				discord.MessageUpdate{
-					Embeds:     &[]discord.Embed{groupExistsEmbed("Set Scanlator")},
+					Embeds:     &[]discord.Embed{groupExistsEmbed("Add Scanlator")},
 					Components: &[]discord.ContainerComponent{},
 				},
 			)
@@ -506,7 +506,7 @@ func MangaSetScanlatorGroupConfirmHandler(
 		if err != nil {
 			b.Logger.Error(
 				fmt.Sprintf(
-					"Failed to set scanlator from server (MangaSetScanlatorGroupConfirmHandler): %s",
+					"Failed to set scanlator from server (MangaScanlatorAddGroupConfirmHandler): %s",
 					err.Error(),
 				),
 			)
@@ -523,7 +523,7 @@ func MangaSetScanlatorGroupConfirmHandler(
 	if err != nil {
 		b.Logger.Error(
 			fmt.Sprintf(
-				"Failed to get series info (MangaSetScanlatorGroupConfirmHandler): %s",
+				"Failed to get series info (MangaScanlatorAddGroupConfirmHandler): %s",
 				mangaId,
 			),
 		)
@@ -538,7 +538,7 @@ func MangaSetScanlatorGroupConfirmHandler(
 	return e.UpdateMessage(
 		discord.MessageUpdate{
 			Embeds: &[]discord.Embed{
-				successMangaSetScanlatorEmbed("Set Scanlator", seriesInfo.Title, groupInfo.Name),
+				successMangaSetScanlatorEmbed("Add Scanlator", seriesInfo.Title, groupInfo.Name),
 			},
 			Components: &[]discord.ContainerComponent{},
 		},
