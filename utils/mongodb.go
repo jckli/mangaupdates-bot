@@ -945,22 +945,43 @@ func DbServerRemoveGroup(b *mubot.Bot, serverId, mangaId, groupId int64) (bool, 
 		"manga.id": mangaId,
 	}
 
-	update := bson.D{{
+	update1 := bson.D{{
 		Key: "$pull", Value: bson.M{
 			"manga.$[m].scanlators": bson.M{"id": groupId},
 		},
 	}}
 
 	opts := options.Update().SetArrayFilters(options.ArrayFilters{
-		Filters: []interface{}{
+		Filters: []any{
 			bson.M{"m.id": mangaId},
 		},
 	})
 
-	res, err := collection.UpdateOne(context.TODO(), filter, update, opts)
+	res, err := collection.UpdateOne(context.TODO(), filter, update1, opts)
 	if err != nil {
 		return false, err
 	}
+
+	update2 := bson.D{{
+		Key: "$unset", Value: bson.M{
+			"manga.$[m].scanlators": "",
+		},
+	}}
+
+	optsEmpty := options.Update().SetArrayFilters(options.ArrayFilters{
+		Filters: []any{
+			bson.M{
+				"m.id":         mangaId,
+				"m.scanlators": bson.M{"$size": 0},
+			},
+		},
+	})
+
+	_, err = collection.UpdateOne(context.TODO(), filter, update2, optsEmpty)
+	if err != nil {
+		return false, err
+	}
+
 	return res.ModifiedCount > 0, nil
 }
 
@@ -979,7 +1000,7 @@ func DbUserRemoveGroup(b *mubot.Bot, userId, mangaId, groupId int64) (bool, erro
 	}}
 
 	opts := options.Update().SetArrayFilters(options.ArrayFilters{
-		Filters: []interface{}{
+		Filters: []any{
 			bson.M{"m.id": mangaId},
 		},
 	})

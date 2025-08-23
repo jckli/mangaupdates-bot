@@ -1,11 +1,13 @@
 package manga
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/handler"
+	"github.com/disgoorg/disgo/rest"
 	"github.com/jckli/mangaupdates-bot/mubot"
 	"github.com/jckli/mangaupdates-bot/utils"
 )
@@ -129,8 +131,8 @@ func MangaScanlatorRemoveUserSearchHandler(
 	}
 	dropdownSearchResults := dropdownDbMangaSearchResultsNestedComponents(
 		"manga",
-		"remove",
 		"scanlator",
+		"remove",
 		"user",
 		searchResultsFormatted,
 	)
@@ -147,8 +149,8 @@ func MangaScanlatorRemoveUserSearchHandler(
 
 	pagination := paginationMangaSearchResultsNestedComponents(
 		"manga",
-		"remove",
 		"scanlator",
+		"remove",
 		"user",
 		parsed,
 	)
@@ -280,7 +282,6 @@ func MangaScanlatorRemoveUserGroupHandler(
 		parsed.GroupList,
 	)
 	if searchResultsFormatted == nil {
-		fmt.Println("no search results formatted")
 		return e.UpdateMessage(
 			discord.MessageUpdate{
 				Embeds:     &[]discord.Embed{searchResults.Build()},
@@ -374,7 +375,6 @@ func MangaScanlatorRemoveServerGroupHandler(
 		parsed.GroupList,
 	)
 	if searchResultsFormatted == nil {
-		fmt.Println("no search results formatted")
 		return e.UpdateMessage(
 			discord.MessageUpdate{
 				Embeds:     &[]discord.Embed{searchResults.Build()},
@@ -417,6 +417,11 @@ func MangaScanlatorRemoveServerGroupHandler(
 			Components: &components,
 		},
 	)
+
+	var customErr rest.Error
+	if errors.As(err, &customErr) {
+		fmt.Println(string(customErr.RsBody))
+	}
 
 	return err
 }

@@ -36,13 +36,10 @@ func StartRssCheck(b *mubot.Bot) {
 	}
 
 	go func() {
-		ticker := time.NewTicker(60 * time.Minute)
+		ticker := time.NewTicker(10 * time.Second)
 		defer ticker.Stop()
-		for {
-			select {
-			case <-ticker.C:
-				checkRssForUpdates(b)
-			}
+		for range ticker.C {
+			checkRssForUpdates(b)
 		}
 	}()
 }
@@ -197,8 +194,6 @@ func notify(b *mubot.Bot, entry utils.MangaEntry) {
 		CreateMessage(errorChannel, discord.MessageCreate{
 			Content: fmt.Sprintf("Finished notifying for %s", entry.Title),
 		})
-
-	return
 }
 
 func getScanGroups(b *mubot.Bot, scanGroup string) ([]utils.MuSearchGroupsGroup, error) {

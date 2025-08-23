@@ -752,7 +752,7 @@ func selectDbScanlatorsEmbed(
 ) (*discord.EmbedBuilder, []dbMangaSearchResultsFormatted) {
 	description := ""
 	if len(seriesGroup) == 0 {
-		description = "No groups found scanlating this manga."
+		description = "No scanlator groups found for this manga."
 		return discord.NewEmbedBuilder().
 			SetTitle(embedTitle).
 			SetDescription(description).
