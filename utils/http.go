@@ -6,40 +6,35 @@ import (
 )
 
 var (
-	client = &fasthttp.Client{}
+	httpClient = &fasthttp.Client{}
 )
 
-func getRequest(url string) ([]byte, error) {
-	req := fasthttp.AcquireRequest()
-	defer fasthttp.ReleaseRequest(req)
-	req.Header.SetMethod("GET")
-	req.SetRequestURI(url)
-
-	resp := fasthttp.AcquireResponse()
-	defer fasthttp.ReleaseResponse(resp)
-
-	err := client.Do(req, resp)
-	if err != nil {
-		return nil, err
-	}
-
-	bodyCopy := make([]byte, len(resp.Body()))
-	copy(bodyCopy, resp.Body())
-
-	return bodyCopy, nil
+type Client struct {
+	BaseURL string
+	APIKey  string
 }
 
-func muGetRequest(url, token string) ([]byte, int, error) {
+func NewClient(baseURL, apiKey string) *Client {
+	return &Client{
+		BaseURL: baseURL,
+		APIKey:  apiKey,
+	}
+}
+
+func (c *Client) Get(endpoint string) ([]byte, int, error) {
 	req := fasthttp.AcquireRequest()
 	defer fasthttp.ReleaseRequest(req)
+
+	url := c.BaseURL + endpoint
+
 	req.Header.SetMethod("GET")
 	req.SetRequestURI(url)
-	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("x-api-key", c.APIKey)
 
 	resp := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(resp)
 
-	err := client.Do(req, resp)
+	err := httpClient.Do(req, resp)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -47,18 +42,19 @@ func muGetRequest(url, token string) ([]byte, int, error) {
 	bodyCopy := make([]byte, len(resp.Body()))
 	copy(bodyCopy, resp.Body())
 
-	statusCode := resp.StatusCode()
-
-	return bodyCopy, statusCode, nil
+	return bodyCopy, resp.StatusCode(), nil
 }
 
-func muPostRequest(url, token string, body interface{}) ([]byte, int, error) {
+func (c *Client) Post(endpoint string, body any) ([]byte, int, error) {
 	req := fasthttp.AcquireRequest()
 	defer fasthttp.ReleaseRequest(req)
+
+	url := c.BaseURL + endpoint
+
 	req.Header.SetMethod("POST")
 	req.SetRequestURI(url)
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("x-api-key", c.APIKey)
 
 	jsonBody, err := json.Marshal(body)
 	if err != nil {
@@ -69,7 +65,7 @@ func muPostRequest(url, token string, body interface{}) ([]byte, int, error) {
 	resp := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(resp)
 
-	err = client.Do(req, resp)
+	err = httpClient.Do(req, resp)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -77,7 +73,5 @@ func muPostRequest(url, token string, body interface{}) ([]byte, int, error) {
 	bodyCopy := make([]byte, len(resp.Body()))
 	copy(bodyCopy, resp.Body())
 
-	statusCode := resp.StatusCode()
-
-	return bodyCopy, statusCode, nil
+	return bodyCopy, resp.StatusCode(), nil
 }
