@@ -49,7 +49,7 @@ func New(version string) *Bot {
 	}
 
 	apiKey := os.Getenv("API_KEY")
-	if apiKey != "" {
+	if apiKey == "" {
 		logger.Error("Failed to get API_KEY from env")
 	}
 

@@ -1,6 +1,6 @@
 module github.com/jckli/mangaupdates-bot
 
-go 1.22.5
+go 1.25.0
 
 require (
 	github.com/disgoorg/disgo v0.18.9
