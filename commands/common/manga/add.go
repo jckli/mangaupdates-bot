@@ -16,7 +16,7 @@ func RunAddEntry(
 	query string,
 ) error {
 	if mangaID, err := strconv.ParseInt(query, 10, 64); err == nil {
-		return sendConfirmationView(r, b, endpoint, mangaID)
+		return sendAddConfirmation(r, b, endpoint, mangaID)
 	}
 
 	return RunAddSearch(r, b, endpoint, query)
@@ -68,7 +68,7 @@ func HandleAddSelection(e *handler.ComponentEvent, b *mubot.Bot) error {
 	mangaID, _ := strconv.ParseInt(e.StringSelectMenuInteractionData().Values[0], 10, 64)
 
 	responder := &common.ComponentResponder{Event: e}
-	return sendConfirmationView(responder, b, mode, mangaID)
+	return sendAddConfirmation(responder, b, mode, mangaID)
 }
 
 func HandleAddConfirmation(e *handler.ComponentEvent, b *mubot.Bot) error {
@@ -102,7 +102,7 @@ func HandleAddConfirmation(e *handler.ComponentEvent, b *mubot.Bot) error {
 	return responder.Respond(embed, nil)
 }
 
-func sendConfirmationView(r common.Responder, b *mubot.Bot, endpoint string, mangaID int64) error {
+func sendAddConfirmation(r common.Responder, b *mubot.Bot, endpoint string, mangaID int64) error {
 	details, err := b.ApiClient.GetMangaDetails(mangaID)
 	if err != nil {
 		return r.Error("Failed to fetch manga details.")

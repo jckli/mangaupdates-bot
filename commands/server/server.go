@@ -27,5 +27,17 @@ var ServerCommand = discord.SlashCommandCreate{
 				},
 			},
 		},
+		discord.ApplicationCommandOptionSubCommand{
+			Name:        "remove",
+			Description: "Remove a manga from this server's tracking list",
+			Options: []discord.ApplicationCommandOption{
+				discord.ApplicationCommandOptionString{
+					Name:         "title",
+					Description:  "The title of the manga",
+					Required:     false,
+					Autocomplete: true,
+				},
+			},
+		},
 	},
 }

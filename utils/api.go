@@ -80,3 +80,21 @@ func (c *Client) AddMangaToWatchlist(endpoint, id string, mangaID int64) error {
 	}
 	return nil
 }
+
+func (c *Client) RemoveMangaFromWatchlist(endpoint, id string, mangaID int64) error {
+	path := fmt.Sprintf("/tsuuchi/%s/%s/manga/%d", endpoint, id, mangaID)
+
+	_, status, err := c.Delete(path, nil)
+	if err != nil {
+		return err
+	}
+
+	if status == fasthttp.StatusNotFound {
+		return fmt.Errorf("This manga is not found in the list.")
+	}
+	if status != fasthttp.StatusOK {
+		return fmt.Errorf("API returned status: %d. Please report this to me in my support server.", status)
+	}
+
+	return nil
+}

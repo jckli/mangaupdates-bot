@@ -77,3 +77,36 @@ func (c *Client) Post(endpoint string, body any) ([]byte, int, error) {
 
 	return bodyCopy, resp.StatusCode(), nil
 }
+
+func (c *Client) Delete(endpoint string, body any) ([]byte, int, error) {
+	req := fasthttp.AcquireRequest()
+	defer fasthttp.ReleaseRequest(req)
+
+	url := c.BaseURL + endpoint
+
+	req.Header.SetMethod("DELETE")
+	req.SetRequestURI(url)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("x-api-key", c.APIKey)
+
+	if body != nil {
+		jsonBody, err := json.Marshal(body)
+		if err != nil {
+			return nil, 0, err
+		}
+		req.SetBody(jsonBody)
+	}
+
+	resp := fasthttp.AcquireResponse()
+	defer fasthttp.ReleaseResponse(resp)
+
+	err := httpClient.Do(req, resp)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	bodyCopy := make([]byte, len(resp.Body()))
+	copy(bodyCopy, resp.Body())
+
+	return bodyCopy, resp.StatusCode(), nil
+}

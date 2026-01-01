@@ -9,9 +9,11 @@ import (
 
 const ItemsPerPage = 15
 
-func GetPageSlice(items []string, page int) ([]string, int) {
+func GetPageSlice[T any](items []T, page int) ([]T, int) {
 	totalItems := len(items)
-	totalPages := int(math.Ceil(float64(totalItems) / float64(ItemsPerPage)))
+	const itemsPerPage = 25
+
+	totalPages := int(math.Ceil(float64(totalItems) / float64(itemsPerPage)))
 
 	if page < 1 {
 		page = 1
@@ -19,12 +21,13 @@ func GetPageSlice(items []string, page int) ([]string, int) {
 	if page > totalPages && totalPages > 0 {
 		page = totalPages
 	}
+
 	if totalPages == 0 {
-		return []string{}, 0
+		return []T{}, 0
 	}
 
-	start := (page - 1) * ItemsPerPage
-	end := start + ItemsPerPage
+	start := (page - 1) * itemsPerPage
+	end := start + itemsPerPage
 	if end > totalItems {
 		end = totalItems
 	}

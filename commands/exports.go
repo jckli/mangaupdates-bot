@@ -27,7 +27,16 @@ func CommandHandlers(b *mubot.Bot) *handler.Mux {
 			return server.AddHandler(e, b)
 		})
 		h.Autocomplete("/add", func(e *handler.AutocompleteEvent) error {
-			return manga.HandleAutocomplete(e, b, "title")
+			return manga.HandleAddAutocomplete(e, b, "title")
+		})
+		h.Command("/remove", func(e *handler.CommandEvent) error {
+			return server.RemoveHandler(e, b)
+		})
+		h.Autocomplete("/remove", func(e *handler.AutocompleteEvent) error {
+			if e.GuildID() == nil {
+				return e.AutocompleteResult(nil)
+			}
+			return manga.HandleRemoveAutocomplete(e, b, "server", e.GuildID().String(), "title")
 		})
 	})
 	h.Route("/user", func(h handler.Router) {
@@ -38,7 +47,13 @@ func CommandHandlers(b *mubot.Bot) *handler.Mux {
 			return user.AddHandler(e, b)
 		})
 		h.Autocomplete("/add", func(e *handler.AutocompleteEvent) error {
-			return manga.HandleAutocomplete(e, b, "title")
+			return manga.HandleAddAutocomplete(e, b, "title")
+		})
+		h.Command("/remove", func(e *handler.CommandEvent) error {
+			return user.RemoveHandler(e, b)
+		})
+		h.Autocomplete("/remove", func(e *handler.AutocompleteEvent) error {
+			return manga.HandleRemoveAutocomplete(e, b, "user", e.User().ID.String(), "title")
 		})
 	})
 
@@ -53,6 +68,17 @@ func CommandHandlers(b *mubot.Bot) *handler.Mux {
 	})
 	h.Component("/manga_add_confirm/{mode}/{manga_id}/{action}", func(e *handler.ComponentEvent) error {
 		return manga.HandleAddConfirmation(e, b)
+	})
+
+	// remove
+	h.Component("/manga_remove_select/{mode}", func(e *handler.ComponentEvent) error {
+		return manga.HandleRemoveSelection(e, b)
+	})
+	h.Component("/manga_remove_confirm/{mode}/{manga_id}/{action}", func(e *handler.ComponentEvent) error {
+		return manga.HandleRemoveConfirmation(e, b)
+	})
+	h.Component("/remove_nav/{mode}/{query}/{page}", func(e *handler.ComponentEvent) error {
+		return manga.HandleRemovePagination(e, b)
 	})
 
 	return h

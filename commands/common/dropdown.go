@@ -2,6 +2,7 @@ package common
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/disgoorg/disgo/discord"
 	"github.com/jckli/mangaupdates-bot/utils"
@@ -26,13 +27,28 @@ func GenerateSearchDropdown(
 			label = label[:95] + "..."
 		}
 
-		desc := fmt.Sprintf("Year: %s | Rating: %.2f", res.Year, res.Rating)
+		var desc string
+		var parts []string
 
-		options = append(options, discord.StringSelectMenuOption{
-			Label:       label,
-			Value:       fmt.Sprintf("%d", res.ID),
-			Description: desc,
-		})
+		if res.Year != "" {
+			parts = append(parts, fmt.Sprintf("Year: %s", res.Year))
+		}
+		if res.Rating > 0 {
+			parts = append(parts, fmt.Sprintf("Rating: %.2f", res.Rating))
+		}
+
+		if len(parts) > 0 {
+			desc = strings.Join(parts, " | ")
+		}
+
+		option := discord.StringSelectMenuOption{
+			Label: label,
+			Value: fmt.Sprintf("%d", res.ID),
+		}
+		if desc != "" {
+			option.Description = desc
+		}
+		options = append(options, option)
 	}
 
 	return []discord.ContainerComponent{
