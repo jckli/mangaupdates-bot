@@ -15,5 +15,17 @@ var ServerCommand = discord.SlashCommandCreate{
 			Name:        "list",
 			Description: "Show all manga tracked by this server",
 		},
+		discord.ApplicationCommandOptionSubCommand{
+			Name:        "add",
+			Description: "Add a manga to this server's tracking list",
+			Options: []discord.ApplicationCommandOption{
+				discord.ApplicationCommandOptionString{
+					Name:         "title",
+					Description:  "The title of the manga",
+					Required:     true,
+					Autocomplete: true,
+				},
+			},
+		},
 	},
 }

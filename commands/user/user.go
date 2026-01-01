@@ -1,21 +1,28 @@
 package user
 
 import (
-	"github.com/disgoorg/disgo/handler"
-	"github.com/jckli/mangaupdates-bot/commands/common"
-	"github.com/jckli/mangaupdates-bot/commands/common/manga"
-	"github.com/jckli/mangaupdates-bot/mubot"
+	"github.com/disgoorg/disgo/discord"
 )
 
-func ListHandler(e *handler.CommandEvent, b *mubot.Bot) error {
-	responder := &common.CommandResponder{Event: e}
-	return manga.RunMangaList(
-		responder,
-		b,
-		"user",
-		e.User().ID.String(),
-		e.User().EffectiveName(),
-		e.User().EffectiveAvatarURL(),
-		1,
-	)
+var UserCommand = discord.SlashCommandCreate{
+	Name:        "user",
+	Description: "Manage your personal manga tracking list",
+	Options: []discord.ApplicationCommandOption{
+		discord.ApplicationCommandOptionSubCommand{
+			Name:        "list",
+			Description: "Show your personal tracked manga",
+		},
+		discord.ApplicationCommandOptionSubCommand{
+			Name:        "add",
+			Description: "Add a manga to your personal tracking list",
+			Options: []discord.ApplicationCommandOption{
+				discord.ApplicationCommandOptionString{
+					Name:         "title",
+					Description:  "The title of the manga",
+					Required:     true,
+					Autocomplete: true,
+				},
+			},
+		},
+	},
 }

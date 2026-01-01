@@ -1,4 +1,4 @@
-package user
+package server
 
 import (
 	"github.com/disgoorg/disgo/handler"
@@ -7,15 +7,8 @@ import (
 	"github.com/jckli/mangaupdates-bot/mubot"
 )
 
-func ListHandler(e *handler.CommandEvent, b *mubot.Bot) error {
+func AddHandler(e *handler.CommandEvent, b *mubot.Bot) error {
+	query := e.SlashCommandInteractionData().String("title")
 	responder := &common.CommandResponder{Event: e}
-	return manga.RunMangaList(
-		responder,
-		b,
-		"user",
-		e.User().ID.String(),
-		e.User().EffectiveName(),
-		e.User().EffectiveAvatarURL(),
-		1,
-	)
+	return manga.RunAddEntry(responder, b, "server", query)
 }

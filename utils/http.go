@@ -2,6 +2,7 @@ package utils
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/valyala/fasthttp"
 )
 
@@ -26,6 +27,7 @@ func (c *Client) Get(endpoint string) ([]byte, int, error) {
 	defer fasthttp.ReleaseRequest(req)
 
 	url := c.BaseURL + endpoint
+	fmt.Println(url)
 
 	req.Header.SetMethod("GET")
 	req.SetRequestURI(url)
