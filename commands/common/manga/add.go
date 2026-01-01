@@ -15,7 +15,6 @@ func RunAddEntry(
 	endpoint string,
 	query string,
 ) error {
-	fmt.Println(query)
 	if mangaID, err := strconv.ParseInt(query, 10, 64); err == nil {
 		return sendConfirmationView(r, b, endpoint, mangaID)
 	}
