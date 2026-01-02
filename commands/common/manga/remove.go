@@ -83,16 +83,17 @@ func RunRemoveMenu(
 	if len(slicedLines) == 0 {
 		description = "No items found."
 	} else {
+		description = ""
 		for _, line := range slicedLines {
 			description += line + "\n"
 		}
 	}
 
-	header := fmt.Sprintf("**Found %d items**", len(matches))
+	header := fmt.Sprintf("Found %d results.", len(matches))
 	if query != "" {
-		header = fmt.Sprintf("**Found %d items matching `%s`**", len(matches), query)
+		header = fmt.Sprintf("Found %d results for `%s`.", len(matches), query)
 	}
-	fullDescription := header + "\n\n" + description
+	fullDescription := header + "\nPlease select one from the dropdown below:\n\n" + description
 
 	embed := common.StandardEmbed("Select Manga to Remove", fullDescription)
 	embed.Footer = &discord.EmbedFooter{Text: fmt.Sprintf("Page %d/%d", page, totalPages)}

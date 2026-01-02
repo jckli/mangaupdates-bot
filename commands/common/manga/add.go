@@ -42,7 +42,7 @@ func RunAddSearch(
 	}
 	description := fmt.Sprintf("Found %d results for `%s`.\nPlease select one from the dropdown below:\n\n", len(results), query)
 	for i, res := range results[0:max] {
-		line := fmt.Sprintf("`%d.` **%s**", i+1, res.Title)
+		line := fmt.Sprintf("`%d.` %s", i+1, res.Title)
 
 		if res.Year != "" {
 			line += fmt.Sprintf(" (%s)", res.Year)

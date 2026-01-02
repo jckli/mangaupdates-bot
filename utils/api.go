@@ -31,7 +31,13 @@ func (c *Client) GetWatchlist(endpoint string, id string) (*[]TrackedManga, erro
 }
 
 func (c *Client) SearchManga(query string) ([]MangaSearchResult, error) {
-	body, status, err := c.Get("/tsuuchi/manga/search?q=" + query)
+	u := fasthttp.AcquireURI()
+	defer fasthttp.ReleaseURI(u)
+	u.SetPath("/tsuuchi/manga/search")
+	u.QueryArgs().Set("q", query)
+	endpoint := string(u.RequestURI())
+
+	body, status, err := c.Get(endpoint)
 	if err != nil {
 		return nil, err
 	}
