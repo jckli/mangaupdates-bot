@@ -34,7 +34,7 @@ func AlertHandler(e *handler.CommandEvent, b *mubot.Bot) error {
 		SetAuthor("MangaUpdates", "", botIcon).
 		SetColor(0xffd700).
 		SetDescription(
-			"I have completely rewritten the bot and its backend services from scratch! 🚀\n\n" +
+			"I have completely rewritten the bot and its backend services from scratch!\n\n" +
 				"**What this means:**\n" +
 				"• **Speed:** Everything should be significantly faster.\n" +
 				"• **Stability:** The underlying architecture is much more robust.\n\n" +
