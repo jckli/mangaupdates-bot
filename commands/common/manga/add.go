@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/handler"
 	"github.com/jckli/mangaupdates-bot/commands/common"
 	"github.com/jckli/mangaupdates-bot/mubot"
@@ -19,72 +20,65 @@ func RunAddEntry(
 		return sendAddConfirmation(r, b, endpoint, mangaID)
 	}
 
-	return RunAddSearch(r, b, endpoint, query)
-}
-
-func RunAddSearch(
-	r common.Responder,
-	b *mubot.Bot,
-	endpoint string,
-	query string,
-) error {
-	results, err := b.ApiClient.SearchManga(query)
+	embed, components, err := GenerateGlobalSearchMenu(b, GlobalSearchConfig{
+		Query:          query,
+		SelectIDPrefix: "manga_add_select",
+		EndpointSuffix: endpoint,
+		Title:          "Search Results",
+		Placeholder:    "Select a manga to add...",
+	})
 	if err != nil {
-		return r.Error("Failed to search manga.")
+		return r.Error(err.Error())
 	}
-	if len(results) == 0 {
-		return r.Error("No results found for `" + query + "`")
-	}
-
-	max := 25
-	if len(results) < max {
-		max = len(results)
-	}
-	description := fmt.Sprintf("Found %d results for `%s`.\nPlease select one from the dropdown below:\n\n", len(results), query)
-	for i, res := range results[0:max] {
-		line := fmt.Sprintf("`%d.` %s", i+1, res.Title)
-
-		if res.Year != "" {
-			line += fmt.Sprintf(" (%s)", res.Year)
-		}
-		if res.Rating > 0 {
-			line += fmt.Sprintf(" • Rating: %.2f", res.Rating)
-		}
-		description += line + "\n"
-	}
-
-	customID := fmt.Sprintf("manga_add_select/%s", endpoint)
-	components := common.GenerateSearchDropdown(customID, "Select a manga to add...", results)
-
-	embed := common.StandardEmbed("Search Results", description)
 	return r.Respond(embed, components)
 }
 
 func HandleAddSelection(e *handler.ComponentEvent, b *mubot.Bot) error {
-	mode := e.Vars["mode"]
+	e.DeferUpdateMessage()
+
+	endpoint := e.Vars["mode"]
 	if len(e.StringSelectMenuInteractionData().Values) == 0 {
 		return nil
 	}
 	mangaID, _ := strconv.ParseInt(e.StringSelectMenuInteractionData().Values[0], 10, 64)
 
-	responder := &common.ComponentResponder{Event: e}
-	return sendAddConfirmation(responder, b, mode, mangaID)
+	details, err := b.ApiClient.GetMangaDetails(mangaID)
+	if err != nil {
+		return err
+	}
+
+	embed := common.GenerateConfirmationEmbed(*details)
+	prefix := fmt.Sprintf("/manga_add_confirm/%s/%d", endpoint, mangaID)
+	buttons := common.CreateConfirmButtons(prefix+"/yes", prefix+"/no")
+
+	_, err = e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(),
+		discord.MessageUpdate{
+			Embeds:     &[]discord.Embed{embed},
+			Components: &buttons,
+		})
+	return err
 }
 
 func HandleAddConfirmation(e *handler.ComponentEvent, b *mubot.Bot) error {
-	mode := e.Vars["mode"]
+	e.DeferUpdateMessage()
+
+	endpoint := e.Vars["mode"]
 	mangaID, _ := strconv.ParseInt(e.Vars["manga_id"], 10, 64)
 	action := e.Vars["action"]
 
-	responder := &common.ComponentResponder{Event: e}
-
 	if action == "no" {
-		embed := common.StandardEmbed("Cancelled", "Manga was not added.")
-		return responder.Respond(embed, nil)
+		_, err := e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(),
+			discord.MessageUpdate{
+				Embeds: &[]discord.Embed{
+					common.StandardEmbed("Cancelled", "Manga was not added."),
+				},
+				Components: &[]discord.ContainerComponent{},
+			})
+		return err
 	}
 
 	var targetID string
-	if mode == "server" {
+	if endpoint == "server" {
 		if e.GuildID() == nil {
 			return nil
 		}
@@ -93,13 +87,24 @@ func HandleAddConfirmation(e *handler.ComponentEvent, b *mubot.Bot) error {
 		targetID = e.User().ID.String()
 	}
 
-	err := b.ApiClient.AddMangaToWatchlist(mode, targetID, mangaID)
+	// API Write
+	err := b.ApiClient.AddMangaToWatchlist(endpoint, targetID, mangaID)
 	if err != nil {
-		return responder.Error(err.Error())
+		errEmbed := common.StandardEmbed("Error", err.Error())
+		errEmbed.Color = 0xFF0000 // Red
+		_, _ = e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(),
+			discord.MessageUpdate{Embeds: &[]discord.Embed{errEmbed}})
+		return err
 	}
 
-	embed := common.StandardEmbed("Success", "Manga successfully added to the list.")
-	return responder.Respond(embed, nil)
+	_, err = e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(),
+		discord.MessageUpdate{
+			Embeds: &[]discord.Embed{
+				common.StandardEmbed("Success", "Manga successfully added to the list."),
+			},
+			Components: &[]discord.ContainerComponent{},
+		})
+	return err
 }
 
 func sendAddConfirmation(r common.Responder, b *mubot.Bot, endpoint string, mangaID int64) error {

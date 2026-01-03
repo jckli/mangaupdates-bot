@@ -1,9 +1,9 @@
 package manga
 
 import (
-	"fmt"
 	"strconv"
 
+	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/handler"
 	"github.com/jckli/mangaupdates-bot/commands/common"
 	"github.com/jckli/mangaupdates-bot/mubot"
@@ -18,54 +18,44 @@ func RunSearchEntry(
 		return sendMangaDetails(r, b, mangaID)
 	}
 
-	return RunSearchMenu(r, b, query)
-}
-
-func RunSearchMenu(
-	r common.Responder,
-	b *mubot.Bot,
-	query string,
-) error {
-	results, err := b.ApiClient.SearchManga(query)
+	embed, components, err := GenerateGlobalSearchMenu(b, GlobalSearchConfig{
+		Query:          query,
+		SelectIDPrefix: "manga_search_select",
+		Title:          "Search Results",
+		Placeholder:    "Select a manga...",
+	})
 	if err != nil {
-		return r.Error("Failed to search manga.")
+		return r.Error(err.Error())
 	}
-	if len(results) == 0 {
-		return r.Error("No results found for `" + query + "`")
-	}
-
-	max := 25
-	if len(results) < max {
-		max = len(results)
-	}
-
-	description := fmt.Sprintf("Found %d results for `%s`.\nPlease select one from the dropdown below:\n\n", len(results), query)
-	for i, res := range results[0:max] {
-		line := fmt.Sprintf("`%d.` %s", i+1, res.Title)
-		if res.Year != "" {
-			line += fmt.Sprintf(" (%s)", res.Year)
-		}
-		if res.Rating > 0 {
-			line += fmt.Sprintf(" • Rating: %.2f", res.Rating)
-		}
-		description += line + "\n"
-	}
-
-	components := common.GenerateSearchDropdown("manga_search_select", "Select a manga...", results)
-
-	embed := common.StandardEmbed("Search Results", description)
 	return r.Respond(embed, components)
 }
 
 func HandleSearchSelection(e *handler.ComponentEvent, b *mubot.Bot) error {
+	e.DeferUpdateMessage()
+
 	if len(e.StringSelectMenuInteractionData().Values) == 0 {
 		return nil
 	}
-
 	mangaID, _ := strconv.ParseInt(e.StringSelectMenuInteractionData().Values[0], 10, 64)
-	responder := &common.ComponentResponder{Event: e}
 
-	return sendMangaDetails(responder, b, mangaID)
+	details, err := b.ApiClient.GetMangaDetails(mangaID)
+	if err != nil {
+		return err
+	}
+
+	botIcon := ""
+	if self, ok := b.Client.Caches().SelfUser(); ok {
+		botIcon = self.EffectiveAvatarURL()
+	}
+
+	embed := common.GenerateDetailEmbed(*details, botIcon)
+
+	_, err = e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(),
+		discord.MessageUpdate{
+			Embeds:     &[]discord.Embed{embed},
+			Components: &[]discord.ContainerComponent{},
+		})
+	return err
 }
 
 func sendMangaDetails(r common.Responder, b *mubot.Bot, mangaID int64) error {
@@ -80,6 +70,5 @@ func sendMangaDetails(r common.Responder, b *mubot.Bot, mangaID int64) error {
 	}
 
 	embed := common.GenerateDetailEmbed(*details, botIcon)
-
 	return r.Respond(embed, nil)
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/handler"
 	"github.com/jckli/mangaupdates-bot/commands/common"
 	"github.com/jckli/mangaupdates-bot/mubot"
@@ -63,42 +64,74 @@ func HandleRemovePagination(e *handler.ComponentEvent, b *mubot.Bot) error {
 }
 
 func HandleRemoveSelection(e *handler.ComponentEvent, b *mubot.Bot) error {
-	mode := e.Vars["mode"]
+	e.DeferUpdateMessage()
+
+	endpoint := e.Vars["mode"]
 	if len(e.StringSelectMenuInteractionData().Values) == 0 {
 		return nil
 	}
-
 	mangaID, _ := strconv.ParseInt(e.StringSelectMenuInteractionData().Values[0], 10, 64)
-	responder := &common.ComponentResponder{Event: e}
 
-	return sendRemoveConfirmation(responder, b, mode, mangaID)
+	details, err := b.ApiClient.GetMangaDetails(mangaID)
+	if err != nil {
+		return err
+	}
+
+	embed := common.GenerateConfirmationEmbed(*details)
+	prefix := fmt.Sprintf("/manga_remove_confirm/%s/%d", endpoint, mangaID)
+	buttons := common.CreateConfirmButtons(prefix+"/yes", prefix+"/no")
+
+	_, err = e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(),
+		discord.MessageUpdate{
+			Embeds:     &[]discord.Embed{embed},
+			Components: &buttons,
+		})
+	return err
 }
 
 func HandleRemoveConfirmation(e *handler.ComponentEvent, b *mubot.Bot) error {
-	mode := e.Vars["mode"]
+	e.DeferUpdateMessage()
+
+	endpoint := e.Vars["mode"]
 	mangaID, _ := strconv.ParseInt(e.Vars["manga_id"], 10, 64)
 	action := e.Vars["action"]
 
-	responder := &common.ComponentResponder{Event: e}
-
 	if action == "no" {
-		return responder.Respond(common.StandardEmbed("Cancelled", "No manga was removed."), nil)
+		_, err := e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(),
+			discord.MessageUpdate{
+				Embeds: &[]discord.Embed{
+					common.StandardEmbed("Cancelled", "No manga was removed."),
+				},
+				Components: &[]discord.ContainerComponent{},
+			})
+		return err
 	}
 
 	targetID := e.User().ID.String()
-	if mode == "server" {
+	if endpoint == "server" {
 		if e.GuildID() == nil {
 			return nil
 		}
 		targetID = e.GuildID().String()
 	}
 
-	err := b.ApiClient.RemoveMangaFromWatchlist(mode, targetID, mangaID)
+	err := b.ApiClient.RemoveMangaFromWatchlist(endpoint, targetID, mangaID)
 	if err != nil {
-		return responder.Error(err.Error())
+		errEmbed := common.StandardEmbed("Error", err.Error())
+		errEmbed.Color = 0xFF0000
+		_, _ = e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(),
+			discord.MessageUpdate{Embeds: &[]discord.Embed{errEmbed}})
+		return err
 	}
 
-	return responder.Respond(common.StandardEmbed("Success", "Manga removed from watchlist."), nil)
+	_, err = e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(),
+		discord.MessageUpdate{
+			Embeds: &[]discord.Embed{
+				common.StandardEmbed("Success", "Manga removed from watchlist."),
+			},
+			Components: &[]discord.ContainerComponent{},
+		})
+	return err
 }
 
 func sendRemoveConfirmation(r common.Responder, b *mubot.Bot, endpoint string, mangaID int64) error {
@@ -108,7 +141,6 @@ func sendRemoveConfirmation(r common.Responder, b *mubot.Bot, endpoint string, m
 	}
 
 	embed := common.GenerateConfirmationEmbed(*details)
-
 	prefix := fmt.Sprintf("/manga_remove_confirm/%s/%d", endpoint, mangaID)
 	buttons := common.CreateConfirmButtons(prefix+"/yes", prefix+"/no")
 

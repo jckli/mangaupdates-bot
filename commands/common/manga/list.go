@@ -4,27 +4,27 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/handler"
 	"github.com/jckli/mangaupdates-bot/commands/common"
 	"github.com/jckli/mangaupdates-bot/mubot"
 )
 
-func RunMangaList(
-	r common.Responder,
+func GenerateMangaList(
 	b *mubot.Bot,
 	endpoint string,
 	id string,
 	displayName string,
 	displayIcon string,
 	page int,
-) error {
+) (discord.Embed, []discord.ContainerComponent, error) {
 	list, err := b.ApiClient.GetWatchlist(endpoint, id)
 	if err != nil {
 		b.Logger.Error("Failed to fetch manga list", "error", err)
-		return r.Error("Technical error fetching list.")
+		return discord.Embed{}, nil, fmt.Errorf("Technical error fetching list.")
 	}
 	if list == nil {
-		return r.Error(fmt.Sprintf("The **%s** manga list is not set up yet.\nUse `/%s setup` to create it.", endpoint, endpoint))
+		return discord.Embed{}, nil, fmt.Errorf("The **%s** manga list is not set up yet.\nUse `/%s setup` to create it.", endpoint, endpoint)
 	}
 
 	formattedItems := make([]string, len(*list))
@@ -51,6 +51,7 @@ func RunMangaList(
 	if self, ok := b.Client.Caches().SelfUser(); ok {
 		botIcon = self.EffectiveAvatarURL()
 	}
+
 	embed := common.GenerateListEmbed(
 		fmt.Sprintf("%s's Manga List", displayName),
 		displayIcon,
@@ -65,10 +66,28 @@ func RunMangaList(
 		totalPages,
 	)
 
+	return embed, components, nil
+}
+
+func RunMangaList(
+	r common.Responder,
+	b *mubot.Bot,
+	endpoint string,
+	id string,
+	displayName string,
+	displayIcon string,
+	page int,
+) error {
+	embed, components, err := GenerateMangaList(b, endpoint, id, displayName, displayIcon, page)
+	if err != nil {
+		return r.Error(err.Error())
+	}
 	return r.Respond(embed, components)
 }
 
 func HandleMangaListPagination(e *handler.ComponentEvent, b *mubot.Bot) error {
+	e.DeferUpdateMessage()
+
 	mode := e.Vars["mode"]
 	page, _ := strconv.Atoi(e.Vars["page"])
 
@@ -91,7 +110,19 @@ func HandleMangaListPagination(e *handler.ComponentEvent, b *mubot.Bot) error {
 		icon = e.User().EffectiveAvatarURL()
 	}
 
-	responder := &common.ComponentResponder{Event: e}
+	embed, components, err := GenerateMangaList(b, mode, targetID, name, icon, page)
+	if err != nil {
+		errEmbed := common.StandardEmbed("Error", err.Error())
+		errEmbed.Color = 0xFF0000
+		_, _ = e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(),
+			discord.MessageUpdate{Embeds: &[]discord.Embed{errEmbed}})
+		return err
+	}
 
-	return RunMangaList(responder, b, mode, targetID, name, icon, page)
+	_, err = e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(),
+		discord.MessageUpdate{
+			Embeds:     &[]discord.Embed{embed},
+			Components: &components,
+		})
+	return err
 }
