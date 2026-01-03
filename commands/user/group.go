@@ -1,4 +1,4 @@
-package server
+package user
 
 import (
 	"github.com/disgoorg/disgo/handler"
@@ -17,5 +17,18 @@ func SetGroupHandler(e *handler.CommandEvent, b *mubot.Bot) error {
 	}
 	targetID := e.GuildID().String()
 	responder := &common.CommandResponder{Event: e}
-	return manga.RunSetGroupEntry(responder, b, "server", targetID, query, group)
+	return manga.RunSetGroupEntry(responder, b, "user", targetID, query, group)
+}
+
+func RemoveGroupHandler(e *handler.CommandEvent, b *mubot.Bot) error {
+	data := e.SlashCommandInteractionData()
+	query := data.String("title")
+
+	if e.GuildID() == nil {
+		return nil
+	}
+	targetID := e.GuildID().String()
+	responder := &common.CommandResponder{Event: e}
+
+	return manga.RunSetGroupEntry(responder, b, "user", targetID, query, "0")
 }

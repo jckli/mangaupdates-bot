@@ -28,8 +28,20 @@ func RunSetGroupEntry(
 		}
 	}
 
-	if errM == nil {
+	if errM == nil && groupQuery != "0" {
 		return RunSetGroupGroupMenu(r, b, endpoint, mangaID, 1)
+	}
+
+	prefix := "setgroup_manga_select"
+	nav := "/setgroup_manga_nav"
+	title := "Select Manga"
+	placeholder := "Select manga..."
+
+	if groupQuery == "0" {
+		prefix = "group_remove_manga_select"
+		nav = "/group_remove_manga_nav"
+		title = "Select Manga to Clear Filter"
+		placeholder = "Select manga to clear filter..."
 	}
 
 	embed, components, err := GenerateWatchlistMenu(b, WatchlistMenuConfig{
@@ -37,10 +49,10 @@ func RunSetGroupEntry(
 		TargetID:            targetID,
 		Query:               query,
 		Page:                1,
-		SelectIDPrefix:      "setgroup_manga_select",
-		NavIDPrefix:         "/setgroup_manga_nav",
-		Title:               "Select Manga",
-		DropdownPlaceholder: "Select manga...",
+		SelectIDPrefix:      prefix,
+		NavIDPrefix:         nav,
+		Title:               title,
+		DropdownPlaceholder: placeholder,
 	})
 	if err != nil {
 		return r.Error(err.Error())
@@ -364,4 +376,58 @@ func HandleSetGroupGroupPagination(e *handler.ComponentEvent, b *mubot.Bot) erro
 			Components: &allComponents,
 		})
 	return err
+}
+
+func HandleGroupRemoveMangaSelection(e *handler.ComponentEvent, b *mubot.Bot) error {
+	e.DeferUpdateMessage()
+
+	endpoint := e.Vars["mode"]
+	if len(e.StringSelectMenuInteractionData().Values) == 0 {
+		return nil
+	}
+	mangaID, _ := strconv.ParseInt(e.StringSelectMenuInteractionData().Values[0], 10, 64)
+
+	mangaDetails, _ := b.ApiClient.GetMangaDetails(mangaID)
+	mangaTitle := "Unknown Manga"
+	if mangaDetails != nil {
+		mangaTitle = mangaDetails.Title
+	}
+
+	embed := common.GenerateGroupConfirmationEmbed(nil, mangaTitle)
+
+	prefix := fmt.Sprintf("/setgroup_confirm/%s/%d/0", endpoint, mangaID)
+	buttons := common.CreateConfirmButtons(prefix+"/yes", prefix+"/no")
+
+	_, err := e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(),
+		discord.MessageUpdate{
+			Embeds:     &[]discord.Embed{embed},
+			Components: &buttons,
+		})
+	return err
+}
+
+func HandleGroupRemoveMangaPagination(e *handler.ComponentEvent, b *mubot.Bot) error {
+	endpoint := e.Vars["mode"]
+	query := e.Vars["query"]
+	if query == "-" {
+		query = ""
+	}
+
+	targetID := e.User().ID.String()
+	if endpoint == "server" {
+		if e.GuildID() == nil {
+			return nil
+		}
+		targetID = e.GuildID().String()
+	}
+
+	return HandleGenericWatchlistPagination(e, b, WatchlistMenuConfig{
+		Endpoint:            endpoint,
+		TargetID:            targetID,
+		Query:               query,
+		SelectIDPrefix:      "group_remove_manga_select",
+		NavIDPrefix:         "/group_remove_manga_nav",
+		Title:               "Select Manga to Clear Filter",
+		DropdownPlaceholder: "Select manga to clear filter...",
+	})
 }

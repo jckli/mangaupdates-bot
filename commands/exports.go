@@ -49,14 +49,26 @@ func CommandHandlers(b *mubot.Bot) *handler.Mux {
 			}
 			return manga.HandleWatchlistAutocomplete(e, b, "server", e.GuildID().String(), "title")
 		})
-		h.Command("/setgroup", func(e *handler.CommandEvent) error {
-			return server.SetGroupHandler(e, b)
-		})
-		h.Autocomplete("/setgroup", func(e *handler.AutocompleteEvent) error {
-			if e.GuildID() == nil {
-				return e.AutocompleteResult(nil)
-			}
-			return manga.HandleSetGroupAutocomplete(e, b, "server", e.GuildID().String())
+		h.Route("/group", func(h handler.Router) {
+			h.Command("/set", func(e *handler.CommandEvent) error {
+				return server.SetGroupHandler(e, b)
+			})
+			h.Autocomplete("/set", func(e *handler.AutocompleteEvent) error {
+				if e.GuildID() == nil {
+					return e.AutocompleteResult(nil)
+				}
+				return manga.HandleSetGroupAutocomplete(e, b, "server", e.GuildID().String())
+			})
+			h.Command("/remove", func(e *handler.CommandEvent) error {
+				return server.RemoveGroupHandler(e, b)
+			})
+			h.Autocomplete("/remove", func(e *handler.AutocompleteEvent) error {
+				if e.GuildID() == nil {
+					return e.AutocompleteResult(nil)
+				}
+				return manga.HandleWatchlistAutocomplete(e, b, "server", e.GuildID().String(), "title")
+			})
+
 		})
 	})
 	h.Route("/user", func(h handler.Router) {
@@ -75,12 +87,22 @@ func CommandHandlers(b *mubot.Bot) *handler.Mux {
 		h.Autocomplete("/remove", func(e *handler.AutocompleteEvent) error {
 			return manga.HandleWatchlistAutocomplete(e, b, "user", e.User().ID.String(), "title")
 		})
-		h.Command("/setgroup", func(e *handler.CommandEvent) error {
-			return user.SetGroupHandler(e, b)
+		h.Route("/group", func(h handler.Router) {
+			h.Command("/set", func(e *handler.CommandEvent) error {
+				return user.SetGroupHandler(e, b)
+			})
+			h.Autocomplete("/set", func(e *handler.AutocompleteEvent) error {
+				return manga.HandleSetGroupAutocomplete(e, b, "user", e.User().ID.String())
+			})
+			h.Command("/remove", func(e *handler.CommandEvent) error {
+				return user.RemoveGroupHandler(e, b)
+			})
+			h.Autocomplete("/remove", func(e *handler.AutocompleteEvent) error {
+				return manga.HandleWatchlistAutocomplete(e, b, "user", e.User().ID.String(), "title")
+
+			})
 		})
-		h.Autocomplete("/setgroup", func(e *handler.AutocompleteEvent) error {
-			return manga.HandleSetGroupAutocomplete(e, b, "user", e.User().ID.String())
-		})
+
 	})
 
 	// list
@@ -127,6 +149,14 @@ func CommandHandlers(b *mubot.Bot) *handler.Mux {
 	})
 	h.Component("/setgroup_confirm/{mode}/{manga_id}/{group_id}/{action}", func(e *handler.ComponentEvent) error {
 		return manga.HandleSetGroupConfirmation(e, b)
+	})
+
+	// set group, but also remove (cuz its in setgroup file)
+	h.Component("/group_remove_manga_select/{mode}", func(e *handler.ComponentEvent) error {
+		return manga.HandleGroupRemoveMangaSelection(e, b)
+	})
+	h.Component("/group_remove_manga_nav/{mode}/{query}/{page}", func(e *handler.ComponentEvent) error {
+		return manga.HandleGroupRemoveMangaPagination(e, b)
 	})
 
 	return h
