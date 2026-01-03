@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tsuuchi-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tsuuchi 
+  template:
+    metadata:
+      labels:
+        app: tsuuchi 
+    spec:
+      containers:
+      - name: tsuuchi 
+        image: jckli/tsuuchi:latest 
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+        env:
+        - name: PORT
+          value: "8080"
+        envFrom:
+        - secretRef:
+            name: tsuuchi-secrets
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tsuuchi-service 
+spec:
+  selector:
+    app: tsuuchi 
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8080
+  type: ClusterIP
