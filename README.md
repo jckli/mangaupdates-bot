@@ -72,6 +72,7 @@ I would prefer you not to self-host, as it is unnecessarily complicated. I would
 This bot is not really written for someone else to host for, so if some things don't work, I am not going to help much. You have to change the code yourself.
 
 ### Environment Variables
+
 - `TOKEN`: Discord tot token
 - `MONGO_USER`: MongoDB username
 - `MONGO_PASS`: MongoDB password
@@ -81,3 +82,4 @@ This bot is not really written for someone else to host for, so if some things d
 - `GITHUB_USER`: GitHub username (for error responses)
 - `TOPGG_TOKEN`: Top.gg token
 - `DBL_TOKEN`: Discordbotlist.com token
+
