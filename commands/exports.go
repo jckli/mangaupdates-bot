@@ -74,7 +74,11 @@ func CommandHandlers(b *mubot.Bot) *handler.Mux {
 				}
 				return manga.HandleWatchlistAutocomplete(e, b, "server", e.GuildID().String(), "title")
 			})
-
+		})
+		h.Route("/role", func(h handler.Router) {
+			h.Command("/set", func(e *handler.CommandEvent) error {
+				return server.RoleSetHandler(e, b)
+			})
 		})
 	})
 	h.Route("/user", func(h handler.Router) {
@@ -177,6 +181,11 @@ func CommandHandlers(b *mubot.Bot) *handler.Mux {
 	})
 	h.Component("/group_remove_manga_nav/{mode}/{query}/{page}", func(e *handler.ComponentEvent) error {
 		return manga.HandleGroupRemoveMangaPagination(e, b)
+	})
+
+	// role
+	h.Component("/server_role_confirm/{type}/{role_id}/{action}", func(e *handler.ComponentEvent) error {
+		return server.HandleRoleConfirmation(e, b)
 	})
 
 	return h

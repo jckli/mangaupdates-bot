@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/valyala/fasthttp"
+	"strconv"
 )
 
 func (c *Client) GetWatchlist(endpoint string, id string) (*[]TrackedManga, error) {
@@ -293,4 +294,24 @@ func (c *Client) GetUserConfig(userID string) (*UserConfig, error) {
 	}
 
 	return &config, nil
+}
+
+func (c *Client) SetServerRole(serverID string, roleID string, roleType string) error {
+	path := fmt.Sprintf("/tsuuchi/server/%s/role", serverID)
+
+	rID, _ := strconv.ParseInt(roleID, 10, 64)
+
+	payload := SetRoleRequest{
+		RoleID:   rID,
+		RoleType: roleType,
+	}
+
+	_, status, err := c.Post(path, payload)
+	if err != nil {
+		return err
+	}
+	if status != fasthttp.StatusOK {
+		return fmt.Errorf("api status: %d", status)
+	}
+	return nil
 }

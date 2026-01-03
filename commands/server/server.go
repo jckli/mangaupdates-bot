@@ -55,24 +55,6 @@ var ServerCommand = discord.SlashCommandCreate{
 				},
 			},
 		},
-		discord.ApplicationCommandOptionSubCommand{
-			Name:        "setgroup",
-			Description: "Filter a manga to specific scanlation groups",
-			Options: []discord.ApplicationCommandOption{
-				discord.ApplicationCommandOptionString{
-					Name:         "title",
-					Description:  "The title of the manga to modify",
-					Required:     false,
-					Autocomplete: true,
-				},
-				discord.ApplicationCommandOptionString{
-					Name:         "group",
-					Description:  "The group to filter by",
-					Required:     false,
-					Autocomplete: true,
-				},
-			},
-		},
 		discord.ApplicationCommandOptionSubCommandGroup{
 			Name:        "group",
 			Description: "Manage scanlation group filters",
@@ -104,6 +86,34 @@ var ServerCommand = discord.SlashCommandCreate{
 							Description:  "The manga to modify",
 							Required:     false,
 							Autocomplete: true,
+						},
+					},
+				},
+			},
+		},
+		discord.ApplicationCommandOptionSubCommandGroup{
+			Name:        "role",
+			Description: "Manage server roles",
+			Options: []discord.ApplicationCommandOptionSubCommand{
+				{
+					Name:        "set",
+					Description: "Assign a role for bot permissions or notifications",
+					Options: []discord.ApplicationCommandOption{
+						discord.ApplicationCommandOptionRole{
+							Name:        "role",
+							Description: "The role to assign",
+							Required:    true,
+						},
+						discord.ApplicationCommandOptionString{
+							Name:        "type",
+							Description: "What is this role used for?",
+							Required:    true,
+							Choices: []discord.ApplicationCommandOptionChoiceString{
+								{
+									Name:  "Admin (Manage list settings)",
+									Value: "admin",
+								},
+							},
 						},
 					},
 				},

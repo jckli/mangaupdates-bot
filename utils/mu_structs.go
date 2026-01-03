@@ -83,7 +83,8 @@ type SetChannelRequest struct {
 }
 
 type SetRoleRequest struct {
-	RoleID string `json:"role_id"`
+	RoleID   int64  `json:"role_id"`
+	RoleType string `json:"type"`
 }
 
 type ServerConfig struct {
