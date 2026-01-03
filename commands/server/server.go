@@ -12,6 +12,18 @@ var ServerCommand = discord.SlashCommandCreate{
 	DefaultMemberPermissions: json.NewNullablePtr(discord.PermissionManageGuild),
 	Options: []discord.ApplicationCommandOption{
 		discord.ApplicationCommandOptionSubCommand{
+			Name:        "setup",
+			Description: "Initialize the bot for this server",
+			Options: []discord.ApplicationCommandOption{
+				discord.ApplicationCommandOptionChannel{
+					Name:         "channel",
+					Description:  "The channel where manga updates will be posted",
+					Required:     true,
+					ChannelTypes: []discord.ChannelType{discord.ChannelTypeGuildText},
+				},
+			},
+		},
+		discord.ApplicationCommandOptionSubCommand{
 			Name:        "list",
 			Description: "Show all manga tracked by this server",
 		},

@@ -177,3 +177,44 @@ func (c *Client) GetMangaGroups(mangaID int64) ([]GroupSearchResult, error) {
 	}
 	return res, nil
 }
+
+func (c *Client) SetupServer(serverID, serverName, channelID string) error {
+	path := fmt.Sprintf("/tsuuchi/server/%s/setup", serverID)
+
+	payload := map[string]any{
+		"server_name": serverName,
+		"channel_id":  channelID,
+	}
+
+	_, status, err := c.Post(path, payload)
+	if err != nil {
+		return err
+	}
+	if status != fasthttp.StatusOK {
+		if status == fasthttp.StatusBadRequest {
+			return fmt.Errorf("This server is already set up.")
+		}
+		return fmt.Errorf("api status: %d", status)
+	}
+	return nil
+}
+
+func (c *Client) SetupUser(userID, username string) error {
+	path := fmt.Sprintf("/tsuuchi/user/%s/setup", userID)
+
+	payload := map[string]any{
+		"username": username,
+	}
+
+	_, status, err := c.Post(path, payload)
+	if err != nil {
+		return err
+	}
+	if status != fasthttp.StatusOK {
+		if status == fasthttp.StatusBadRequest {
+			return fmt.Errorf("You are already set up.")
+		}
+		return fmt.Errorf("api status: %d", status)
+	}
+	return nil
+}

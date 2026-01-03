@@ -31,6 +31,9 @@ func CommandHandlers(b *mubot.Bot) *handler.Mux {
 		})
 	})
 	h.Route("/server", func(h handler.Router) {
+		h.Command("/setup", func(e *handler.CommandEvent) error {
+			return server.SetupHandler(e, b)
+		})
 		h.Command("/list", func(e *handler.CommandEvent) error {
 			return server.ListHandler(e, b)
 		})
@@ -72,6 +75,9 @@ func CommandHandlers(b *mubot.Bot) *handler.Mux {
 		})
 	})
 	h.Route("/user", func(h handler.Router) {
+		h.Command("/setup", func(e *handler.CommandEvent) error {
+			return user.SetupHandler(e, b)
+		})
 		h.Command("/list", func(e *handler.CommandEvent) error {
 			return user.ListHandler(e, b)
 		})

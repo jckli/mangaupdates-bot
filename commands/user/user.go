@@ -9,6 +9,10 @@ var UserCommand = discord.SlashCommandCreate{
 	Description: "Manage your personal manga tracking list",
 	Options: []discord.ApplicationCommandOption{
 		discord.ApplicationCommandOptionSubCommand{
+			Name:        "setup",
+			Description: "Initialize your personal manga watchlist (DM notifications)",
+		},
+		discord.ApplicationCommandOptionSubCommand{
 			Name:        "list",
 			Description: "Show your personal tracked manga",
 		},
