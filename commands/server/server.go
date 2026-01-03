@@ -6,10 +6,9 @@ import (
 )
 
 var ServerCommand = discord.SlashCommandCreate{
-	Name:                     "server",
-	Description:              "Manage the server's manga tracking list",
-	DMPermission:             json.Ptr(false),
-	DefaultMemberPermissions: json.NewNullablePtr(discord.PermissionManageGuild),
+	Name:         "server",
+	Description:  "Manage the server's manga tracking list",
+	DMPermission: json.Ptr(false),
 	Options: []discord.ApplicationCommandOption{
 		discord.ApplicationCommandOptionSubCommand{
 			Name:        "setup",
