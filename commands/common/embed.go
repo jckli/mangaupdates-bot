@@ -48,6 +48,13 @@ func formatStatus(completed bool) string {
 	return "Ongoing"
 }
 
+func formatActive(active bool) string {
+	if active {
+		return "Yes"
+	}
+	return "No"
+}
+
 // buttons
 func CreateConfirmButtons(confirmID, cancelID string) []discord.ContainerComponent {
 	return []discord.ContainerComponent{
@@ -131,6 +138,52 @@ func GenerateDetailEmbed(details utils.MangaDetails, botIconURL string) discord.
 
 	if details.Image != nil {
 		embed.SetImage(details.Image.URL.Original)
+	}
+
+	return embed.Build()
+}
+
+func GenerateGroupConfirmationEmbed(group *utils.GroupDetails, mangaTitle string) discord.Embed {
+	if group == nil || group.GroupID == 0 {
+		return discord.NewEmbedBuilder().
+			SetTitle(fmt.Sprintf("Clear filter for `%s`?", mangaTitle)).
+			SetDescription("You are **clearing** the scanlation group filter.\n\nYou will receive notifications for **all** releases.").
+			SetColor(ColorPrimary).
+			Build()
+	}
+
+	embed := discord.NewEmbedBuilder().
+		SetTitle(fmt.Sprintf("Set filter for `%s`?", mangaTitle)).
+		SetDescription(fmt.Sprintf("You are limiting notifications to **%s**.", group.Name)).
+		SetColor(ColorPrimary).
+		AddField("Group Name", group.Name, true).
+		AddField("Active", formatActive(group.Active), true)
+
+	var links []string
+	if group.Social.Site != "" {
+		links = append(links, fmt.Sprintf("[Website](%s)", group.Social.Site))
+	}
+	if group.Social.Discord != "" {
+		val := group.Social.Discord
+		if strings.HasPrefix(val, "http") {
+			links = append(links, fmt.Sprintf("[Discord](%s)", val))
+		} else {
+			links = append(links, fmt.Sprintf("Discord: `%s`", val))
+		}
+	}
+	if group.Social.Twitter != "" {
+		val := group.Social.Twitter
+		if strings.HasPrefix(val, "http") {
+			links = append(links, fmt.Sprintf("[Twitter](%s)", val))
+		} else {
+			links = append(links, fmt.Sprintf("Twitter: `%s`", val))
+		}
+	}
+
+	if len(links) > 0 {
+		embed.AddField("Links", strings.Join(links, " | "), false)
+	} else {
+		embed.AddField("Links", "N/A", false)
 	}
 
 	return embed.Build()

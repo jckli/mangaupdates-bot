@@ -47,7 +47,16 @@ func CommandHandlers(b *mubot.Bot) *handler.Mux {
 			if e.GuildID() == nil {
 				return e.AutocompleteResult(nil)
 			}
-			return manga.HandleRemoveAutocomplete(e, b, "server", e.GuildID().String(), "title")
+			return manga.HandleWatchlistAutocomplete(e, b, "server", e.GuildID().String(), "title")
+		})
+		h.Command("/setgroup", func(e *handler.CommandEvent) error {
+			return server.SetGroupHandler(e, b)
+		})
+		h.Autocomplete("/setgroup", func(e *handler.AutocompleteEvent) error {
+			if e.GuildID() == nil {
+				return e.AutocompleteResult(nil)
+			}
+			return manga.HandleSetGroupAutocomplete(e, b, "server", e.GuildID().String())
 		})
 	})
 	h.Route("/user", func(h handler.Router) {
@@ -64,7 +73,13 @@ func CommandHandlers(b *mubot.Bot) *handler.Mux {
 			return user.RemoveHandler(e, b)
 		})
 		h.Autocomplete("/remove", func(e *handler.AutocompleteEvent) error {
-			return manga.HandleRemoveAutocomplete(e, b, "user", e.User().ID.String(), "title")
+			return manga.HandleWatchlistAutocomplete(e, b, "user", e.User().ID.String(), "title")
+		})
+		h.Command("/setgroup", func(e *handler.CommandEvent) error {
+			return user.SetGroupHandler(e, b)
+		})
+		h.Autocomplete("/setgroup", func(e *handler.AutocompleteEvent) error {
+			return manga.HandleSetGroupAutocomplete(e, b, "user", e.User().ID.String())
 		})
 	})
 
@@ -95,6 +110,23 @@ func CommandHandlers(b *mubot.Bot) *handler.Mux {
 	// search
 	h.Component("/manga_search_select", func(e *handler.ComponentEvent) error {
 		return manga.HandleSearchSelection(e, b)
+	})
+
+	// set group
+	h.Component("/setgroup_manga_select/{mode}", func(e *handler.ComponentEvent) error {
+		return manga.HandleSetGroupMangaSelection(e, b)
+	})
+	h.Component("/setgroup_manga_nav/{mode}/{query}/{page}", func(e *handler.ComponentEvent) error {
+		return manga.HandleSetGroupMangaPagination(e, b)
+	})
+	h.Component("/setgroup_group_select/{mode}/{manga_id}", func(e *handler.ComponentEvent) error {
+		return manga.HandleSetGroupGroupSelection(e, b)
+	})
+	h.Component("/setgroup_group_nav/{mode}/{manga_id}/{page}", func(e *handler.ComponentEvent) error {
+		return manga.HandleSetGroupGroupPagination(e, b)
+	})
+	h.Component("/setgroup_confirm/{mode}/{manga_id}/{group_id}/{action}", func(e *handler.ComponentEvent) error {
+		return manga.HandleSetGroupConfirmation(e, b)
 	})
 
 	return h

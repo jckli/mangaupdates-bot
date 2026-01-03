@@ -5,6 +5,7 @@ import (
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/handler"
 	"github.com/jckli/mangaupdates-bot/mubot"
+	"strconv"
 	"strings"
 )
 
@@ -43,7 +44,7 @@ func HandleAddAutocomplete(e *handler.AutocompleteEvent, b *mubot.Bot, queryName
 	return e.AutocompleteResult(choices)
 }
 
-func HandleRemoveAutocomplete(
+func HandleWatchlistAutocomplete(
 	e *handler.AutocompleteEvent,
 	b *mubot.Bot,
 	endpoint string,
@@ -69,6 +70,9 @@ func HandleRemoveAutocomplete(
 		if query == "" || strings.Contains(strings.ToLower(item.Title), queryLower) {
 
 			label := item.Title
+			if item.GroupName != "" {
+				label += fmt.Sprintf(" [%s]", item.GroupName)
+			}
 			if len(label) > 100 {
 				label = label[:97] + "..."
 			}
@@ -84,4 +88,49 @@ func HandleRemoveAutocomplete(
 	}
 
 	return e.AutocompleteResult(choices)
+}
+
+func HandleSetGroupAutocomplete(e *handler.AutocompleteEvent, b *mubot.Bot, endpoint, targetID string) error {
+	focused := e.Data.Focused()
+
+	switch focused.Name {
+	case "title":
+		return HandleWatchlistAutocomplete(e, b, endpoint, targetID, "title")
+
+	case "group":
+		mangaIDStr := e.Data.String("title")
+		mangaID, err := strconv.ParseInt(mangaIDStr, 10, 64)
+		if err != nil {
+			return e.AutocompleteResult(nil)
+		}
+		groups, err := b.ApiClient.GetMangaGroups(mangaID)
+		if err != nil {
+			return e.AutocompleteResult(nil)
+		}
+		query := strings.ToLower(e.Data.String("group"))
+		var choices []discord.AutocompleteChoice
+		if strings.Contains(strings.ToLower("All Groups (Clear Filter)"), query) {
+			choices = append(choices, discord.AutocompleteChoiceString{
+				Name:  "All Groups (Clear Filter)",
+				Value: "0",
+			})
+		}
+		count := 0
+		for _, g := range groups {
+			if count >= 24 {
+				break
+			}
+
+			if query == "" || strings.Contains(strings.ToLower(g.Name), query) {
+				choices = append(choices, discord.AutocompleteChoiceString{
+					Name:  g.Name,
+					Value: fmt.Sprintf("%d", g.ID),
+				})
+				count++
+			}
+		}
+		return e.AutocompleteResult(choices)
+	}
+
+	return e.AutocompleteResult(nil)
 }

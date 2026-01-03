@@ -9,7 +9,7 @@ type MangaSearchResult struct {
 }
 
 type GroupSearchResult struct {
-	ID   int64  `json:"id"`
+	ID   int64  `json:"group_id"`
 	Name string `json:"name"`
 }
 
@@ -32,6 +32,7 @@ type GroupDetails struct {
 	Name    string      `json:"name"`
 	URL     string      `json:"url"`
 	Social  GroupSocial `json:"social"`
+	Active  bool        `json:"active"`
 }
 
 type GroupSocial struct {

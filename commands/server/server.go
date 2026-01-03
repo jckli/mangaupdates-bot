@@ -39,5 +39,23 @@ var ServerCommand = discord.SlashCommandCreate{
 				},
 			},
 		},
+		discord.ApplicationCommandOptionSubCommand{
+			Name:        "setgroup",
+			Description: "Filter a manga to specific scanlation groups",
+			Options: []discord.ApplicationCommandOption{
+				discord.ApplicationCommandOptionString{
+					Name:         "title",
+					Description:  "The title of the manga to modify",
+					Required:     false,
+					Autocomplete: true,
+				},
+				discord.ApplicationCommandOptionString{
+					Name:         "group",
+					Description:  "The group to filter by",
+					Required:     false,
+					Autocomplete: true,
+				},
+			},
+		},
 	},
 }

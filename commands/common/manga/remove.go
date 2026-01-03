@@ -3,13 +3,10 @@ package manga
 import (
 	"fmt"
 	"strconv"
-	"strings"
 
-	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/handler"
 	"github.com/jckli/mangaupdates-bot/commands/common"
 	"github.com/jckli/mangaupdates-bot/mubot"
-	"github.com/jckli/mangaupdates-bot/utils"
 )
 
 func RunRemoveEntry(
@@ -23,89 +20,25 @@ func RunRemoveEntry(
 		return sendRemoveConfirmation(r, b, endpoint, mangaID)
 	}
 
-	return RunRemoveMenu(r, b, endpoint, targetID, query, 1)
-}
-
-func RunRemoveMenu(
-	r common.Responder,
-	b *mubot.Bot,
-	endpoint string,
-	targetID string,
-	query string,
-	page int,
-) error {
-	list, err := b.ApiClient.GetWatchlist(endpoint, targetID)
+	embed, components, err := GenerateWatchlistMenu(b, WatchlistMenuConfig{
+		Endpoint:            endpoint,
+		TargetID:            targetID,
+		Query:               query,
+		Page:                1,
+		SelectIDPrefix:      "manga_remove_select",
+		NavIDPrefix:         "/remove_nav",
+		Title:               "Select Manga to Remove",
+		DropdownPlaceholder: "Select manga to remove...",
+	})
 	if err != nil {
-		return r.Error("Failed to fetch watchlist.")
+		return r.Error(err.Error())
 	}
-	if list == nil || len(*list) == 0 {
-		return r.Error("Your watchlist is empty.")
-	}
-
-	var matches []utils.MangaSearchResult
-	var displayLines []string
-
-	queryLower := strings.ToLower(query)
-
-	for _, item := range *list {
-		if query == "" || strings.Contains(strings.ToLower(item.Title), queryLower) {
-
-			matches = append(matches, utils.MangaSearchResult{ID: item.ID, Title: item.Title})
-
-			line := fmt.Sprintf("• %s", item.Title)
-			if item.GroupName != "" {
-				line += fmt.Sprintf(" (*%s*)", item.GroupName)
-			}
-			displayLines = append(displayLines, line)
-		}
-	}
-
-	if len(matches) == 0 {
-		return r.Error(fmt.Sprintf("No manga found matching `%s`.", query))
-	}
-
-	slicedMatches, totalPages := common.GetPageSlice(matches, page)
-	slicedLines, _ := common.GetPageSlice(displayLines, page)
-
-	customSelectID := fmt.Sprintf("manga_remove_select/%s", endpoint)
-	dropdown := common.GenerateSearchDropdown(customSelectID, "Select manga to remove...", slicedMatches)
-
-	safeQuery := query
-	if safeQuery == "" {
-		safeQuery = "-"
-	}
-	btnPrefix := fmt.Sprintf("/remove_nav/%s/%s", endpoint, safeQuery)
-	buttons := common.GeneratePaginationButtons(btnPrefix, page, totalPages)
-
-	allComponents := append(dropdown, buttons...)
-
-	var description string
-	if len(slicedLines) == 0 {
-		description = "No items found."
-	} else {
-		description = ""
-		for _, line := range slicedLines {
-			description += line + "\n"
-		}
-	}
-
-	header := fmt.Sprintf("Found %d results.", len(matches))
-	if query != "" {
-		header = fmt.Sprintf("Found %d results for `%s`.", len(matches), query)
-	}
-	fullDescription := header + "\nPlease select one from the dropdown below:\n\n" + description
-
-	embed := common.StandardEmbed("Select Manga to Remove", fullDescription)
-	embed.Footer = &discord.EmbedFooter{Text: fmt.Sprintf("Page %d/%d", page, totalPages)}
-
-	return r.Respond(embed, allComponents)
+	return r.Respond(embed, components)
 }
 
 func HandleRemovePagination(e *handler.ComponentEvent, b *mubot.Bot) error {
 	endpoint := e.Vars["mode"]
 	query := e.Vars["query"]
-	page, _ := strconv.Atoi(e.Vars["page"])
-
 	if query == "-" {
 		query = ""
 	}
@@ -118,8 +51,15 @@ func HandleRemovePagination(e *handler.ComponentEvent, b *mubot.Bot) error {
 		targetID = e.GuildID().String()
 	}
 
-	responder := &common.ComponentResponder{Event: e}
-	return RunRemoveMenu(responder, b, endpoint, targetID, query, page)
+	return HandleGenericWatchlistPagination(e, b, WatchlistMenuConfig{
+		Endpoint:            endpoint,
+		TargetID:            targetID,
+		Query:               query,
+		SelectIDPrefix:      "manga_remove_select",
+		NavIDPrefix:         "/remove_nav",
+		Title:               "Select Manga to Remove",
+		DropdownPlaceholder: "Select manga to remove...",
+	})
 }
 
 func HandleRemoveSelection(e *handler.ComponentEvent, b *mubot.Bot) error {
