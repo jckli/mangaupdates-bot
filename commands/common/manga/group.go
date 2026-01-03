@@ -291,10 +291,13 @@ func HandleSetGroupConfirmation(e *handler.ComponentEvent, b *mubot.Bot) error {
 
 	if err != nil {
 		errEmbed := common.StandardEmbed("Error", err.Error())
-		errEmbed.Color = 0xFF0000
+		errEmbed.Color = common.ColorError
 
 		_, _ = e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(),
-			discord.MessageUpdate{Embeds: &[]discord.Embed{errEmbed}})
+			discord.MessageUpdate{
+				Embeds:     &[]discord.Embed{errEmbed},
+				Components: &[]discord.ContainerComponent{},
+			})
 		return err
 	}
 

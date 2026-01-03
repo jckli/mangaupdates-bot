@@ -1,53 +1,55 @@
 package server
 
 import (
+	"fmt"
+
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/handler"
 	"github.com/jckli/mangaupdates-bot/commands/common"
 	"github.com/jckli/mangaupdates-bot/mubot"
 )
 
-func RunDelete(e *handler.CommandEvent, b *mubot.Bot) error {
+func ChannelSetHandler(e *handler.CommandEvent, b *mubot.Bot) error {
 	responder := &common.CommandResponder{Event: e}
 	if err := common.GuardServerAdmin(b, e.GuildID().String(), e.Member()); err != nil {
 		return responder.Error(err.Error())
 	}
 
-	if e.GuildID() == nil {
-		return responder.Error("This command can only be used in a server.")
-	}
+	data := e.SlashCommandInteractionData()
+	channel := data.Channel("channel")
 
-	embed := common.StandardEmbed("Delete Server Data?", "Are you sure you want to delete this server's configuration?\n\n**This action cannot be undone.**\nAll tracked manga and settings will be permanently removed.")
-	embed.Color = common.ColorError
-	buttons := common.CreateConfirmButtons("/server_delete_confirm/yes", "/server_delete_confirm/no")
+	desc := fmt.Sprintf("Are you sure you want to change the notification channel to <#%s>?\n\nAll future manga updates will be posted there.", channel.ID.String())
+	embed := common.StandardEmbed("Confirm Channel Update", desc)
+
+	confirmPath := fmt.Sprintf("/server_channel_confirm/%s/yes", channel.ID)
+	cancelPath := fmt.Sprintf("/server_channel_confirm/%s/no", channel.ID)
+
+	buttons := common.CreateConfirmButtons(confirmPath, cancelPath)
 
 	return responder.Respond(embed, buttons)
 }
 
-func HandleDeleteConfirmation(e *handler.ComponentEvent, b *mubot.Bot) error {
+func HandleChannelConfirmation(e *handler.ComponentEvent, b *mubot.Bot) error {
 	e.DeferUpdateMessage()
 	if err := common.GuardServerAdmin(b, e.GuildID().String(), e.Member()); err != nil {
 		return err
 	}
 
 	action := e.Vars["action"]
+	channelID := e.Vars["channel_id"]
 
 	if action == "no" {
 		_, err := e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(),
 			discord.MessageUpdate{
 				Embeds: &[]discord.Embed{
-					common.StandardEmbed("Cancelled", "Server data was not deleted."),
+					common.StandardEmbed("Cancelled", "Notification channel was not changed."),
 				},
 				Components: &[]discord.ContainerComponent{},
 			})
 		return err
 	}
 
-	if e.GuildID() == nil {
-		return nil
-	}
-
-	err := b.ApiClient.DeleteServer(e.GuildID().String())
+	err := b.ApiClient.UpdateServerChannel(e.GuildID().String(), channelID)
 	if err != nil {
 		errEmbed := common.StandardEmbed("Error", err.Error())
 		errEmbed.Color = common.ColorError
@@ -62,7 +64,7 @@ func HandleDeleteConfirmation(e *handler.ComponentEvent, b *mubot.Bot) error {
 	_, err = e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(),
 		discord.MessageUpdate{
 			Embeds: &[]discord.Embed{
-				common.StandardEmbed("Server Removed", "This server has been removed from the database."),
+				common.StandardEmbed("Success", fmt.Sprintf("Manga updates will now be posted in <#%s>.", channelID)),
 			},
 			Components: &[]discord.ContainerComponent{},
 		})

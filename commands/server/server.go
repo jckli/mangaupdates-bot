@@ -136,5 +136,25 @@ var ServerCommand = discord.SlashCommandCreate{
 				},
 			},
 		},
+		discord.ApplicationCommandOptionSubCommandGroup{
+			Name:        "channel",
+			Description: "Manage notification channel",
+			Options: []discord.ApplicationCommandOptionSubCommand{
+				{
+					Name:        "set",
+					Description: "Set the channel where manga updates are posted",
+					Options: []discord.ApplicationCommandOption{
+						discord.ApplicationCommandOptionChannel{
+							Name:        "channel",
+							Description: "The new notification channel",
+							Required:    true,
+							ChannelTypes: []discord.ChannelType{
+								discord.ChannelTypeGuildText,
+							},
+						},
+					},
+				},
+			},
+		},
 	},
 }

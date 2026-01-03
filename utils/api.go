@@ -332,3 +332,20 @@ func (c *Client) RemoveServerRole(serverID string, roleType string) error {
 	}
 	return nil
 }
+
+func (c *Client) UpdateServerChannel(serverID string, channelID string) error {
+	path := fmt.Sprintf("/tsuuchi/server/%s/channel", serverID)
+
+	payload := map[string]string{
+		"channel_id": channelID,
+	}
+
+	_, status, err := c.Patch(path, payload)
+	if err != nil {
+		return err
+	}
+	if status != fasthttp.StatusOK {
+		return fmt.Errorf("api status: %d", status)
+	}
+	return nil
+}

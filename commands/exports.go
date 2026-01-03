@@ -83,6 +83,11 @@ func CommandHandlers(b *mubot.Bot) *handler.Mux {
 				return server.RoleRemoveHandler(e, b)
 			})
 		})
+		h.Route("/channel", func(h handler.Router) {
+			h.Command("/set", func(e *handler.CommandEvent) error {
+				return server.ChannelSetHandler(e, b)
+			})
+		})
 	})
 	h.Route("/user", func(h handler.Router) {
 		h.Command("/setup", func(e *handler.CommandEvent) error {
@@ -192,6 +197,11 @@ func CommandHandlers(b *mubot.Bot) *handler.Mux {
 	})
 	h.Component("/server_role_remove_confirm/{type}/{action}", func(e *handler.ComponentEvent) error {
 		return server.HandleRoleRemoveConfirmation(e, b)
+	})
+
+	// channel
+	h.Component("/server_channel_confirm/{channel_id}/{action}", func(e *handler.ComponentEvent) error {
+		return server.HandleChannelConfirmation(e, b)
 	})
 
 	return h

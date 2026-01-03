@@ -62,7 +62,10 @@ func HandleRoleConfirmation(e *handler.ComponentEvent, b *mubot.Bot) error {
 		errEmbed := common.StandardEmbed("Error", err.Error())
 		errEmbed.Color = common.ColorError
 		_, _ = e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(),
-			discord.MessageUpdate{Embeds: &[]discord.Embed{errEmbed}})
+			discord.MessageUpdate{
+				Embeds:     &[]discord.Embed{errEmbed},
+				Components: &[]discord.ContainerComponent{},
+			})
 		return err
 	}
 
@@ -131,7 +134,10 @@ func HandleRoleRemoveConfirmation(e *handler.ComponentEvent, b *mubot.Bot) error
 		errEmbed := common.StandardEmbed("Error", err.Error())
 		errEmbed.Color = common.ColorError
 		_, _ = e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(),
-			discord.MessageUpdate{Embeds: &[]discord.Embed{errEmbed}})
+			discord.MessageUpdate{
+				Embeds:     &[]discord.Embed{errEmbed},
+				Components: &[]discord.ContainerComponent{},
+			})
 		return err
 	}
 

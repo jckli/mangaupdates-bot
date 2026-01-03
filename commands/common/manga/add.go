@@ -93,13 +93,15 @@ func HandleAddConfirmation(e *handler.ComponentEvent, b *mubot.Bot) error {
 		targetID = e.User().ID.String()
 	}
 
-	// API Write
 	err := b.ApiClient.AddMangaToWatchlist(endpoint, targetID, mangaID)
 	if err != nil {
 		errEmbed := common.StandardEmbed("Error", err.Error())
-		errEmbed.Color = 0xFF0000 // Red
+		errEmbed.Color = common.ColorError
 		_, _ = e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(),
-			discord.MessageUpdate{Embeds: &[]discord.Embed{errEmbed}})
+			discord.MessageUpdate{
+				Embeds:     &[]discord.Embed{errEmbed},
+				Components: &[]discord.ContainerComponent{},
+			})
 		return err
 	}
 
