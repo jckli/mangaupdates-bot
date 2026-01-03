@@ -15,16 +15,28 @@ type CommandResponder struct {
 }
 
 func (c *CommandResponder) Respond(embed discord.Embed, components []discord.ContainerComponent) error {
-	return c.Event.Respond(discord.InteractionResponseTypeCreateMessage, discord.MessageCreate{
-		Embeds: []discord.Embed{embed}, Components: components,
-	})
+	_, err := c.Event.Client().Rest().UpdateInteractionResponse(
+		c.Event.ApplicationID(),
+		c.Event.Token(),
+		discord.MessageUpdate{
+			Embeds:     &[]discord.Embed{embed},
+			Components: &components,
+		},
+	)
+	return err
 }
 
 func (c *CommandResponder) Error(content string) error {
-	return c.Event.Respond(discord.InteractionResponseTypeCreateMessage, discord.MessageCreate{
-		Embeds: []discord.Embed{ErrorEmbed(content)},
-		Flags:  discord.MessageFlagEphemeral,
-	})
+	embed := ErrorEmbed(content)
+	_, err := c.Event.Client().Rest().UpdateInteractionResponse(
+		c.Event.ApplicationID(),
+		c.Event.Token(),
+		discord.MessageUpdate{
+			Embeds:     &[]discord.Embed{embed},
+			Components: &[]discord.ContainerComponent{},
+		},
+	)
+	return err
 }
 
 type ComponentResponder struct {

@@ -12,7 +12,7 @@ func parseAPIError(status int, body []byte) error {
 		Error string `json:"error"`
 	}
 	if err := json.Unmarshal(body, &errResp); err == nil && errResp.Error != "" {
-		return fmt.Errorf(fmt.Sprintf("Error: %s. Please report this in the support server.", errResp.Error))
+		return fmt.Errorf(fmt.Sprintf("%s. Join the support server for extra assistance.", errResp.Error))
 	}
 
 	switch status {

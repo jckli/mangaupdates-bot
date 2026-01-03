@@ -7,6 +7,9 @@ import (
 )
 
 func SetupHandler(e *handler.CommandEvent, b *mubot.Bot) error {
+	if err := e.DeferCreateMessage(false); err != nil {
+		return err
+	}
 	responder := &common.CommandResponder{Event: e}
 
 	err := b.ApiClient.SetupUser(e.User().ID.String(), e.User().EffectiveName())

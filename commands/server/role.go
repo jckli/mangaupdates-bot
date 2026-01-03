@@ -11,6 +11,9 @@ import (
 )
 
 func RoleSetHandler(e *handler.CommandEvent, b *mubot.Bot) error {
+	if err := e.DeferCreateMessage(false); err != nil {
+		return err
+	}
 	responder := &common.CommandResponder{Event: e}
 	if err := common.GuardServerAdmin(b, e.GuildID().String(), e.Member()); err != nil {
 		return responder.Error(err.Error())
@@ -85,6 +88,9 @@ func HandleRoleConfirmation(e *handler.ComponentEvent, b *mubot.Bot) error {
 }
 
 func RoleRemoveHandler(e *handler.CommandEvent, b *mubot.Bot) error {
+	if err := e.DeferCreateMessage(false); err != nil {
+		return err
+	}
 	responder := &common.CommandResponder{Event: e}
 
 	if err := common.GuardServerAdmin(b, e.GuildID().String(), e.Member()); err != nil {

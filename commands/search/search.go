@@ -22,6 +22,9 @@ var SearchCommand = discord.SlashCommandCreate{
 }
 
 func SearchHandler(e *handler.CommandEvent, b *mubot.Bot) error {
+	if err := e.DeferCreateMessage(false); err != nil {
+		return err
+	}
 	query := e.SlashCommandInteractionData().String("title")
 	responder := &common.CommandResponder{Event: e}
 

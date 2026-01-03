@@ -128,7 +128,7 @@ func (s *Server) sendToDiscord(payload BroadcastPayload) {
 	embed := discord.NewEmbedBuilder().
 		SetAuthor("MangaUpdates", "", botIcon).
 		SetDescriptionf("Chapter `%s` has been released for `%s`!\n\n_Note: Sources are now linked directly in the scanlator names below._", payload.Chapter, payload.Title).
-		SetTitle(payload.Title).
+		SetTitlef("New %s Chapter!", payload.Title).
 		SetURL(payload.Link).
 		SetColor(ColorPrimary).
 		AddField("Chapter", payload.Chapter, true).

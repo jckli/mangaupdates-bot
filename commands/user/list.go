@@ -8,6 +8,9 @@ import (
 )
 
 func ListHandler(e *handler.CommandEvent, b *mubot.Bot) error {
+	if err := e.DeferCreateMessage(false); err != nil {
+		return err
+	}
 	responder := &common.CommandResponder{Event: e}
 	if err := common.GuardUser(b, e.User().ID.String()); err != nil {
 		return responder.Error(err.Error())
