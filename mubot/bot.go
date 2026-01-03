@@ -94,7 +94,7 @@ func (b *Bot) Setup(listeners ...bot.EventListener) bot.Client {
 func (b *Bot) ReadyEvent(_ *events.Ready) {
 	err := b.Client.SetPresence(
 		context.TODO(),
-		gateway.WithPlayingActivity("🚧 Rewrite update | /help | /alerts"),
+		gateway.WithPlayingActivity("✨ Rewrite update | /alert | /help"),
 		gateway.WithOnlineStatus(discord.OnlineStatusOnline),
 	)
 	if err != nil {
