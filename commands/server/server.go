@@ -24,6 +24,10 @@ var ServerCommand = discord.SlashCommandCreate{
 			},
 		},
 		discord.ApplicationCommandOptionSubCommand{
+			Name:        "delete",
+			Description: "Remove this server from the bot entirely (Delete all data)",
+		},
+		discord.ApplicationCommandOptionSubCommand{
 			Name:        "list",
 			Description: "Show all manga tracked by this server",
 		},

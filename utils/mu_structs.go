@@ -85,3 +85,13 @@ type SetChannelRequest struct {
 type SetRoleRequest struct {
 	RoleID string `json:"role_id"`
 }
+
+type ServerConfig struct {
+	Roles struct {
+		Admin int64 `json:"admin,omitempty"`
+	} `json:"roles"`
+	ChannelID int64 `json:"channelid,omitempty"`
+}
+
+type UserConfig struct {
+}

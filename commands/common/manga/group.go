@@ -139,6 +139,9 @@ func sendSetGroupConfirmation(
 
 func HandleSetGroupMangaSelection(e *handler.ComponentEvent, b *mubot.Bot) error {
 	e.DeferUpdateMessage()
+	if err := common.GuardWidget(e, b, true); err != nil {
+		return err
+	}
 
 	endpoint := e.Vars["mode"]
 	if len(e.StringSelectMenuInteractionData().Values) == 0 {
@@ -193,6 +196,9 @@ func HandleSetGroupMangaSelection(e *handler.ComponentEvent, b *mubot.Bot) error
 
 func HandleSetGroupGroupSelection(e *handler.ComponentEvent, b *mubot.Bot) error {
 	e.DeferUpdateMessage()
+	if err := common.GuardWidget(e, b, true); err != nil {
+		return err
+	}
 
 	endpoint := e.Vars["mode"]
 	mangaID, _ := strconv.ParseInt(e.Vars["manga_id"], 10, 64)
@@ -232,6 +238,9 @@ func HandleSetGroupGroupSelection(e *handler.ComponentEvent, b *mubot.Bot) error
 
 func HandleSetGroupConfirmation(e *handler.ComponentEvent, b *mubot.Bot) error {
 	e.DeferUpdateMessage()
+	if err := common.GuardWidget(e, b, true); err != nil {
+		return err
+	}
 
 	endpoint := e.Vars["mode"]
 	mangaID, _ := strconv.ParseInt(e.Vars["manga_id"], 10, 64)
@@ -301,6 +310,9 @@ func HandleSetGroupConfirmation(e *handler.ComponentEvent, b *mubot.Bot) error {
 }
 
 func HandleSetGroupMangaPagination(e *handler.ComponentEvent, b *mubot.Bot) error {
+	if err := common.GuardWidget(e, b, true); err != nil {
+		return err
+	}
 	endpoint := e.Vars["mode"]
 	query := e.Vars["query"]
 	if query == "-" {
@@ -328,6 +340,9 @@ func HandleSetGroupMangaPagination(e *handler.ComponentEvent, b *mubot.Bot) erro
 
 func HandleSetGroupGroupPagination(e *handler.ComponentEvent, b *mubot.Bot) error {
 	e.DeferUpdateMessage()
+	if err := common.GuardWidget(e, b, true); err != nil {
+		return err
+	}
 
 	endpoint := e.Vars["mode"]
 	mangaID, _ := strconv.ParseInt(e.Vars["manga_id"], 10, 64)
@@ -380,6 +395,9 @@ func HandleSetGroupGroupPagination(e *handler.ComponentEvent, b *mubot.Bot) erro
 
 func HandleGroupRemoveMangaSelection(e *handler.ComponentEvent, b *mubot.Bot) error {
 	e.DeferUpdateMessage()
+	if err := common.GuardWidget(e, b, true); err != nil {
+		return err
+	}
 
 	endpoint := e.Vars["mode"]
 	if len(e.StringSelectMenuInteractionData().Values) == 0 {
@@ -407,6 +425,9 @@ func HandleGroupRemoveMangaSelection(e *handler.ComponentEvent, b *mubot.Bot) er
 }
 
 func HandleGroupRemoveMangaPagination(e *handler.ComponentEvent, b *mubot.Bot) error {
+	if err := common.GuardWidget(e, b, true); err != nil {
+		return err
+	}
 	endpoint := e.Vars["mode"]
 	query := e.Vars["query"]
 	if query == "-" {

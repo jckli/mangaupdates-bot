@@ -24,7 +24,7 @@ func GenerateMangaList(
 		return discord.Embed{}, nil, fmt.Errorf("Technical error fetching list.")
 	}
 	if list == nil {
-		return discord.Embed{}, nil, fmt.Errorf("The **%s** manga list is not set up yet.\nUse `/%s setup` to create it.", endpoint, endpoint)
+		return discord.Embed{}, nil, fmt.Errorf("Watchlist data not found")
 	}
 
 	formattedItems := make([]string, len(*list))
@@ -87,6 +87,10 @@ func RunMangaList(
 
 func HandleMangaListPagination(e *handler.ComponentEvent, b *mubot.Bot) error {
 	e.DeferUpdateMessage()
+
+	if err := common.GuardWidget(e, b, false); err != nil {
+		return err
+	}
 
 	mode := e.Vars["mode"]
 	page, _ := strconv.Atoi(e.Vars["page"])

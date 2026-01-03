@@ -9,6 +9,10 @@ import (
 
 func ListHandler(e *handler.CommandEvent, b *mubot.Bot) error {
 	responder := &common.CommandResponder{Event: e}
+	if err := common.GuardUser(b, e.User().ID.String()); err != nil {
+		return responder.Error(err.Error())
+	}
+
 	return manga.RunMangaList(
 		responder,
 		b,

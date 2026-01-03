@@ -8,8 +8,12 @@ import (
 )
 
 func RemoveHandler(e *handler.CommandEvent, b *mubot.Bot) error {
+	responder := &common.CommandResponder{Event: e}
+	if err := common.GuardUser(b, e.User().ID.String()); err != nil {
+		return responder.Error(err.Error())
+	}
+
 	query := e.SlashCommandInteractionData().String("title")
 	targetID := e.User().ID.String()
-	responder := &common.CommandResponder{Event: e}
 	return manga.RunRemoveEntry(responder, b, "user", targetID, query)
 }

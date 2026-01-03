@@ -8,6 +8,10 @@ import (
 )
 
 func ListHandler(e *handler.CommandEvent, b *mubot.Bot) error {
+	responder := &common.CommandResponder{Event: e}
+	if err := common.GuardServerExists(b, e.GuildID().String()); err != nil {
+		return responder.Error(err.Error())
+	}
 	if e.GuildID() == nil {
 		return nil
 	}
@@ -18,8 +22,6 @@ func ListHandler(e *handler.CommandEvent, b *mubot.Bot) error {
 	if i := guild.IconURL(); i != nil {
 		icon = *i
 	}
-
-	responder := &common.CommandResponder{Event: e}
 
 	return manga.RunMangaList(
 		responder,

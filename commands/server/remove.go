@@ -8,11 +8,15 @@ import (
 )
 
 func RemoveHandler(e *handler.CommandEvent, b *mubot.Bot) error {
+	responder := &common.CommandResponder{Event: e}
+	if err := common.GuardServerAdmin(b, e.GuildID().String(), e.Member()); err != nil {
+		return responder.Error(err.Error())
+	}
+
 	query := e.SlashCommandInteractionData().String("title")
 	if e.GuildID() == nil {
 		return nil
 	}
 	targetID := e.GuildID().String()
-	responder := &common.CommandResponder{Event: e}
 	return manga.RunRemoveEntry(responder, b, "server", targetID, query)
 }

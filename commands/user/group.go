@@ -8,6 +8,11 @@ import (
 )
 
 func SetGroupHandler(e *handler.CommandEvent, b *mubot.Bot) error {
+	responder := &common.CommandResponder{Event: e}
+	if err := common.GuardUser(b, e.User().ID.String()); err != nil {
+		return responder.Error(err.Error())
+	}
+
 	data := e.SlashCommandInteractionData()
 	query := data.String("title")
 	group := data.String("group")
@@ -16,11 +21,15 @@ func SetGroupHandler(e *handler.CommandEvent, b *mubot.Bot) error {
 		return nil
 	}
 	targetID := e.GuildID().String()
-	responder := &common.CommandResponder{Event: e}
 	return manga.RunSetGroupEntry(responder, b, "user", targetID, query, group)
 }
 
 func RemoveGroupHandler(e *handler.CommandEvent, b *mubot.Bot) error {
+	responder := &common.CommandResponder{Event: e}
+	if err := common.GuardUser(b, e.User().ID.String()); err != nil {
+		return responder.Error(err.Error())
+	}
+
 	data := e.SlashCommandInteractionData()
 	query := data.String("title")
 
@@ -28,7 +37,5 @@ func RemoveGroupHandler(e *handler.CommandEvent, b *mubot.Bot) error {
 		return nil
 	}
 	targetID := e.GuildID().String()
-	responder := &common.CommandResponder{Event: e}
-
 	return manga.RunSetGroupEntry(responder, b, "user", targetID, query, "0")
 }

@@ -34,6 +34,9 @@ func CommandHandlers(b *mubot.Bot) *handler.Mux {
 		h.Command("/setup", func(e *handler.CommandEvent) error {
 			return server.SetupHandler(e, b)
 		})
+		h.Command("/delete", func(e *handler.CommandEvent) error {
+			return server.RunDelete(e, b)
+		})
 		h.Command("/list", func(e *handler.CommandEvent) error {
 			return server.ListHandler(e, b)
 		})
@@ -78,6 +81,9 @@ func CommandHandlers(b *mubot.Bot) *handler.Mux {
 		h.Command("/setup", func(e *handler.CommandEvent) error {
 			return user.SetupHandler(e, b)
 		})
+		h.Command("/delete", func(e *handler.CommandEvent) error {
+			return user.RunDelete(e, b)
+		})
 		h.Command("/list", func(e *handler.CommandEvent) error {
 			return user.ListHandler(e, b)
 		})
@@ -109,6 +115,14 @@ func CommandHandlers(b *mubot.Bot) *handler.Mux {
 			})
 		})
 
+	})
+
+	// delete
+	h.Component("/server_delete_confirm/{action}", func(e *handler.ComponentEvent) error {
+		return server.HandleDeleteConfirmation(e, b)
+	})
+	h.Component("/user_delete_confirm/{action}", func(e *handler.ComponentEvent) error {
+		return user.HandleDeleteConfirmation(e, b)
 	})
 
 	// list

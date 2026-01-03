@@ -8,7 +8,11 @@ import (
 )
 
 func AddHandler(e *handler.CommandEvent, b *mubot.Bot) error {
-	query := e.SlashCommandInteractionData().String("title")
 	responder := &common.CommandResponder{Event: e}
+	if err := common.GuardServerAdmin(b, e.GuildID().String(), e.Member()); err != nil {
+		return responder.Error(err.Error())
+	}
+
+	query := e.SlashCommandInteractionData().String("title")
 	return manga.RunAddEntry(responder, b, "server", query)
 }

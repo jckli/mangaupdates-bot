@@ -35,6 +35,9 @@ func RunAddEntry(
 
 func HandleAddSelection(e *handler.ComponentEvent, b *mubot.Bot) error {
 	e.DeferUpdateMessage()
+	if err := common.GuardWidget(e, b, true); err != nil {
+		return err
+	}
 
 	endpoint := e.Vars["mode"]
 	if len(e.StringSelectMenuInteractionData().Values) == 0 {
@@ -61,6 +64,9 @@ func HandleAddSelection(e *handler.ComponentEvent, b *mubot.Bot) error {
 
 func HandleAddConfirmation(e *handler.ComponentEvent, b *mubot.Bot) error {
 	e.DeferUpdateMessage()
+	if err := common.GuardWidget(e, b, true); err != nil {
+		return err
+	}
 
 	endpoint := e.Vars["mode"]
 	mangaID, _ := strconv.ParseInt(e.Vars["manga_id"], 10, 64)

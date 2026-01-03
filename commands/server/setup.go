@@ -10,6 +10,9 @@ import (
 
 func SetupHandler(e *handler.CommandEvent, b *mubot.Bot) error {
 	responder := &common.CommandResponder{Event: e}
+	if err := common.GuardAdminOnly(b, e.GuildID().String(), e.Member()); err != nil {
+		return responder.Error(err.Error())
+	}
 
 	if e.GuildID() == nil {
 		return responder.Error("This command can only be used in a server.")

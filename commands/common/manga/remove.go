@@ -38,6 +38,9 @@ func RunRemoveEntry(
 }
 
 func HandleRemovePagination(e *handler.ComponentEvent, b *mubot.Bot) error {
+	if err := common.GuardWidget(e, b, true); err != nil {
+		return err
+	}
 	endpoint := e.Vars["mode"]
 	query := e.Vars["query"]
 	if query == "-" {
@@ -65,6 +68,9 @@ func HandleRemovePagination(e *handler.ComponentEvent, b *mubot.Bot) error {
 
 func HandleRemoveSelection(e *handler.ComponentEvent, b *mubot.Bot) error {
 	e.DeferUpdateMessage()
+	if err := common.GuardWidget(e, b, true); err != nil {
+		return err
+	}
 
 	endpoint := e.Vars["mode"]
 	if len(e.StringSelectMenuInteractionData().Values) == 0 {
@@ -91,6 +97,9 @@ func HandleRemoveSelection(e *handler.ComponentEvent, b *mubot.Bot) error {
 
 func HandleRemoveConfirmation(e *handler.ComponentEvent, b *mubot.Bot) error {
 	e.DeferUpdateMessage()
+	if err := common.GuardWidget(e, b, true); err != nil {
+		return err
+	}
 
 	endpoint := e.Vars["mode"]
 	mangaID, _ := strconv.ParseInt(e.Vars["manga_id"], 10, 64)

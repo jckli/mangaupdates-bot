@@ -13,6 +13,10 @@ var UserCommand = discord.SlashCommandCreate{
 			Description: "Initialize your personal manga watchlist (DM notifications)",
 		},
 		discord.ApplicationCommandOptionSubCommand{
+			Name:        "delete",
+			Description: "Delete your personal profile and stop all notifications (Delete all data)",
+		},
+		discord.ApplicationCommandOptionSubCommand{
 			Name:        "list",
 			Description: "Show your personal tracked manga",
 		},

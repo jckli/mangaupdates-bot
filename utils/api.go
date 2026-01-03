@@ -218,3 +218,79 @@ func (c *Client) SetupUser(userID, username string) error {
 	}
 	return nil
 }
+
+func (c *Client) DeleteServer(serverID string) error {
+	path := fmt.Sprintf("/tsuuchi/server/%s", serverID)
+	_, status, err := c.Delete(path, nil)
+	if err != nil {
+		return err
+	}
+	if status != fasthttp.StatusOK {
+		if status == fasthttp.StatusNotFound {
+			return fmt.Errorf("Server is not set up")
+		}
+		return fmt.Errorf("API returned status: %d", status)
+	}
+	return nil
+}
+
+func (c *Client) DeleteUser(userID string) error {
+	path := fmt.Sprintf("/tsuuchi/user/%s", userID)
+	_, status, err := c.Delete(path, nil)
+	if err != nil {
+		return err
+	}
+	if status != fasthttp.StatusOK {
+		if status == fasthttp.StatusNotFound {
+			return fmt.Errorf("User is not set up")
+		}
+		return fmt.Errorf("API returned status: %d", status)
+	}
+	return nil
+}
+
+func (c *Client) GetServerConfig(serverID string) (*ServerConfig, error) {
+	path := fmt.Sprintf("/tsuuchi/server/%s/config", serverID)
+
+	body, status, err := c.Get(path)
+	if err != nil {
+		return nil, err
+	}
+	if status == fasthttp.StatusNotFound {
+		return nil, nil
+	}
+	if status != fasthttp.StatusOK {
+		return nil, fmt.Errorf("API returned status: %d", status)
+
+	}
+
+	var config ServerConfig
+	if err := json.Unmarshal(body, &config); err != nil {
+		return nil, err
+	}
+	return &config, nil
+}
+
+func (c *Client) GetUserConfig(userID string) (*UserConfig, error) {
+	path := fmt.Sprintf("/tsuuchi/user/%s/config", userID)
+
+	body, status, err := c.Get(path)
+	if err != nil {
+		return nil, err
+	}
+
+	if status == fasthttp.StatusNotFound {
+		return nil, nil
+	}
+
+	if status != fasthttp.StatusOK {
+		return nil, fmt.Errorf("api status: %d", status)
+	}
+
+	var config UserConfig
+	if err := json.Unmarshal(body, &config); err != nil {
+		return nil, fmt.Errorf("failed to decode user config: %w", err)
+	}
+
+	return &config, nil
+}
