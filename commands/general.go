@@ -3,6 +3,7 @@ package commands
 import (
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/handler"
+	"github.com/jckli/mangaupdates-bot/commands/common"
 )
 
 var pingCommand = discord.SlashCommandCreate{
@@ -19,7 +20,7 @@ func PingHandler(e *handler.CommandEvent) error {
 	embed := discord.NewEmbedBuilder().
 		SetTitle("Pong! 🏓").
 		SetDescription("My ping is " + ping).
-		SetColor(0x3083e3).
+		SetColor(common.ColorPrimary).
 		SetTimestamp(e.CreatedAt()).
 		Build()
 

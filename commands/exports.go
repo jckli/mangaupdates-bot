@@ -13,6 +13,7 @@ import (
 var CommandList = []discord.ApplicationCommandCreate{
 	helpCommand,
 	pingCommand,
+	infoCommand,
 	server.ServerCommand,
 	user.UserCommand,
 	search.SearchCommand,
@@ -23,6 +24,9 @@ func CommandHandlers(b *mubot.Bot) *handler.Mux {
 
 	h.Command("/help", func(e *handler.CommandEvent) error {
 		return HelpHandler(e, b)
+	})
+	h.Command("/mangaupdates", func(e *handler.CommandEvent) error {
+		return InfoHandler(e, b)
 	})
 	h.Command("/ping", PingHandler)
 	h.Route("/search", func(h handler.Router) {
