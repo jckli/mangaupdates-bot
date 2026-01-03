@@ -80,3 +80,69 @@ func HandleRoleConfirmation(e *handler.ComponentEvent, b *mubot.Bot) error {
 		})
 	return err
 }
+
+func RoleRemoveHandler(e *handler.CommandEvent, b *mubot.Bot) error {
+	responder := &common.CommandResponder{Event: e}
+
+	if err := common.GuardServerAdmin(b, e.GuildID().String(), e.Member()); err != nil {
+		return responder.Error(err.Error())
+	}
+
+	data := e.SlashCommandInteractionData()
+	roleType := data.String("type")
+
+	displayType := strings.ToUpper(roleType[:1]) + roleType[1:]
+
+	desc := fmt.Sprintf("Are you sure you want to remove the **%s** role configuration?\n\nThe bot will revert to default permissions for this setting.", displayType)
+	embed := common.StandardEmbed("Confirm Role Removal", desc)
+	embed.Color = common.ColorError
+
+	confirmPath := fmt.Sprintf("/server_role_remove_confirm/%s/yes", roleType)
+	cancelPath := fmt.Sprintf("/server_role_remove_confirm/%s/no", roleType)
+
+	buttons := common.CreateConfirmButtons(confirmPath, cancelPath)
+
+	return responder.Respond(embed, buttons)
+}
+
+func HandleRoleRemoveConfirmation(e *handler.ComponentEvent, b *mubot.Bot) error {
+	e.DeferUpdateMessage()
+
+	if err := common.GuardServerAdmin(b, e.GuildID().String(), e.Member()); err != nil {
+		return err
+	}
+
+	action := e.Vars["action"]
+	roleType := e.Vars["type"]
+
+	if action == "no" {
+		_, err := e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(),
+			discord.MessageUpdate{
+				Embeds: &[]discord.Embed{
+					common.StandardEmbed("Cancelled", "Role configuration was not removed."),
+				},
+				Components: &[]discord.ContainerComponent{},
+			})
+		return err
+	}
+
+	err := b.ApiClient.RemoveServerRole(e.GuildID().String(), roleType)
+	if err != nil {
+		errEmbed := common.StandardEmbed("Error", err.Error())
+		errEmbed.Color = common.ColorError
+		_, _ = e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(),
+			discord.MessageUpdate{Embeds: &[]discord.Embed{errEmbed}})
+		return err
+	}
+
+	displayType := strings.ToUpper(roleType[:1]) + roleType[1:]
+
+	_, err = e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(),
+		discord.MessageUpdate{
+			Embeds: &[]discord.Embed{
+				common.StandardEmbed("Success", fmt.Sprintf("**%s** role has been removed.", displayType)),
+			},
+			Components: &[]discord.ContainerComponent{},
+		})
+	return err
+}

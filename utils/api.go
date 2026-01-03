@@ -315,3 +315,20 @@ func (c *Client) SetServerRole(serverID string, roleID string, roleType string) 
 	}
 	return nil
 }
+
+func (c *Client) RemoveServerRole(serverID string, roleType string) error {
+	path := fmt.Sprintf("/tsuuchi/server/%s/role", serverID)
+
+	payload := SetRoleRequest{
+		RoleType: roleType,
+	}
+
+	_, status, err := c.Delete(path, payload)
+	if err != nil {
+		return err
+	}
+	if status != fasthttp.StatusOK {
+		return fmt.Errorf("api status: %d", status)
+	}
+	return nil
+}

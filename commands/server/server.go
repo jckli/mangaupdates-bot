@@ -97,7 +97,7 @@ var ServerCommand = discord.SlashCommandCreate{
 			Options: []discord.ApplicationCommandOptionSubCommand{
 				{
 					Name:        "set",
-					Description: "Assign a role for bot permissions or notifications",
+					Description: "Assign a role for the bot to use",
 					Options: []discord.ApplicationCommandOption{
 						discord.ApplicationCommandOptionRole{
 							Name:        "role",
@@ -106,11 +106,28 @@ var ServerCommand = discord.SlashCommandCreate{
 						},
 						discord.ApplicationCommandOptionString{
 							Name:        "type",
-							Description: "What is this role used for?",
+							Description: "The role type",
 							Required:    true,
 							Choices: []discord.ApplicationCommandOptionChoiceString{
 								{
 									Name:  "Admin (Manage list settings)",
+									Value: "admin",
+								},
+							},
+						},
+					},
+				},
+				{
+					Name:        "remove",
+					Description: "Remove a configured role",
+					Options: []discord.ApplicationCommandOption{
+						discord.ApplicationCommandOptionString{
+							Name:        "type",
+							Description: "The role to remove",
+							Required:    true,
+							Choices: []discord.ApplicationCommandOptionChoiceString{
+								{
+									Name:  "Admin",
 									Value: "admin",
 								},
 							},
