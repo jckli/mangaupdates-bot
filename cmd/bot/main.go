@@ -35,11 +35,17 @@ func main() {
 		)
 		_, err = mu.Client.Rest().
 			SetGuildCommands(mu.Client.ApplicationID(), mu.Config.DevServerID, commands.CommandList)
+		if err == nil {
+			_, err = mu.Client.Rest().SetGlobalCommands(mu.Client.ApplicationID(), nil)
+		}
 	} else {
 		mu.Logger.Info(
 			"Running in global mode. Syncing commands globally.",
 		)
 		_, err = mu.Client.Rest().SetGlobalCommands(mu.Client.ApplicationID(), commands.CommandList)
+		if err == nil {
+			_, err = mu.Client.Rest().SetGuildCommands(mu.Client.ApplicationID(), mu.Config.DevServerID, nil)
+		}
 	}
 	if err != nil {
 		mu.Logger.Error(fmt.Sprintf("Failed to sync commands: %s", err))
