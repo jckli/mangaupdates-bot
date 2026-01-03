@@ -7,6 +7,24 @@ import (
 	"strconv"
 )
 
+func parseAPIError(status int, body []byte) error {
+	var errResp struct {
+		Error string `json:"error"`
+	}
+	if err := json.Unmarshal(body, &errResp); err == nil && errResp.Error != "" {
+		return fmt.Errorf(fmt.Sprintf("Error: %s. Please report this in the support server.", errResp.Error))
+	}
+
+	switch status {
+	case fasthttp.StatusNotFound:
+		return fmt.Errorf("Resource not found. Please report this in the support server.")
+	case fasthttp.StatusInternalServerError:
+		return fmt.Errorf("Internal server error. Please report this in the support server.")
+	default:
+		return fmt.Errorf("API request failed (Status: %d). Please report this in the support server.", status)
+	}
+}
+
 func (c *Client) GetWatchlist(endpoint string, id string) (*[]TrackedManga, error) {
 	path := fmt.Sprintf("/tsuuchi/%s/%s", endpoint, id)
 
@@ -20,7 +38,7 @@ func (c *Client) GetWatchlist(endpoint string, id string) (*[]TrackedManga, erro
 	}
 
 	if status != fasthttp.StatusOK {
-		return nil, fmt.Errorf("API returned status: %d", status)
+		return nil, parseAPIError(status, body)
 	}
 
 	var res []TrackedManga
@@ -43,7 +61,7 @@ func (c *Client) SearchManga(query string) ([]MangaSearchResult, error) {
 		return nil, err
 	}
 	if status != fasthttp.StatusOK {
-		return nil, fmt.Errorf("Search failed with status: %d", status)
+		return nil, parseAPIError(status, body)
 	}
 
 	var res []MangaSearchResult
@@ -59,7 +77,7 @@ func (c *Client) GetMangaDetails(mangaID int64) (*MangaDetails, error) {
 		return nil, err
 	}
 	if status != fasthttp.StatusOK {
-		return nil, fmt.Errorf("Manga details fetch failed with status: %d", status)
+		return nil, parseAPIError(status, body)
 	}
 
 	var res MangaDetails
@@ -75,15 +93,12 @@ func (c *Client) AddMangaToWatchlist(endpoint, id string, mangaID int64) error {
 		"id": mangaID,
 	}
 
-	_, status, err := c.Post(path, payload)
+	body, status, err := c.Post(path, payload)
 	if err != nil {
 		return err
 	}
-	if status == fasthttp.StatusConflict || status == fasthttp.StatusBadRequest {
-		return fmt.Errorf("This manga is already on the list.")
-	}
 	if status != fasthttp.StatusOK && status != fasthttp.StatusCreated {
-		return fmt.Errorf("API returned status: %d. Please report this to me in my support server.", status)
+		return parseAPIError(status, body)
 	}
 	return nil
 }
@@ -91,16 +106,13 @@ func (c *Client) AddMangaToWatchlist(endpoint, id string, mangaID int64) error {
 func (c *Client) RemoveMangaFromWatchlist(endpoint, id string, mangaID int64) error {
 	path := fmt.Sprintf("/tsuuchi/%s/%s/manga/%d", endpoint, id, mangaID)
 
-	_, status, err := c.Delete(path, nil)
+	body, status, err := c.Delete(path, nil)
 	if err != nil {
 		return err
 	}
 
-	if status == fasthttp.StatusNotFound {
-		return fmt.Errorf("This manga is not found in the list.")
-	}
 	if status != fasthttp.StatusOK {
-		return fmt.Errorf("API returned status: %d. Please report this to me in my support server.", status)
+		return parseAPIError(status, body)
 	}
 
 	return nil
@@ -118,7 +130,7 @@ func (c *Client) SearchGroups(query string) ([]GroupSearchResult, error) {
 		return nil, err
 	}
 	if status != fasthttp.StatusOK {
-		return nil, fmt.Errorf("API returned status: %d", status)
+		return nil, parseAPIError(status, body)
 	}
 
 	var res []GroupSearchResult
@@ -135,12 +147,12 @@ func (c *Client) UpdateMangaGroup(endpoint, targetID string, mangaID int64, grou
 		"group_id":   groupID,
 	}
 
-	_, status, err := c.Patch(path, payload)
+	body, status, err := c.Patch(path, payload)
 	if err != nil {
 		return err
 	}
 	if status != fasthttp.StatusOK {
-		return fmt.Errorf("API returned status: %d", status)
+		return parseAPIError(status, body)
 	}
 
 	return nil
@@ -152,7 +164,7 @@ func (c *Client) GetGroupDetails(groupID int64) (*GroupDetails, error) {
 		return nil, err
 	}
 	if status != fasthttp.StatusOK {
-		return nil, fmt.Errorf("Group details fetch failed with status: %d", status)
+		return nil, parseAPIError(status, body)
 	}
 
 	var res GroupDetails
@@ -169,7 +181,7 @@ func (c *Client) GetMangaGroups(mangaID int64) ([]GroupSearchResult, error) {
 		return nil, err
 	}
 	if status != fasthttp.StatusOK {
-		return nil, fmt.Errorf("API returned status: %d", status)
+		return nil, parseAPIError(status, body)
 	}
 
 	var res []GroupSearchResult
@@ -187,15 +199,12 @@ func (c *Client) SetupServer(serverID, serverName, channelID string) error {
 		"channel_id":  channelID,
 	}
 
-	_, status, err := c.Post(path, payload)
+	body, status, err := c.Post(path, payload)
 	if err != nil {
 		return err
 	}
 	if status != fasthttp.StatusOK {
-		if status == fasthttp.StatusBadRequest {
-			return fmt.Errorf("This server is already set up.")
-		}
-		return fmt.Errorf("api status: %d", status)
+		return parseAPIError(status, body)
 	}
 	return nil
 }
@@ -207,45 +216,36 @@ func (c *Client) SetupUser(userID, username string) error {
 		"username": username,
 	}
 
-	_, status, err := c.Post(path, payload)
+	body, status, err := c.Post(path, payload)
 	if err != nil {
 		return err
 	}
 	if status != fasthttp.StatusOK {
-		if status == fasthttp.StatusBadRequest {
-			return fmt.Errorf("You are already set up.")
-		}
-		return fmt.Errorf("api status: %d", status)
+		return parseAPIError(status, body)
 	}
 	return nil
 }
 
 func (c *Client) DeleteServer(serverID string) error {
 	path := fmt.Sprintf("/tsuuchi/server/%s", serverID)
-	_, status, err := c.Delete(path, nil)
+	body, status, err := c.Delete(path, nil)
 	if err != nil {
 		return err
 	}
 	if status != fasthttp.StatusOK {
-		if status == fasthttp.StatusNotFound {
-			return fmt.Errorf("Server is not set up")
-		}
-		return fmt.Errorf("API returned status: %d", status)
+		return parseAPIError(status, body)
 	}
 	return nil
 }
 
 func (c *Client) DeleteUser(userID string) error {
 	path := fmt.Sprintf("/tsuuchi/user/%s", userID)
-	_, status, err := c.Delete(path, nil)
+	body, status, err := c.Delete(path, nil)
 	if err != nil {
 		return err
 	}
 	if status != fasthttp.StatusOK {
-		if status == fasthttp.StatusNotFound {
-			return fmt.Errorf("User is not set up")
-		}
-		return fmt.Errorf("API returned status: %d", status)
+		return parseAPIError(status, body)
 	}
 	return nil
 }
@@ -257,12 +257,13 @@ func (c *Client) GetServerConfig(serverID string) (*ServerConfig, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	if status == fasthttp.StatusNotFound {
 		return nil, nil
 	}
-	if status != fasthttp.StatusOK {
-		return nil, fmt.Errorf("API returned status: %d", status)
 
+	if status != fasthttp.StatusOK {
+		return nil, parseAPIError(status, body)
 	}
 
 	var config ServerConfig
@@ -285,7 +286,7 @@ func (c *Client) GetUserConfig(userID string) (*UserConfig, error) {
 	}
 
 	if status != fasthttp.StatusOK {
-		return nil, fmt.Errorf("api status: %d", status)
+		return nil, parseAPIError(status, body)
 	}
 
 	var config UserConfig
@@ -300,18 +301,17 @@ func (c *Client) SetServerRole(serverID string, roleID string, roleType string) 
 	path := fmt.Sprintf("/tsuuchi/server/%s/role", serverID)
 
 	rID, _ := strconv.ParseInt(roleID, 10, 64)
-
 	payload := SetRoleRequest{
 		RoleID:   rID,
 		RoleType: roleType,
 	}
 
-	_, status, err := c.Post(path, payload)
+	body, status, err := c.Post(path, payload)
 	if err != nil {
 		return err
 	}
 	if status != fasthttp.StatusOK {
-		return fmt.Errorf("api status: %d", status)
+		return parseAPIError(status, body)
 	}
 	return nil
 }
@@ -323,12 +323,12 @@ func (c *Client) RemoveServerRole(serverID string, roleType string) error {
 		RoleType: roleType,
 	}
 
-	_, status, err := c.Delete(path, payload)
+	body, status, err := c.Delete(path, payload)
 	if err != nil {
 		return err
 	}
 	if status != fasthttp.StatusOK {
-		return fmt.Errorf("api status: %d", status)
+		return parseAPIError(status, body)
 	}
 	return nil
 }
@@ -336,16 +336,17 @@ func (c *Client) RemoveServerRole(serverID string, roleType string) error {
 func (c *Client) UpdateServerChannel(serverID string, channelID string) error {
 	path := fmt.Sprintf("/tsuuchi/server/%s/channel", serverID)
 
-	payload := map[string]string{
-		"channel_id": channelID,
+	cID, _ := strconv.ParseInt(channelID, 10, 64)
+	payload := map[string]int64{
+		"channel_id": cID,
 	}
 
-	_, status, err := c.Patch(path, payload)
+	body, status, err := c.Patch(path, payload)
 	if err != nil {
 		return err
 	}
 	if status != fasthttp.StatusOK {
-		return fmt.Errorf("api status: %d", status)
+		return parseAPIError(status, body)
 	}
 	return nil
 }
