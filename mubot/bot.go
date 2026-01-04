@@ -36,6 +36,7 @@ func New(version string) *Bot {
 	devServerID, _ := strconv.Atoi(os.Getenv("DEV_SERVER_ID"))
 
 	logger := slog.Default()
+	slog.SetLogLoggerLevel(slog.LevelDebug)
 	logger.Info("Starting bot version: " + version)
 
 	apiUrl := os.Getenv("API_URL")
