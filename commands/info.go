@@ -26,15 +26,12 @@ func InfoHandler(e *handler.CommandEvent, b *mubot.Bot) error {
 
 	responder := &common.CommandResponder{Event: e}
 
-	var (
-		guildCount  int
-		memberCount int
-	)
+	if e.Client().Caches().GuildsLen() > 0 && b.MemberCount.Load() == 0 {
+		b.UpdateStats()
+	}
 
-	e.Client().Caches().GuildsForEach(func(guild discord.Guild) {
-		guildCount++
-		memberCount += guild.MemberCount
-	})
+	guildCount := b.GuildCount.Load()
+	memberCount := b.MemberCount.Load()
 
 	uptime := time.Since(startTime)
 	days := int(uptime.Hours()) / 24

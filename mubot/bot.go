@@ -5,6 +5,8 @@ import (
 	"log/slog"
 	"os"
 	"strconv"
+	"sync/atomic"
+	"time"
 
 	"github.com/disgoorg/disgo"
 	"github.com/disgoorg/disgo/bot"
@@ -30,6 +32,8 @@ type Bot struct {
 	InternalPort string
 	Version      string
 	Config       Config
+	GuildCount   atomic.Int64
+	MemberCount  atomic.Int64
 }
 
 func New(version string) *Bot {
@@ -133,4 +137,24 @@ func (b *Bot) OnGuildLeave(e *events.GuildLeave) {
 		b.Logger.Info("Successfully deleted server data", "guild_id", e.GuildID)
 		utils.SendLogMessage(b.Client.Rest(), fmt.Sprintf("**Cleanup Complete**\nServer ID: `%s` data deleted.", e.GuildID))
 	}
+}
+
+func (b *Bot) UpdateStats() {
+	var gCount, mCount int64
+	b.Client.Caches().GuildsForEach(func(guild discord.Guild) {
+		gCount++
+		mCount += int64(guild.MemberCount)
+	})
+
+	b.GuildCount.Store(gCount)
+	b.MemberCount.Store(mCount)
+}
+
+func (b *Bot) StartStatsWorker() {
+	go func() {
+		ticker := time.NewTicker(10 * time.Minute)
+		for range ticker.C {
+			b.UpdateStats()
+		}
+	}()
 }

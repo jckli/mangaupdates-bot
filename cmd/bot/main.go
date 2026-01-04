@@ -54,6 +54,8 @@ func main() {
 	bridgeServer := bridge.New(mu.Client, mu.Logger, mu.InternalPort)
 	bridgeServer.Start()
 
+	mu.StartStatsWorker()
+
 	err = mu.Client.OpenShardManager(context.TODO())
 	if err != nil {
 		mu.Logger.Error(fmt.Sprintf("Error while connecting: %s", err))
