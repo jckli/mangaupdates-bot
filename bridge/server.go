@@ -9,15 +9,15 @@ import (
 	"github.com/disgoorg/disgo/bot"
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/snowflake/v2"
+	"github.com/jckli/mangaupdates-bot/utils"
 	"github.com/valyala/fasthttp"
 )
 
 var ColorPrimary = 0x3083e3
 
 const (
-	QueueSize    = 5000
-	WorkerCount  = 5
-	LogChannelID = "990005048408936529"
+	QueueSize   = 5000
+	WorkerCount = 5
 )
 
 type Server struct {
@@ -38,14 +38,7 @@ type BroadcastPayload struct {
 }
 
 func (s *Server) logToOps(msg string) {
-	go func() {
-		destID, err := snowflake.Parse(LogChannelID)
-		if err != nil {
-			s.Logger.Error("Invalid Log Channel ID", "error", err)
-			return
-		}
-		_, _ = s.Client.Rest().CreateMessage(destID, discord.MessageCreate{Content: msg})
-	}()
+	utils.SendLogMessage(s.Client.Rest(), msg)
 }
 
 func New(client bot.Client, logger *slog.Logger, port string) *Server {

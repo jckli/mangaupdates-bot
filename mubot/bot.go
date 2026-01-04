@@ -114,6 +114,13 @@ func (b *Bot) ReadyEvent(e *events.Ready) {
 
 func (b *Bot) OnGuildLeave(e *events.GuildLeave) {
 	b.Logger.Info("Left guild, cleaning up data", "guild_id", e.GuildID)
+	utils.SendLogMessage(b.Client.Rest(),
+		fmt.Sprintf(
+			"**Left Guild**\n**Server ID:** `%s`\n**Members:** `%d`\n*Deleting data...*",
+			e.GuildID,
+			e.Guild.MemberCount,
+		),
+	)
 
 	err := b.ApiClient.DeleteServer(e.GuildID.String())
 	if err != nil {
@@ -121,7 +128,9 @@ func (b *Bot) OnGuildLeave(e *events.GuildLeave) {
 			"guild_id", e.GuildID,
 			"error", err,
 		)
+		utils.SendLogMessage(b.Client.Rest(), fmt.Sprintf("**Cleanup Failed**\nServer ID: `%s`\nError: `%s`", e.GuildID, err.Error()))
 	} else {
 		b.Logger.Info("Successfully deleted server data", "guild_id", e.GuildID)
+		utils.SendLogMessage(b.Client.Rest(), fmt.Sprintf("**Cleanup Complete**\nServer ID: `%s` data deleted.", e.GuildID))
 	}
 }

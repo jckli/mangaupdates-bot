@@ -2,28 +2,18 @@ package utils
 
 import (
 	"github.com/disgoorg/disgo/discord"
-	"html"
+	"github.com/disgoorg/disgo/rest"
+	"github.com/disgoorg/snowflake/v2"
 )
 
-func DcErrorTechnicalErrorEmbed() discord.Embed {
-	embed := discord.NewEmbedBuilder().
-		SetTitle("Error").
-		SetDescription("Something went wrong. Please ask for assistance in the support server.").
-		SetColor(0xff4f4f).
-		Build()
-	return embed
-}
+const LogChannelID = "990005048408936529"
 
-func TruncateString(s string, maxLength int) string {
-	if len(s) <= maxLength {
-		return s
-	}
-	if maxLength <= 3 {
-		return s[:maxLength]
-	}
-	return s[:maxLength-3] + "..."
-}
-
-func ParseHTMLEntities(s string) string {
-	return html.UnescapeString(s)
+func SendLogMessage(client rest.Rest, content string) {
+	go func() {
+		destID, err := snowflake.Parse(LogChannelID)
+		if err != nil {
+			return
+		}
+		_, _ = client.CreateMessage(destID, discord.MessageCreate{Content: content})
+	}()
 }
