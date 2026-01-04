@@ -136,8 +136,14 @@ func (s *Server) sendToDiscord(payload BroadcastPayload) {
 
 	if err != nil {
 		s.Logger.Error("Failed to send to Discord", "channel_id", channelID, "error", err)
-		s.logToOps(fmt.Sprintf("**Delivery Failed**: `%s` Ch.%s -> Channel `%s`\nError: `%v`", payload.Title, payload.Chapter, channelID, err))
+		s.logToOps(fmt.Sprintf("**Delivery Failed**: `%s` Ch.%s -> %s (`%s`)\nError: `%v`",
+			payload.Title,
+			payload.Chapter,
+			payload.TargetType,
+			payload.TargetID,
+			err,
+		))
 	} else {
-		s.logToOps(fmt.Sprintf("**Sent**: `%s` Ch.%s -> %s (`%s`)", payload.Title, payload.Chapter, payload.TargetType, channelID))
+		s.logToOps(fmt.Sprintf("**Sent**: `%s` Ch.%s -> %s (`%s`)", payload.Title, payload.Chapter, payload.TargetType, payload.TargetID))
 	}
 }
