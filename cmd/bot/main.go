@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"github.com/disgoorg/disgo/bot"
 	"github.com/jckli/mangaupdates-bot/bridge"
@@ -54,9 +53,7 @@ func main() {
 	bridgeServer := bridge.New(mu.Client, mu.Logger, mu.InternalPort)
 	bridgeServer.Start()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	err = mu.Client.OpenShardManager(ctx)
+	err = mu.Client.OpenShardManager(context.TODO())
 	if err != nil {
 		mu.Logger.Error(fmt.Sprintf("Error while connecting: %s", err))
 	}

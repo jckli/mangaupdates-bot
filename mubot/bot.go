@@ -88,6 +88,7 @@ func (b *Bot) Setup(listeners ...bot.EventListener) bot.Client {
 					gateway.WithPlayingActivity("✨ Rewrite update | /alert | /help"),
 					gateway.WithOnlineStatus(discord.OnlineStatusOnline),
 				),
+				gateway.WithAutoReconnect(true),
 			),
 		),
 		bot.WithCacheConfigOpts(
