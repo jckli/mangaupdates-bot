@@ -23,6 +23,7 @@ func main() {
 	mu.Setup(
 		h,
 		bot.NewListenerFunc(mu.ReadyEvent),
+		bot.NewListenerFunc(mu.GuildsReadyEvent),
 	)
 
 	var err error

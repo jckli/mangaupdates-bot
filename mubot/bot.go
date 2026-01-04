@@ -106,6 +106,23 @@ func (b *Bot) ReadyEvent(e *events.Ready) {
 	b.Logger.Info("Bot shard connected and ready.")
 
 	shardID := e.ShardID()
+
 	shardCount := len(b.Client.ShardManager().Shards())
+
 	b.Logger.Info(fmt.Sprintf("Shard %d/%d is connected! Waiting for guilds to stream in...", shardID+1, shardCount))
+}
+
+func (b *Bot) GuildsReadyEvent(e *events.GuildsReady) {
+	shardID := e.ShardID()
+	shardCount := len(b.Client.ShardManager().Shards())
+
+	count := 0
+	b.Client.Caches().GuildsForEach(func(g discord.Guild) {
+		if b.Client.ShardManager().ShardByGuildID(g.ID).ShardID() == shardID {
+			count++
+		}
+	})
+
+	b.Logger.Info(fmt.Sprintf("Shard %d/%d has finished loading %d servers.", shardID+1, shardCount, count))
+
 }
