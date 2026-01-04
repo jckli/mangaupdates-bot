@@ -77,12 +77,12 @@ func (b *Bot) Setup(listeners ...bot.EventListener) bot.Client {
 	b.Client, err = disgo.New(
 		b.Config.Token,
 		bot.WithShardManagerConfigOpts(
-			sharding.WithAutoScaling(true),
+			sharding.WithShardCount(3),
 			sharding.WithGatewayConfigOpts(
+				gateway.WithCompress(true),
 				gateway.WithIntents(
 					gateway.IntentGuilds,
 				),
-				gateway.WithCompress(true),
 				gateway.WithPresenceOpts(
 					gateway.WithPlayingActivity("✨ Rewrite update | /alert | /help"),
 					gateway.WithOnlineStatus(discord.OnlineStatusOnline),
@@ -97,6 +97,7 @@ func (b *Bot) Setup(listeners ...bot.EventListener) bot.Client {
 	)
 	if err != nil {
 		b.Logger.Error(fmt.Sprintf("Error while building DisGo client: %s", err))
+		os.Exit(1)
 	}
 
 	return b.Client
