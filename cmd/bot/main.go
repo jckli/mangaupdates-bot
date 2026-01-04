@@ -56,7 +56,7 @@ func main() {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	err = mu.Client.OpenGateway(ctx)
+	err = mu.Client.OpenShardManager(ctx)
 	if err != nil {
 		mu.Logger.Error(fmt.Sprintf("Error while connecting: %s", err))
 	}

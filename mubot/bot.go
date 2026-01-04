@@ -1,7 +1,6 @@
 package mubot
 
 import (
-	"context"
 	"fmt"
 	"log/slog"
 	"os"
@@ -13,6 +12,7 @@ import (
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
 	"github.com/disgoorg/disgo/gateway"
+	"github.com/disgoorg/disgo/sharding"
 	"github.com/disgoorg/snowflake/v2"
 	"github.com/jckli/mangaupdates-bot/utils"
 )
@@ -73,12 +73,20 @@ func (b *Bot) Setup(listeners ...bot.EventListener) bot.Client {
 	var err error
 	b.Client, err = disgo.New(
 		b.Config.Token,
-		bot.WithLogger(b.Logger),
-		bot.WithGatewayConfigOpts(
-			gateway.WithIntents(
-				gateway.IntentGuilds,
+		bot.WithShardManagerConfigOpts(
+			sharding.WithAutoScaling(true),
+			sharding.WithGatewayConfigOpts(
+				gateway.WithIntents(
+					gateway.IntentGuilds,
+				),
+				gateway.WithCompress(true),
+				gateway.WithPresenceOpts(
+					gateway.WithPlayingActivity("✨ Rewrite update | /alert | /help"),
+					gateway.WithOnlineStatus(discord.OnlineStatusOnline),
+				),
 			),
 		),
+		bot.WithLogger(b.Logger),
 		bot.WithCacheConfigOpts(
 			cache.WithCaches(cache.FlagGuilds),
 		),
@@ -92,14 +100,5 @@ func (b *Bot) Setup(listeners ...bot.EventListener) bot.Client {
 }
 
 func (b *Bot) ReadyEvent(_ *events.Ready) {
-	err := b.Client.SetPresence(
-		context.TODO(),
-		gateway.WithPlayingActivity("✨ Rewrite update | /alert | /help"),
-		gateway.WithOnlineStatus(discord.OnlineStatusOnline),
-	)
-	if err != nil {
-		b.Logger.Error(fmt.Sprintf("Error while setting presence: %s", err))
-	}
-
-	b.Logger.Info("Bot presence set successfully.")
+	b.Logger.Info("Bot shard connected and ready.")
 }
