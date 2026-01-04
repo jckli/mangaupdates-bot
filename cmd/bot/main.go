@@ -22,6 +22,7 @@ func main() {
 	mu.Setup(
 		h,
 		bot.NewListenerFunc(mu.ReadyEvent),
+		bot.NewListenerFunc(mu.OnGuildLeave),
 	)
 
 	var err error

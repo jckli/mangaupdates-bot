@@ -111,3 +111,17 @@ func (b *Bot) ReadyEvent(e *events.Ready) {
 
 	b.Logger.Info(fmt.Sprintf("Shard %d/%d is connected!", shardID+1, shardCount))
 }
+
+func (b *Bot) OnGuildLeave(e *events.GuildLeave) {
+	b.Logger.Info("Left guild, cleaning up data", "guild_id", e.GuildID)
+
+	err := b.ApiClient.DeleteServer(e.GuildID.String())
+	if err != nil {
+		b.Logger.Error("Failed to auto-delete server data",
+			"guild_id", e.GuildID,
+			"error", err,
+		)
+	} else {
+		b.Logger.Info("Successfully deleted server data", "guild_id", e.GuildID)
+	}
+}
