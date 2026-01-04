@@ -36,7 +36,9 @@ func New(version string) *Bot {
 	devServerID, _ := strconv.Atoi(os.Getenv("DEV_SERVER_ID"))
 
 	logger := slog.Default()
-	slog.SetLogLoggerLevel(slog.LevelDebug)
+	if os.Getenv("DEBUG_MODE") == "true" {
+		slog.SetLogLoggerLevel(slog.LevelDebug)
+	}
 	logger.Info("Starting bot version: " + version)
 
 	apiUrl := os.Getenv("API_URL")
@@ -100,6 +102,10 @@ func (b *Bot) Setup(listeners ...bot.EventListener) bot.Client {
 	return b.Client
 }
 
-func (b *Bot) ReadyEvent(_ *events.Ready) {
+func (b *Bot) ReadyEvent(e *events.Ready) {
 	b.Logger.Info("Bot shard connected and ready.")
+
+	shardID := e.ShardID()
+	shardCount := len(b.Client.ShardManager().Shards())
+	b.Logger.Info(fmt.Sprintf("Shard %d/%d is connected! Waiting for guilds to stream in...", shardID+1, shardCount))
 }
