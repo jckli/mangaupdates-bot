@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"os"
 	"time"
 
 	"github.com/disgoorg/disgo/bot"
@@ -21,10 +22,11 @@ const (
 )
 
 type Server struct {
-	Client     bot.Client
-	Logger     *slog.Logger
-	Port       string
-	updateChan chan BroadcastPayload
+	Client              bot.Client
+	Logger              *slog.Logger
+	Port                string
+	updateChan          chan BroadcastPayload
+	GlobalFeedChannelID string
 }
 
 type BroadcastPayload struct {
@@ -43,10 +45,11 @@ func (s *Server) logToOps(msg string) {
 
 func New(client bot.Client, logger *slog.Logger, port string) *Server {
 	return &Server{
-		Client:     client,
-		Logger:     logger,
-		Port:       port,
-		updateChan: make(chan BroadcastPayload, QueueSize),
+		Client:              client,
+		Logger:              logger,
+		Port:                port,
+		updateChan:          make(chan BroadcastPayload, QueueSize),
+		GlobalFeedChannelID: os.Getenv("GLOBAL_FEED_CHANNEL_ID"),
 	}
 }
 
@@ -108,7 +111,8 @@ func (s *Server) sendToDiscord(payload BroadcastPayload) {
 	}
 
 	var channelID snowflake.ID = targetID
-	if payload.TargetType == "user" {
+	isDM := payload.TargetType == "user"
+	if isDM {
 		ch, err := s.Client.Rest().CreateDMChannel(targetID)
 		if err != nil {
 			s.Logger.Error("Failed to create DM", "user_id", targetID, "error", err)
@@ -130,7 +134,7 @@ func (s *Server) sendToDiscord(payload BroadcastPayload) {
 		SetTimestamp(time.Now()).
 		Build()
 
-	_, err = s.Client.Rest().CreateMessage(channelID, discord.MessageCreate{
+	message, err := s.Client.Rest().CreateMessage(channelID, discord.MessageCreate{
 		Embeds: []discord.Embed{embed},
 	})
 
@@ -144,6 +148,14 @@ func (s *Server) sendToDiscord(payload BroadcastPayload) {
 			err,
 		))
 	} else {
+		if !isDM && s.GlobalFeedChannelID != "" && payload.TargetID == s.GlobalFeedChannelID {
+			go func() {
+				_, err := s.Client.Rest().CrosspostMessage(channelID, message.ID)
+				if err != nil {
+					s.Logger.Error("Failed to auto-publish global feed", "error", err)
+				}
+			}()
+		}
 		s.logToOps(fmt.Sprintf("**Sent**: `%s` Ch.%s -> %s (`%s`)", payload.Title, payload.Chapter, payload.TargetType, payload.TargetID))
 	}
 }
