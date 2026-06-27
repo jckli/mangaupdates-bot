@@ -30,19 +30,12 @@ func AlertHandler(e *handler.CommandEvent, b *mubot.Bot) error {
 	}
 
 	embed := discord.NewEmbedBuilder().
-		SetTitle("📢 Bot Rewrite & Updates").
+		SetTitle("📢 Bot Announcements").
 		SetAuthor("MangaUpdates", "", botIcon).
 		SetColor(0xffd700).
 		SetDescription(
-			"I have completely rewritten the bot and its backend services from scratch!\n\n" +
-				"**What this means:**\n" +
-				"• **Speed:** Everything should be significantly faster.\n" +
-				"• **Stability:** The underlying architecture is much more robust.\n\n" +
-				"**⚠️ Note:**\n" +
-				"Since this is a brand new codebase, you might encounter bugs. " +
-				"If you find any issues, please report them in the support server.",
+			"If you have any suggestions for improving the bot, please tell me in the support server.",
 		).
-		SetFooterText("Thanks for your patience!").
 		SetTimestamp(time.Now()).
 		Build()
 

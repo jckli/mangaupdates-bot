@@ -89,7 +89,7 @@ func (b *Bot) Setup(listeners ...bot.EventListener) bot.Client {
 					gateway.IntentGuilds,
 				),
 				gateway.WithPresenceOpts(
-					gateway.WithPlayingActivity("✨ Rewrite update | /alert | /help"),
+					gateway.WithPlayingActivity("/help"),
 					gateway.WithOnlineStatus(discord.OnlineStatusOnline),
 				),
 				gateway.WithAutoReconnect(true),
