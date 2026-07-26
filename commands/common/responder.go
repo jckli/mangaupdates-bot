@@ -59,3 +59,12 @@ func (c *ComponentResponder) Error(content string) error {
 		Embeds: &[]discord.Embed{embed}, Components: &[]discord.LayoutComponent{},
 	})
 }
+
+func SendInteractionError(e *handler.ComponentEvent, content string) {
+	errEmbed := ErrorEmbed(content)
+	_, _ = e.Client().Rest.UpdateInteractionResponse(e.ApplicationID(), e.Token(),
+		discord.MessageUpdate{
+			Embeds:     &[]discord.Embed{errEmbed},
+			Components: &[]discord.LayoutComponent{},
+		})
+}

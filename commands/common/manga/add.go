@@ -36,6 +36,7 @@ func RunAddEntry(
 func HandleAddSelection(e *handler.ComponentEvent, b *mubot.Bot) error {
 	e.DeferUpdateMessage()
 	if err := common.GuardWidget(e, b, true); err != nil {
+		common.SendInteractionError(e, err.Error())
 		return err
 	}
 
@@ -47,6 +48,7 @@ func HandleAddSelection(e *handler.ComponentEvent, b *mubot.Bot) error {
 
 	details, err := b.ApiClient.GetMangaDetails(mangaID)
 	if err != nil {
+		common.SendInteractionError(e, err.Error())
 		return err
 	}
 

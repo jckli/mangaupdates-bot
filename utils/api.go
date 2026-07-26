@@ -3,8 +3,26 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/valyala/fasthttp"
 	"strconv"
+	"sync"
+	"time"
+
+	"github.com/valyala/fasthttp"
+)
+
+type serverConfigCacheEntry struct {
+	config *ServerConfig
+	at     time.Time
+}
+
+type userConfigCacheEntry struct {
+	config *UserConfig
+	at     time.Time
+}
+
+var (
+	serverConfigCache sync.Map
+	userConfigCache   sync.Map
 )
 
 func parseAPIError(status int, body []byte) error {
@@ -192,6 +210,7 @@ func (c *Client) GetMangaGroups(mangaID int64) ([]GroupSearchResult, error) {
 }
 
 func (c *Client) SetupServer(serverID, serverName, channelID string) error {
+	serverConfigCache.Delete(serverID)
 	path := fmt.Sprintf("/tsuuchi/server/%s/setup", serverID)
 
 	payload := map[string]any{
@@ -210,6 +229,7 @@ func (c *Client) SetupServer(serverID, serverName, channelID string) error {
 }
 
 func (c *Client) SetupUser(userID, username string) error {
+	userConfigCache.Delete(userID)
 	path := fmt.Sprintf("/tsuuchi/user/%s/setup", userID)
 
 	payload := map[string]any{
@@ -227,6 +247,7 @@ func (c *Client) SetupUser(userID, username string) error {
 }
 
 func (c *Client) DeleteServer(serverID string) error {
+	serverConfigCache.Delete(serverID)
 	path := fmt.Sprintf("/tsuuchi/server/%s", serverID)
 	body, status, err := c.Delete(path, nil)
 	if err != nil {
@@ -239,6 +260,7 @@ func (c *Client) DeleteServer(serverID string) error {
 }
 
 func (c *Client) DeleteUser(userID string) error {
+	userConfigCache.Delete(userID)
 	path := fmt.Sprintf("/tsuuchi/user/%s", userID)
 	body, status, err := c.Delete(path, nil)
 	if err != nil {
@@ -251,6 +273,13 @@ func (c *Client) DeleteUser(userID string) error {
 }
 
 func (c *Client) GetServerConfig(serverID string) (*ServerConfig, error) {
+	if val, ok := serverConfigCache.Load(serverID); ok {
+		entry := val.(serverConfigCacheEntry)
+		if time.Since(entry.at) < 60*time.Second {
+			return entry.config, nil
+		}
+	}
+
 	path := fmt.Sprintf("/tsuuchi/server/%s/config", serverID)
 
 	body, status, err := c.Get(path)
@@ -270,10 +299,22 @@ func (c *Client) GetServerConfig(serverID string) (*ServerConfig, error) {
 	if err := json.Unmarshal(body, &config); err != nil {
 		return nil, err
 	}
+
+	serverConfigCache.Store(serverID, serverConfigCacheEntry{
+		config: &config,
+		at:     time.Now(),
+	})
 	return &config, nil
 }
 
 func (c *Client) GetUserConfig(userID string) (*UserConfig, error) {
+	if val, ok := userConfigCache.Load(userID); ok {
+		entry := val.(userConfigCacheEntry)
+		if time.Since(entry.at) < 60*time.Second {
+			return entry.config, nil
+		}
+	}
+
 	path := fmt.Sprintf("/tsuuchi/user/%s/config", userID)
 
 	body, status, err := c.Get(path)
@@ -294,10 +335,15 @@ func (c *Client) GetUserConfig(userID string) (*UserConfig, error) {
 		return nil, fmt.Errorf("failed to decode user config: %w", err)
 	}
 
+	userConfigCache.Store(userID, userConfigCacheEntry{
+		config: &config,
+		at:     time.Now(),
+	})
 	return &config, nil
 }
 
 func (c *Client) SetServerRole(serverID string, roleID string, roleType string) error {
+	serverConfigCache.Delete(serverID)
 	path := fmt.Sprintf("/tsuuchi/server/%s/role", serverID)
 
 	rID, _ := strconv.ParseInt(roleID, 10, 64)
@@ -317,6 +363,7 @@ func (c *Client) SetServerRole(serverID string, roleID string, roleType string) 
 }
 
 func (c *Client) RemoveServerRole(serverID string, roleType string) error {
+	serverConfigCache.Delete(serverID)
 	path := fmt.Sprintf("/tsuuchi/server/%s/role", serverID)
 
 	payload := SetRoleRequest{
@@ -334,6 +381,7 @@ func (c *Client) RemoveServerRole(serverID string, roleType string) error {
 }
 
 func (c *Client) UpdateServerChannel(serverID string, channelID string) error {
+	serverConfigCache.Delete(serverID)
 	path := fmt.Sprintf("/tsuuchi/server/%s/channel", serverID)
 
 	cID, _ := strconv.ParseInt(channelID, 10, 64)

@@ -40,6 +40,7 @@ func HandleSearchSelection(e *handler.ComponentEvent, b *mubot.Bot) error {
 
 	details, err := b.ApiClient.GetMangaDetails(mangaID)
 	if err != nil {
+		common.SendInteractionError(e, err.Error())
 		return err
 	}
 
