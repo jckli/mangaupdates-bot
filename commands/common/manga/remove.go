@@ -67,34 +67,38 @@ func HandleRemovePagination(e *handler.ComponentEvent, b *mubot.Bot) error {
 }
 
 func HandleRemoveSelection(e *handler.ComponentEvent, b *mubot.Bot) error {
-	e.DeferUpdateMessage()
-	if err := common.GuardWidget(e, b, true); err != nil {
-		common.SendInteractionError(e, err.Error())
-		return err
-	}
+	_ = e.DeferUpdateMessage()
 
-	endpoint := e.Vars["mode"]
-	if len(e.StringSelectMenuInteractionData().Values) == 0 {
-		return nil
-	}
-	mangaID, _ := strconv.ParseInt(e.StringSelectMenuInteractionData().Values[0], 10, 64)
+	go func() {
+		if err := common.GuardWidget(e, b, true); err != nil {
+			common.SendInteractionError(e, err.Error())
+			return
+		}
 
-	details, err := b.ApiClient.GetMangaDetails(mangaID)
-	if err != nil {
-		common.SendInteractionError(e, err.Error())
-		return err
-	}
+		endpoint := e.Vars["mode"]
+		if len(e.StringSelectMenuInteractionData().Values) == 0 {
+			return
+		}
+		mangaID, _ := strconv.ParseInt(e.StringSelectMenuInteractionData().Values[0], 10, 64)
 
-	embed := common.GenerateConfirmationEmbed(*details)
-	prefix := fmt.Sprintf("/manga_remove_confirm/%s/%d", endpoint, mangaID)
-	buttons := common.CreateConfirmButtons(prefix+"/yes", prefix+"/no")
+		details, err := b.ApiClient.GetMangaDetails(mangaID)
+		if err != nil {
+			common.SendInteractionError(e, err.Error())
+			return
+		}
 
-	_, err = e.Client().Rest.UpdateInteractionResponse(e.ApplicationID(), e.Token(),
-		discord.MessageUpdate{
-			Embeds:     &[]discord.Embed{embed},
-			Components: &buttons,
-		})
-	return err
+		embed := common.GenerateConfirmationEmbed(*details)
+		prefix := fmt.Sprintf("/manga_remove_confirm/%s/%d", endpoint, mangaID)
+		buttons := common.CreateConfirmButtons(prefix+"/yes", prefix+"/no")
+
+		_, _ = e.Client().Rest.UpdateInteractionResponse(e.ApplicationID(), e.Token(),
+			discord.MessageUpdate{
+				Embeds:     &[]discord.Embed{embed},
+				Components: &buttons,
+			})
+	}()
+
+	return nil
 }
 
 func HandleRemoveConfirmation(e *handler.ComponentEvent, b *mubot.Bot) error {

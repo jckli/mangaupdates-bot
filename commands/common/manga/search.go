@@ -31,32 +31,35 @@ func RunSearchEntry(
 }
 
 func HandleSearchSelection(e *handler.ComponentEvent, b *mubot.Bot) error {
-	e.DeferUpdateMessage()
+	_ = e.DeferUpdateMessage()
 
-	if len(e.StringSelectMenuInteractionData().Values) == 0 {
-		return nil
-	}
-	mangaID, _ := strconv.ParseInt(e.StringSelectMenuInteractionData().Values[0], 10, 64)
+	go func() {
+		if len(e.StringSelectMenuInteractionData().Values) == 0 {
+			return
+		}
+		mangaID, _ := strconv.ParseInt(e.StringSelectMenuInteractionData().Values[0], 10, 64)
 
-	details, err := b.ApiClient.GetMangaDetails(mangaID)
-	if err != nil {
-		common.SendInteractionError(e, err.Error())
-		return err
-	}
+		details, err := b.ApiClient.GetMangaDetails(mangaID)
+		if err != nil {
+			common.SendInteractionError(e, err.Error())
+			return
+		}
 
-	botIcon := ""
-	if self, ok := b.Client.Caches.SelfUser(); ok {
-		botIcon = self.EffectiveAvatarURL()
-	}
+		botIcon := ""
+		if self, ok := b.Client.Caches.SelfUser(); ok {
+			botIcon = self.EffectiveAvatarURL()
+		}
 
-	embed := common.GenerateDetailEmbed(*details, botIcon)
+		embed := common.GenerateDetailEmbed(*details, botIcon)
 
-	_, err = e.Client().Rest.UpdateInteractionResponse(e.ApplicationID(), e.Token(),
-		discord.MessageUpdate{
-			Embeds:     &[]discord.Embed{embed},
-			Components: &[]discord.LayoutComponent{},
-		})
-	return err
+		_, _ = e.Client().Rest.UpdateInteractionResponse(e.ApplicationID(), e.Token(),
+			discord.MessageUpdate{
+				Embeds:     &[]discord.Embed{embed},
+				Components: &[]discord.LayoutComponent{},
+			})
+	}()
+
+	return nil
 }
 
 func sendMangaDetails(r common.Responder, b *mubot.Bot, mangaID int64) error {
