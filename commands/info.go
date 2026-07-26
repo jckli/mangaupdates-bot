@@ -26,9 +26,7 @@ func InfoHandler(e *handler.CommandEvent, b *mubot.Bot) error {
 
 	responder := &common.CommandResponder{Event: e}
 
-	if e.Client().Caches.GuildsLen() > 0 && b.MemberCount.Load() == 0 {
-		b.UpdateStats()
-	}
+	b.UpdateStats()
 
 	guildCount := b.GuildCount.Load()
 	memberCount := b.MemberCount.Load()
