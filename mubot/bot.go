@@ -139,6 +139,14 @@ func (b *Bot) OnGuildLeave(e *events.GuildLeave) {
 	}
 }
 
+func (b *Bot) OnGuildUpdate(e *events.GuildUpdate) {
+	if e.Guild.MemberCount == 0 && e.OldGuild.MemberCount > 0 {
+		guild := e.Guild
+		guild.MemberCount = e.OldGuild.MemberCount
+		b.Client.Caches().AddGuild(guild)
+	}
+}
+
 func (b *Bot) UpdateStats() {
 	var gCount, mCount int64
 	b.Client.Caches().GuildsForEach(func(guild discord.Guild) {

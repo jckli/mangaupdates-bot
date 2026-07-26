@@ -23,6 +23,7 @@ func main() {
 		h,
 		bot.NewListenerFunc(mu.ReadyEvent),
 		bot.NewListenerFunc(mu.OnGuildLeave),
+		bot.NewListenerFunc(mu.OnGuildUpdate),
 	)
 
 	var err error
