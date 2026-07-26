@@ -15,6 +15,10 @@ func PingHandler(e *handler.CommandEvent) error {
 	var ping string
 	if e.Client().HasGateway() {
 		ping = e.Client().Gateway.Latency().String()
+	} else if e.Client().HasShardManager() {
+		if shard := e.Client().ShardManager.Shard(e.ShardID()); shard != nil {
+			ping = shard.Latency().String()
+		}
 	}
 
 	embed := discord.NewEmbed().
