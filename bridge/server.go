@@ -22,7 +22,7 @@ const (
 )
 
 type Server struct {
-	Client              bot.Client
+	Client              *bot.Client
 	Logger              *slog.Logger
 	Port                string
 	updateChan          chan BroadcastPayload
@@ -40,10 +40,10 @@ type BroadcastPayload struct {
 }
 
 func (s *Server) logToOps(msg string) {
-	utils.SendLogMessage(s.Client.Rest(), msg)
+	utils.SendLogMessage(s.Client.Rest, msg)
 }
 
-func New(client bot.Client, logger *slog.Logger, port string) *Server {
+func New(client *bot.Client, logger *slog.Logger, port string) *Server {
 	return &Server{
 		Client:              client,
 		Logger:              logger,
@@ -106,14 +106,14 @@ func (s *Server) sendToDiscord(payload BroadcastPayload) {
 	}
 
 	botIcon := ""
-	if self, ok := s.Client.Caches().SelfUser(); ok {
+	if self, ok := s.Client.Caches.SelfUser(); ok {
 		botIcon = self.EffectiveAvatarURL()
 	}
 
 	var channelID snowflake.ID = targetID
 	isDM := payload.TargetType == "user"
 	if isDM {
-		ch, err := s.Client.Rest().CreateDMChannel(targetID)
+		ch, err := s.Client.Rest.CreateDMChannel(targetID)
 		if err != nil {
 			s.Logger.Error("Failed to create DM", "user_id", targetID, "error", err)
 			s.logToOps(fmt.Sprintf("**DM Error**: Could not open DM with User `%s`\nError: `%v`", payload.TargetID, err))
@@ -122,19 +122,18 @@ func (s *Server) sendToDiscord(payload BroadcastPayload) {
 		channelID = ch.ID()
 	}
 
-	embed := discord.NewEmbedBuilder().
-		SetAuthor("MangaUpdates", "", botIcon).
-		SetDescriptionf("Chapter `%s` has been released for `%s`!\n\n_Note: Sources are now linked directly in the scanlator names below._", payload.Chapter, payload.Title).
-		SetTitlef("New %s Chapter!", payload.Title).
-		SetURL(payload.Link).
-		SetColor(ColorPrimary).
+	embed := discord.NewEmbed().
+		WithAuthor("MangaUpdates", "", botIcon).
+		WithDescriptionf("Chapter `%s` has been released for `%s`!\n\n_Note: Sources are now linked directly in the scanlator names below._", payload.Chapter, payload.Title).
+		WithTitlef("New %s Chapter!", payload.Title).
+		WithURL(payload.Link).
+		WithColor(ColorPrimary).
 		AddField("Chapter", payload.Chapter, true).
 		AddField("Scanlators", payload.Groups, true).
-		SetImage(payload.ImageURL).
-		SetTimestamp(time.Now()).
-		Build()
+		WithImage(payload.ImageURL).
+		WithTimestamp(time.Now())
 
-	message, err := s.Client.Rest().CreateMessage(channelID, discord.MessageCreate{
+	message, err := s.Client.Rest.CreateMessage(channelID, discord.MessageCreate{
 		Embeds: []discord.Embed{embed},
 	})
 
@@ -150,7 +149,7 @@ func (s *Server) sendToDiscord(payload BroadcastPayload) {
 	} else {
 		if !isDM && s.GlobalFeedChannelID != "" && payload.TargetID == s.GlobalFeedChannelID {
 			go func() {
-				_, err := s.Client.Rest().CrosspostMessage(channelID, message.ID)
+				_, err := s.Client.Rest.CrosspostMessage(channelID, message.ID)
 				if err != nil {
 					s.Logger.Error("Failed to auto-publish global feed", "error", err)
 				}

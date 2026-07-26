@@ -34,18 +34,18 @@ func main() {
 				mu.Config.DevServerID,
 			),
 		)
-		_, err = mu.Client.Rest().
-			SetGuildCommands(mu.Client.ApplicationID(), mu.Config.DevServerID, commands.CommandList)
+		_, err = mu.Client.Rest.
+			SetGuildCommands(mu.Client.ApplicationID, mu.Config.DevServerID, commands.CommandList)
 		if err == nil {
-			_, err = mu.Client.Rest().SetGlobalCommands(mu.Client.ApplicationID(), nil)
+			_, err = mu.Client.Rest.SetGlobalCommands(mu.Client.ApplicationID, nil)
 		}
 	} else {
 		mu.Logger.Info(
 			"Running in global mode. Syncing commands globally.",
 		)
-		_, err = mu.Client.Rest().SetGlobalCommands(mu.Client.ApplicationID(), commands.CommandList)
+		_, err = mu.Client.Rest.SetGlobalCommands(mu.Client.ApplicationID, commands.CommandList)
 		if err == nil {
-			_, err = mu.Client.Rest().SetGuildCommands(mu.Client.ApplicationID(), mu.Config.DevServerID, nil)
+			_, err = mu.Client.Rest.SetGuildCommands(mu.Client.ApplicationID, mu.Config.DevServerID, nil)
 		}
 	}
 	if err != nil {

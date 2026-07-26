@@ -26,7 +26,7 @@ type Config struct {
 }
 
 type Bot struct {
-	Client       bot.Client
+	Client       *bot.Client
 	ApiClient    *utils.Client
 	Logger       *slog.Logger
 	InternalPort string
@@ -76,7 +76,7 @@ func New(version string) *Bot {
 	}
 }
 
-func (b *Bot) Setup(listeners ...bot.EventListener) bot.Client {
+func (b *Bot) Setup(listeners ...bot.EventListener) *bot.Client {
 	var err error
 	b.Client, err = disgo.New(
 		b.Config.Token,
@@ -84,7 +84,6 @@ func (b *Bot) Setup(listeners ...bot.EventListener) bot.Client {
 			sharding.WithLogger(b.Logger),
 			sharding.WithAutoScaling(true),
 			sharding.WithGatewayConfigOpts(
-				gateway.WithCompress(true),
 				gateway.WithIntents(
 					gateway.IntentGuilds,
 				),
@@ -111,14 +110,17 @@ func (b *Bot) Setup(listeners ...bot.EventListener) bot.Client {
 func (b *Bot) ReadyEvent(e *events.Ready) {
 	b.Logger.Info("Bot shard connected and ready.")
 	shardID := e.ShardID()
-	shardCount := len(b.Client.ShardManager().Shards())
+	shardCount := 0
+	for range b.Client.ShardManager.Shards() {
+		shardCount++
+	}
 
 	b.Logger.Info(fmt.Sprintf("Shard %d/%d is connected!", shardID+1, shardCount))
 }
 
 func (b *Bot) OnGuildLeave(e *events.GuildLeave) {
 	b.Logger.Info("Left guild, cleaning up data", "guild_id", e.GuildID)
-	utils.SendLogMessage(b.Client.Rest(),
+	utils.SendLogMessage(b.Client.Rest,
 		fmt.Sprintf(
 			"**Left Guild**\n**Server ID:** `%s`\n**Members:** `%d`\n*Deleting data...*",
 			e.GuildID,
@@ -132,10 +134,10 @@ func (b *Bot) OnGuildLeave(e *events.GuildLeave) {
 			"guild_id", e.GuildID,
 			"error", err,
 		)
-		utils.SendLogMessage(b.Client.Rest(), fmt.Sprintf("**Cleanup Failed**\nServer ID: `%s`\nError: `%s`", e.GuildID, err.Error()))
+		utils.SendLogMessage(b.Client.Rest, fmt.Sprintf("**Cleanup Failed**\nServer ID: `%s`\nError: `%s`", e.GuildID, err.Error()))
 	} else {
 		b.Logger.Info("Successfully deleted server data", "guild_id", e.GuildID)
-		utils.SendLogMessage(b.Client.Rest(), fmt.Sprintf("**Cleanup Complete**\nServer ID: `%s` data deleted.", e.GuildID))
+		utils.SendLogMessage(b.Client.Rest, fmt.Sprintf("**Cleanup Complete**\nServer ID: `%s` data deleted.", e.GuildID))
 	}
 }
 
@@ -143,16 +145,16 @@ func (b *Bot) OnGuildUpdate(e *events.GuildUpdate) {
 	if e.Guild.MemberCount == 0 && e.OldGuild.MemberCount > 0 {
 		guild := e.Guild
 		guild.MemberCount = e.OldGuild.MemberCount
-		b.Client.Caches().AddGuild(guild)
+		b.Client.Caches.AddGuild(guild)
 	}
 }
 
 func (b *Bot) UpdateStats() {
 	var gCount, mCount int64
-	b.Client.Caches().GuildsForEach(func(guild discord.Guild) {
+	for guild := range b.Client.Caches.Guilds() {
 		gCount++
 		mCount += int64(guild.MemberCount)
-	})
+	}
 
 	b.GuildCount.Store(gCount)
 	b.MemberCount.Store(mCount)

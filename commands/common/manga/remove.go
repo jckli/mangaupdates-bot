@@ -87,7 +87,7 @@ func HandleRemoveSelection(e *handler.ComponentEvent, b *mubot.Bot) error {
 	prefix := fmt.Sprintf("/manga_remove_confirm/%s/%d", endpoint, mangaID)
 	buttons := common.CreateConfirmButtons(prefix+"/yes", prefix+"/no")
 
-	_, err = e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(),
+	_, err = e.Client().Rest.UpdateInteractionResponse(e.ApplicationID(), e.Token(),
 		discord.MessageUpdate{
 			Embeds:     &[]discord.Embed{embed},
 			Components: &buttons,
@@ -106,12 +106,12 @@ func HandleRemoveConfirmation(e *handler.ComponentEvent, b *mubot.Bot) error {
 	action := e.Vars["action"]
 
 	if action == "no" {
-		_, err := e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(),
+		_, err := e.Client().Rest.UpdateInteractionResponse(e.ApplicationID(), e.Token(),
 			discord.MessageUpdate{
 				Embeds: &[]discord.Embed{
 					common.StandardEmbed("Cancelled", "No manga was removed."),
 				},
-				Components: &[]discord.ContainerComponent{},
+				Components: &[]discord.LayoutComponent{},
 			})
 		return err
 	}
@@ -128,20 +128,20 @@ func HandleRemoveConfirmation(e *handler.ComponentEvent, b *mubot.Bot) error {
 	if err != nil {
 		errEmbed := common.StandardEmbed("Error", err.Error())
 		errEmbed.Color = common.ColorError
-		_, _ = e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(),
+		_, _ = e.Client().Rest.UpdateInteractionResponse(e.ApplicationID(), e.Token(),
 			discord.MessageUpdate{
 				Embeds:     &[]discord.Embed{errEmbed},
-				Components: &[]discord.ContainerComponent{},
+				Components: &[]discord.LayoutComponent{},
 			})
 		return err
 	}
 
-	_, err = e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(),
+	_, err = e.Client().Rest.UpdateInteractionResponse(e.ApplicationID(), e.Token(),
 		discord.MessageUpdate{
 			Embeds: &[]discord.Embed{
 				common.StandardEmbed("Success", "Manga removed from watchlist."),
 			},
-			Components: &[]discord.ContainerComponent{},
+			Components: &[]discord.LayoutComponent{},
 		})
 	return err
 }

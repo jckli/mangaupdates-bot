@@ -50,12 +50,12 @@ func HandleRoleConfirmation(e *handler.ComponentEvent, b *mubot.Bot) error {
 	roleID := e.Vars["role_id"]
 
 	if action == "no" {
-		_, err := e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(),
+		_, err := e.Client().Rest.UpdateInteractionResponse(e.ApplicationID(), e.Token(),
 			discord.MessageUpdate{
 				Embeds: &[]discord.Embed{
 					common.StandardEmbed("Cancelled", "Role configuration was not changed."),
 				},
-				Components: &[]discord.ContainerComponent{},
+				Components: &[]discord.LayoutComponent{},
 			})
 		return err
 	}
@@ -64,10 +64,10 @@ func HandleRoleConfirmation(e *handler.ComponentEvent, b *mubot.Bot) error {
 	if err != nil {
 		errEmbed := common.StandardEmbed("Error", err.Error())
 		errEmbed.Color = common.ColorError
-		_, _ = e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(),
+		_, _ = e.Client().Rest.UpdateInteractionResponse(e.ApplicationID(), e.Token(),
 			discord.MessageUpdate{
 				Embeds:     &[]discord.Embed{errEmbed},
-				Components: &[]discord.ContainerComponent{},
+				Components: &[]discord.LayoutComponent{},
 			})
 		return err
 	}
@@ -77,12 +77,12 @@ func HandleRoleConfirmation(e *handler.ComponentEvent, b *mubot.Bot) error {
 		displayType = strings.ToUpper(roleType[:1]) + roleType[1:]
 	}
 
-	_, err = e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(),
+	_, err = e.Client().Rest.UpdateInteractionResponse(e.ApplicationID(), e.Token(),
 		discord.MessageUpdate{
 			Embeds: &[]discord.Embed{
 				common.StandardEmbed("Success", fmt.Sprintf("**%s** role has been updated.", displayType)),
 			},
-			Components: &[]discord.ContainerComponent{},
+			Components: &[]discord.LayoutComponent{},
 		})
 	return err
 }
@@ -125,12 +125,12 @@ func HandleRoleRemoveConfirmation(e *handler.ComponentEvent, b *mubot.Bot) error
 	roleType := e.Vars["type"]
 
 	if action == "no" {
-		_, err := e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(),
+		_, err := e.Client().Rest.UpdateInteractionResponse(e.ApplicationID(), e.Token(),
 			discord.MessageUpdate{
 				Embeds: &[]discord.Embed{
 					common.StandardEmbed("Cancelled", "Role configuration was not removed."),
 				},
-				Components: &[]discord.ContainerComponent{},
+				Components: &[]discord.LayoutComponent{},
 			})
 		return err
 	}
@@ -139,22 +139,22 @@ func HandleRoleRemoveConfirmation(e *handler.ComponentEvent, b *mubot.Bot) error
 	if err != nil {
 		errEmbed := common.StandardEmbed("Error", err.Error())
 		errEmbed.Color = common.ColorError
-		_, _ = e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(),
+		_, _ = e.Client().Rest.UpdateInteractionResponse(e.ApplicationID(), e.Token(),
 			discord.MessageUpdate{
 				Embeds:     &[]discord.Embed{errEmbed},
-				Components: &[]discord.ContainerComponent{},
+				Components: &[]discord.LayoutComponent{},
 			})
 		return err
 	}
 
 	displayType := strings.ToUpper(roleType[:1]) + roleType[1:]
 
-	_, err = e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(),
+	_, err = e.Client().Rest.UpdateInteractionResponse(e.ApplicationID(), e.Token(),
 		discord.MessageUpdate{
 			Embeds: &[]discord.Embed{
 				common.StandardEmbed("Success", fmt.Sprintf("**%s** role has been removed.", displayType)),
 			},
-			Components: &[]discord.ContainerComponent{},
+			Components: &[]discord.LayoutComponent{},
 		})
 	return err
 }

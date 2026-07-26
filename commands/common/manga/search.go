@@ -44,16 +44,16 @@ func HandleSearchSelection(e *handler.ComponentEvent, b *mubot.Bot) error {
 	}
 
 	botIcon := ""
-	if self, ok := b.Client.Caches().SelfUser(); ok {
+	if self, ok := b.Client.Caches.SelfUser(); ok {
 		botIcon = self.EffectiveAvatarURL()
 	}
 
 	embed := common.GenerateDetailEmbed(*details, botIcon)
 
-	_, err = e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(),
+	_, err = e.Client().Rest.UpdateInteractionResponse(e.ApplicationID(), e.Token(),
 		discord.MessageUpdate{
 			Embeds:     &[]discord.Embed{embed},
-			Components: &[]discord.ContainerComponent{},
+			Components: &[]discord.LayoutComponent{},
 		})
 	return err
 }
@@ -65,7 +65,7 @@ func sendMangaDetails(r common.Responder, b *mubot.Bot, mangaID int64) error {
 	}
 
 	botIcon := ""
-	if self, ok := b.Client.Caches().SelfUser(); ok {
+	if self, ok := b.Client.Caches.SelfUser(); ok {
 		botIcon = self.EffectiveAvatarURL()
 	}
 

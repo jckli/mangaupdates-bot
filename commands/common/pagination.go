@@ -39,14 +39,14 @@ func GeneratePaginationButtons(
 	buttonPrefix string,
 	page int,
 	totalPages int,
-) []discord.ContainerComponent {
+) []discord.LayoutComponent {
 
 	if totalPages <= 1 {
 		return nil
 	}
 
-	return []discord.ContainerComponent{
-		discord.ActionRowComponent{
+	return []discord.LayoutComponent{
+		discord.NewActionRow(
 			discord.NewSecondaryButton(
 				"◀",
 				fmt.Sprintf("%s/%d", buttonPrefix, page-1),
@@ -57,6 +57,6 @@ func GeneratePaginationButtons(
 				"▶",
 				fmt.Sprintf("%s/%d", buttonPrefix, page+1),
 			).WithDisabled(page == totalPages),
-		},
+		),
 	}
 }

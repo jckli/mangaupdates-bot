@@ -2,13 +2,12 @@ package server
 
 import (
 	"github.com/disgoorg/disgo/discord"
-	"github.com/disgoorg/json"
 )
 
 var ServerCommand = discord.SlashCommandCreate{
-	Name:         "server",
-	Description:  "Manage the server's manga tracking list",
-	DMPermission: json.Ptr(false),
+	Name:        "server",
+	Description: "Manage the server's manga tracking list",
+	Contexts:    []discord.InteractionContextType{discord.InteractionContextTypeGuild},
 	Options: []discord.ApplicationCommandOption{
 		discord.ApplicationCommandOptionSubCommand{
 			Name:        "setup",

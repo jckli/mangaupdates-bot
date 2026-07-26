@@ -186,7 +186,7 @@ func HandleSetGroupMangaSelection(e *handler.ComponentEvent, b *mubot.Bot) error
 	embed := common.StandardEmbed("Select Group", fullDescription)
 	embed.Footer = &discord.EmbedFooter{Text: fmt.Sprintf("Page %d/%d", 1, totalPages)}
 
-	_, err = e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(),
+	_, err = e.Client().Rest.UpdateInteractionResponse(e.ApplicationID(), e.Token(),
 		discord.MessageUpdate{
 			Embeds:     &[]discord.Embed{embed},
 			Components: &allComponents,
@@ -228,7 +228,7 @@ func HandleSetGroupGroupSelection(e *handler.ComponentEvent, b *mubot.Bot) error
 	prefix := fmt.Sprintf("/setgroup_confirm/%s/%d/%d", endpoint, mangaID, groupID)
 	buttons := common.CreateConfirmButtons(prefix+"/yes", prefix+"/no")
 
-	_, err := e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(),
+	_, err := e.Client().Rest.UpdateInteractionResponse(e.ApplicationID(), e.Token(),
 		discord.MessageUpdate{
 			Embeds:     &[]discord.Embed{embed},
 			Components: &buttons,
@@ -248,12 +248,12 @@ func HandleSetGroupConfirmation(e *handler.ComponentEvent, b *mubot.Bot) error {
 	action := e.Vars["action"]
 
 	if action == "no" {
-		_, err := e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(),
+		_, err := e.Client().Rest.UpdateInteractionResponse(e.ApplicationID(), e.Token(),
 			discord.MessageUpdate{
 				Embeds: &[]discord.Embed{
 					common.StandardEmbed("Cancelled", "Group filter was not changed."),
 				},
-				Components: &[]discord.ContainerComponent{},
+				Components: &[]discord.LayoutComponent{},
 			},
 		)
 		return err
@@ -293,20 +293,20 @@ func HandleSetGroupConfirmation(e *handler.ComponentEvent, b *mubot.Bot) error {
 		errEmbed := common.StandardEmbed("Error", err.Error())
 		errEmbed.Color = common.ColorError
 
-		_, _ = e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(),
+		_, _ = e.Client().Rest.UpdateInteractionResponse(e.ApplicationID(), e.Token(),
 			discord.MessageUpdate{
 				Embeds:     &[]discord.Embed{errEmbed},
-				Components: &[]discord.ContainerComponent{},
+				Components: &[]discord.LayoutComponent{},
 			})
 		return err
 	}
 
-	_, err = e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(),
+	_, err = e.Client().Rest.UpdateInteractionResponse(e.ApplicationID(), e.Token(),
 		discord.MessageUpdate{
 			Embeds: &[]discord.Embed{
 				common.StandardEmbed("Success", fmt.Sprintf("Group filter set to **%s**.", groupName)),
 			},
-			Components: &[]discord.ContainerComponent{},
+			Components: &[]discord.LayoutComponent{},
 		},
 	)
 	return err
@@ -388,7 +388,7 @@ func HandleSetGroupGroupPagination(e *handler.ComponentEvent, b *mubot.Bot) erro
 	embed := common.StandardEmbed("Select Group", fullDescription)
 	embed.Footer = &discord.EmbedFooter{Text: fmt.Sprintf("Page %d/%d", page, totalPages)}
 
-	_, err = e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(),
+	_, err = e.Client().Rest.UpdateInteractionResponse(e.ApplicationID(), e.Token(),
 		discord.MessageUpdate{
 			Embeds:     &[]discord.Embed{embed},
 			Components: &allComponents,
@@ -419,7 +419,7 @@ func HandleGroupRemoveMangaSelection(e *handler.ComponentEvent, b *mubot.Bot) er
 	prefix := fmt.Sprintf("/setgroup_confirm/%s/%d/0", endpoint, mangaID)
 	buttons := common.CreateConfirmButtons(prefix+"/yes", prefix+"/no")
 
-	_, err := e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(),
+	_, err := e.Client().Rest.UpdateInteractionResponse(e.ApplicationID(), e.Token(),
 		discord.MessageUpdate{
 			Embeds:     &[]discord.Embed{embed},
 			Components: &buttons,

@@ -23,25 +23,24 @@ func AlertHandler(e *handler.CommandEvent, b *mubot.Bot) error {
 
 	responder := &common.CommandResponder{Event: e}
 
-	botUser, _ := e.Client().Caches().SelfUser()
+	botUser, _ := e.Client().Caches.SelfUser()
 	botIcon := ""
 	if botUser.AvatarURL() != nil {
 		botIcon = *botUser.AvatarURL()
 	}
 
-	embed := discord.NewEmbedBuilder().
-		SetTitle("📢 Bot Announcements").
-		SetAuthor("MangaUpdates", "", botIcon).
-		SetColor(0xffd700).
-		SetDescription(
+	embed := discord.NewEmbed().
+		WithTitle("📢 Bot Announcements").
+		WithAuthor("MangaUpdates", "", botIcon).
+		WithColor(0xffd700).
+		WithDescription(
 			"If you have any suggestions for improving the bot, please tell me in the support server.",
 		).
-		SetTimestamp(time.Now()).
-		Build()
+		WithTimestamp(time.Now())
 
 	actionRow := discord.NewActionRow(
 		discord.NewLinkButton("Report Bugs", "https://jackli.dev/discord"),
 	)
 
-	return responder.Respond(embed, []discord.ContainerComponent{actionRow})
+	return responder.Respond(embed, []discord.LayoutComponent{actionRow})
 }

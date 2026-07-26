@@ -14,18 +14,17 @@ var pingCommand = discord.SlashCommandCreate{
 func PingHandler(e *handler.CommandEvent) error {
 	var ping string
 	if e.Client().HasGateway() {
-		ping = e.Client().Gateway().Latency().String()
+		ping = e.Client().Gateway.Latency().String()
 	}
 
-	embed := discord.NewEmbedBuilder().
-		SetTitle("Pong! 🏓").
-		SetDescription("My ping is " + ping).
-		SetColor(common.ColorPrimary).
-		SetTimestamp(e.CreatedAt()).
-		Build()
+	embed := discord.NewEmbed().
+		WithTitle("Pong! 🏓").
+		WithDescription("My ping is " + ping).
+		WithColor(common.ColorPrimary).
+		WithTimestamp(e.CreatedAt())
 
 	return e.Respond(
 		discord.InteractionResponseTypeCreateMessage,
-		discord.NewMessageCreateBuilder().SetEmbeds(embed).Build(),
+		discord.NewMessageCreate().WithEmbeds(embed),
 	)
 }

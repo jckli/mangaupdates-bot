@@ -17,7 +17,7 @@ func GenerateMangaList(
 	displayName string,
 	displayIcon string,
 	page int,
-) (discord.Embed, []discord.ContainerComponent, error) {
+) (discord.Embed, []discord.LayoutComponent, error) {
 	list, err := b.ApiClient.GetWatchlist(endpoint, id)
 	if err != nil {
 		b.Logger.Error("Failed to fetch manga list", "error", err)
@@ -48,7 +48,7 @@ func GenerateMangaList(
 	}
 
 	botIcon := ""
-	if self, ok := b.Client.Caches().SelfUser(); ok {
+	if self, ok := b.Client.Caches.SelfUser(); ok {
 		botIcon = self.EffectiveAvatarURL()
 	}
 
@@ -118,15 +118,15 @@ func HandleMangaListPagination(e *handler.ComponentEvent, b *mubot.Bot) error {
 	if err != nil {
 		errEmbed := common.StandardEmbed("Error", err.Error())
 		errEmbed.Color = common.ColorError
-		_, _ = e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(),
+		_, _ = e.Client().Rest.UpdateInteractionResponse(e.ApplicationID(), e.Token(),
 			discord.MessageUpdate{
 				Embeds:     &[]discord.Embed{errEmbed},
-				Components: &[]discord.ContainerComponent{},
+				Components: &[]discord.LayoutComponent{},
 			})
 		return err
 	}
 
-	_, err = e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(),
+	_, err = e.Client().Rest.UpdateInteractionResponse(e.ApplicationID(), e.Token(),
 		discord.MessageUpdate{
 			Embeds:     &[]discord.Embed{embed},
 			Components: &components,

@@ -42,12 +42,12 @@ func HandleChannelConfirmation(e *handler.ComponentEvent, b *mubot.Bot) error {
 	channelID := e.Vars["channel_id"]
 
 	if action == "no" {
-		_, err := e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(),
+		_, err := e.Client().Rest.UpdateInteractionResponse(e.ApplicationID(), e.Token(),
 			discord.MessageUpdate{
 				Embeds: &[]discord.Embed{
 					common.StandardEmbed("Cancelled", "Notification channel was not changed."),
 				},
-				Components: &[]discord.ContainerComponent{},
+				Components: &[]discord.LayoutComponent{},
 			})
 		return err
 	}
@@ -56,20 +56,20 @@ func HandleChannelConfirmation(e *handler.ComponentEvent, b *mubot.Bot) error {
 	if err != nil {
 		errEmbed := common.StandardEmbed("Error", err.Error())
 		errEmbed.Color = common.ColorError
-		_, _ = e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(),
+		_, _ = e.Client().Rest.UpdateInteractionResponse(e.ApplicationID(), e.Token(),
 			discord.MessageUpdate{
 				Embeds:     &[]discord.Embed{errEmbed},
-				Components: &[]discord.ContainerComponent{},
+				Components: &[]discord.LayoutComponent{},
 			})
 		return err
 	}
 
-	_, err = e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(),
+	_, err = e.Client().Rest.UpdateInteractionResponse(e.ApplicationID(), e.Token(),
 		discord.MessageUpdate{
 			Embeds: &[]discord.Embed{
 				common.StandardEmbed("Success", fmt.Sprintf("Manga updates will now be posted in <#%s>.", channelID)),
 			},
-			Components: &[]discord.ContainerComponent{},
+			Components: &[]discord.LayoutComponent{},
 		})
 	return err
 }

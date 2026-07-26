@@ -6,7 +6,7 @@ import (
 )
 
 type Responder interface {
-	Respond(embed discord.Embed, components []discord.ContainerComponent) error
+	Respond(embed discord.Embed, components []discord.LayoutComponent) error
 	Error(content string) error
 }
 
@@ -14,8 +14,8 @@ type CommandResponder struct {
 	Event *handler.CommandEvent
 }
 
-func (c *CommandResponder) Respond(embed discord.Embed, components []discord.ContainerComponent) error {
-	_, err := c.Event.Client().Rest().UpdateInteractionResponse(
+func (c *CommandResponder) Respond(embed discord.Embed, components []discord.LayoutComponent) error {
+	_, err := c.Event.Client().Rest.UpdateInteractionResponse(
 		c.Event.ApplicationID(),
 		c.Event.Token(),
 		discord.MessageUpdate{
@@ -28,12 +28,12 @@ func (c *CommandResponder) Respond(embed discord.Embed, components []discord.Con
 
 func (c *CommandResponder) Error(content string) error {
 	embed := ErrorEmbed(content)
-	_, err := c.Event.Client().Rest().UpdateInteractionResponse(
+	_, err := c.Event.Client().Rest.UpdateInteractionResponse(
 		c.Event.ApplicationID(),
 		c.Event.Token(),
 		discord.MessageUpdate{
 			Embeds:     &[]discord.Embed{embed},
-			Components: &[]discord.ContainerComponent{},
+			Components: &[]discord.LayoutComponent{},
 		},
 	)
 	return err
@@ -43,9 +43,9 @@ type ComponentResponder struct {
 	Event *handler.ComponentEvent
 }
 
-func (c *ComponentResponder) Respond(embed discord.Embed, components []discord.ContainerComponent) error {
+func (c *ComponentResponder) Respond(embed discord.Embed, components []discord.LayoutComponent) error {
 	if components == nil {
-		components = []discord.ContainerComponent{}
+		components = []discord.LayoutComponent{}
 	}
 
 	return c.Event.UpdateMessage(discord.MessageUpdate{
@@ -56,6 +56,6 @@ func (c *ComponentResponder) Respond(embed discord.Embed, components []discord.C
 func (c *ComponentResponder) Error(content string) error {
 	embed := ErrorEmbed(content)
 	return c.Event.UpdateMessage(discord.MessageUpdate{
-		Embeds: &[]discord.Embed{embed}, Components: &[]discord.ContainerComponent{},
+		Embeds: &[]discord.Embed{embed}, Components: &[]discord.LayoutComponent{},
 	})
 }

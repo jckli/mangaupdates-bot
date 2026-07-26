@@ -19,7 +19,7 @@ type GlobalSearchConfig struct {
 func GenerateGlobalSearchMenu(
 	b *mubot.Bot,
 	cfg GlobalSearchConfig,
-) (discord.Embed, []discord.ContainerComponent, error) {
+) (discord.Embed, []discord.LayoutComponent, error) {
 	results, err := b.ApiClient.SearchManga(cfg.Query)
 	if err != nil {
 		return discord.Embed{}, nil, fmt.Errorf("failed to search manga")

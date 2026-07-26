@@ -56,22 +56,21 @@ func formatActive(active bool) string {
 }
 
 // buttons
-func CreateConfirmButtons(confirmID, cancelID string) []discord.ContainerComponent {
-	return []discord.ContainerComponent{
-		discord.ActionRowComponent{
+func CreateConfirmButtons(confirmID, cancelID string) []discord.LayoutComponent {
+	return []discord.LayoutComponent{
+		discord.NewActionRow(
 			discord.NewDangerButton("Cancel", cancelID),
 			discord.NewSuccessButton("Confirm", confirmID),
-		},
+		),
 	}
 }
 
 // actual embeds
 func StandardEmbed(title, description string) discord.Embed {
-	return discord.NewEmbedBuilder().
-		SetTitle(title).
-		SetDescription(description).
-		SetColor(ColorPrimary).
-		Build()
+	return discord.NewEmbed().
+		WithTitle(title).
+		WithDescription(description).
+		WithColor(ColorPrimary)
 }
 
 func GenerateListEmbed(
@@ -81,23 +80,22 @@ func GenerateListEmbed(
 	totalItems int,
 	botIconURL string,
 ) discord.Embed {
-	return discord.NewEmbedBuilder().
-		SetAuthor("MangaUpdates", "", botIconURL).
-		SetTitle(title).
-		SetThumbnail(iconURL).
-		SetDescription(description).
-		SetColor(ColorPrimary).
-		SetFooterText(fmt.Sprintf("Total: %d", totalItems)).
-		Build()
+	return discord.NewEmbed().
+		WithAuthor("MangaUpdates", "", botIconURL).
+		WithTitle(title).
+		WithThumbnail(iconURL).
+		WithDescription(description).
+		WithColor(ColorPrimary).
+		WithFooterText(fmt.Sprintf("Total: %d", totalItems))
 }
 
 func GenerateConfirmationEmbed(details utils.MangaDetails) discord.Embed {
 	authorStr, artistStr := formatAuthorsAndArtists(details.Authors)
 
-	embed := discord.NewEmbedBuilder().
-		SetTitle(fmt.Sprintf("Is `%s` correct?", details.Title)).
-		SetDescription(details.Description).
-		SetColor(ColorPrimary).
+	embed := discord.NewEmbed().
+		WithTitlef("Is `%s` correct?", details.Title).
+		WithDescription(details.Description).
+		WithColor(ColorPrimary).
 		AddField("Year", details.Year, true).
 		AddField("Type", details.Type, true).
 		AddField("Latest Chapter", fmt.Sprintf("%d", details.LatestChapter), true).
@@ -106,29 +104,28 @@ func GenerateConfirmationEmbed(details utils.MangaDetails) discord.Embed {
 		AddField("Rating", fmt.Sprintf("%.2f", details.BayesianRating), true)
 
 	if details.Image != nil {
-		embed.SetImage(details.Image.URL.Original)
+		embed = embed.WithImage(details.Image.URL.Original)
 	}
 
-	return embed.Build()
+	return embed
 }
 
 func ErrorEmbed(content string) discord.Embed {
-	return discord.NewEmbedBuilder().
-		SetTitle("Error").
-		SetDescription(content).
-		SetColor(ColorError).
-		Build()
+	return discord.NewEmbed().
+		WithTitle("Error").
+		WithDescription(content).
+		WithColor(ColorError)
 }
 
 func GenerateDetailEmbed(details utils.MangaDetails, botIconURL string) discord.Embed {
 	authorStr, artistStr := formatAuthorsAndArtists(details.Authors)
 
-	embed := discord.NewEmbedBuilder().
-		SetAuthor("MangaUpdates", "", botIconURL).
-		SetTitle(fmt.Sprintf("%s (%s)", details.Title, formatStatus(details.Completed))).
-		SetURL(details.URL).
-		SetDescription(details.Description).
-		SetColor(ColorPrimary).
+	embed := discord.NewEmbed().
+		WithAuthor("MangaUpdates", "", botIconURL).
+		WithTitlef("%s (%s)", details.Title, formatStatus(details.Completed)).
+		WithURL(details.URL).
+		WithDescription(details.Description).
+		WithColor(ColorPrimary).
 		AddField("Year", details.Year, true).
 		AddField("Type", details.Type, true).
 		AddField("Latest Chapter", fmt.Sprintf("%d", details.LatestChapter), true).
@@ -137,25 +134,24 @@ func GenerateDetailEmbed(details utils.MangaDetails, botIconURL string) discord.
 		AddField("Rating", fmt.Sprintf("%.2f", details.BayesianRating), true)
 
 	if details.Image != nil {
-		embed.SetImage(details.Image.URL.Original)
+		embed = embed.WithImage(details.Image.URL.Original)
 	}
 
-	return embed.Build()
+	return embed
 }
 
 func GenerateGroupConfirmationEmbed(group *utils.GroupDetails, mangaTitle string) discord.Embed {
 	if group == nil || group.GroupID == 0 {
-		return discord.NewEmbedBuilder().
-			SetTitle(fmt.Sprintf("Clear filter for `%s`?", mangaTitle)).
-			SetDescription("You are **clearing** the scanlation group filter.\n\nYou will receive notifications for **all** releases.").
-			SetColor(ColorPrimary).
-			Build()
+		return discord.NewEmbed().
+			WithTitlef("Clear filter for `%s`?", mangaTitle).
+			WithDescription("You are **clearing** the scanlation group filter.\n\nYou will receive notifications for **all** releases.").
+			WithColor(ColorPrimary)
 	}
 
-	embed := discord.NewEmbedBuilder().
-		SetTitle(fmt.Sprintf("Set filter for `%s`?", mangaTitle)).
-		SetDescription(fmt.Sprintf("You are limiting notifications to **%s**.", group.Name)).
-		SetColor(ColorPrimary).
+	embed := discord.NewEmbed().
+		WithTitlef("Set filter for `%s`?", mangaTitle).
+		WithDescriptionf("You are limiting notifications to **%s**.", group.Name).
+		WithColor(ColorPrimary).
 		AddField("Group Name", group.Name, true).
 		AddField("Active", formatActive(group.Active), true)
 
@@ -181,10 +177,10 @@ func GenerateGroupConfirmationEmbed(group *utils.GroupDetails, mangaTitle string
 	}
 
 	if len(links) > 0 {
-		embed.AddField("Links", strings.Join(links, " | "), false)
+		embed = embed.AddField("Links", strings.Join(links, " | "), false)
 	} else {
-		embed.AddField("Links", "N/A", false)
+		embed = embed.AddField("Links", "N/A", false)
 	}
 
-	return embed.Build()
+	return embed
 }

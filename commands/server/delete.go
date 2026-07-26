@@ -36,12 +36,12 @@ func HandleDeleteConfirmation(e *handler.ComponentEvent, b *mubot.Bot) error {
 	action := e.Vars["action"]
 
 	if action == "no" {
-		_, err := e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(),
+		_, err := e.Client().Rest.UpdateInteractionResponse(e.ApplicationID(), e.Token(),
 			discord.MessageUpdate{
 				Embeds: &[]discord.Embed{
 					common.StandardEmbed("Cancelled", "Server data was not deleted."),
 				},
-				Components: &[]discord.ContainerComponent{},
+				Components: &[]discord.LayoutComponent{},
 			})
 		return err
 	}
@@ -54,20 +54,20 @@ func HandleDeleteConfirmation(e *handler.ComponentEvent, b *mubot.Bot) error {
 	if err != nil {
 		errEmbed := common.StandardEmbed("Error", err.Error())
 		errEmbed.Color = common.ColorError
-		_, _ = e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(),
+		_, _ = e.Client().Rest.UpdateInteractionResponse(e.ApplicationID(), e.Token(),
 			discord.MessageUpdate{
 				Embeds:     &[]discord.Embed{errEmbed},
-				Components: &[]discord.ContainerComponent{},
+				Components: &[]discord.LayoutComponent{},
 			})
 		return err
 	}
 
-	_, err = e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(),
+	_, err = e.Client().Rest.UpdateInteractionResponse(e.ApplicationID(), e.Token(),
 		discord.MessageUpdate{
 			Embeds: &[]discord.Embed{
 				common.StandardEmbed("Server Removed", "This server has been removed from the database."),
 			},
-			Components: &[]discord.ContainerComponent{},
+			Components: &[]discord.LayoutComponent{},
 		})
 	return err
 }

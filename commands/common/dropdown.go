@@ -12,7 +12,7 @@ func GenerateSearchDropdown(
 	customID string,
 	placeholder string,
 	results []utils.MangaSearchResult,
-) []discord.ContainerComponent {
+) []discord.LayoutComponent {
 
 	var options []discord.StringSelectMenuOption
 
@@ -51,13 +51,9 @@ func GenerateSearchDropdown(
 		options = append(options, option)
 	}
 
-	return []discord.ContainerComponent{
-		discord.ActionRowComponent{
-			discord.StringSelectMenuComponent{
-				CustomID:    customID,
-				Placeholder: placeholder,
-				Options:     options,
-			},
-		},
+	return []discord.LayoutComponent{
+		discord.NewActionRow(
+			discord.NewStringSelectMenu(customID, placeholder, options...),
+		),
 	}
 }

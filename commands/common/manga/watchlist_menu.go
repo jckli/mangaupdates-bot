@@ -26,7 +26,7 @@ type WatchlistMenuConfig struct {
 func GenerateWatchlistMenu(
 	b *mubot.Bot,
 	cfg WatchlistMenuConfig,
-) (discord.Embed, []discord.ContainerComponent, error) {
+) (discord.Embed, []discord.LayoutComponent, error) {
 	list, err := b.ApiClient.GetWatchlist(cfg.Endpoint, cfg.TargetID)
 	if err != nil {
 		return discord.Embed{}, nil, fmt.Errorf("failed to fetch watchlist")
@@ -102,7 +102,7 @@ func HandleGenericWatchlistPagination(
 		return err
 	}
 
-	_, err = e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(),
+	_, err = e.Client().Rest.UpdateInteractionResponse(e.ApplicationID(), e.Token(),
 		discord.MessageUpdate{
 			Embeds:     &[]discord.Embed{embed},
 			Components: &components,

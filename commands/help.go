@@ -56,14 +56,13 @@ func buildHelpEmbed(b *mubot.Bot) discord.Embed {
 	}
 
 	botIcon := ""
-	if self, ok := b.Client.Caches().SelfUser(); ok {
+	if self, ok := b.Client.Caches.SelfUser(); ok {
 		botIcon = self.EffectiveAvatarURL()
 	}
 
-	return discord.NewEmbedBuilder().
-		SetAuthor("MangaUpdates", "", botIcon).
-		SetDescription(sb.String()).
-		SetColor(common.ColorPrimary).
-		SetFooterTextf("Version: %s", b.Version).
-		Build()
+	return discord.NewEmbed().
+		WithAuthor("MangaUpdates", "", botIcon).
+		WithDescription(sb.String()).
+		WithColor(common.ColorPrimary).
+		WithFooterTextf("Version: %s", b.Version)
 }

@@ -26,7 +26,7 @@ func InfoHandler(e *handler.CommandEvent, b *mubot.Bot) error {
 
 	responder := &common.CommandResponder{Event: e}
 
-	if e.Client().Caches().GuildsLen() > 0 && b.MemberCount.Load() == 0 {
+	if e.Client().Caches.GuildsLen() > 0 && b.MemberCount.Load() == 0 {
 		b.UpdateStats()
 	}
 
@@ -45,7 +45,7 @@ func InfoHandler(e *handler.CommandEvent, b *mubot.Bot) error {
 	}
 	uptimeStr += fmt.Sprintf("%02d:%02d:%02d", hours, minutes, seconds)
 
-	botUser, _ := e.Client().Caches().SelfUser()
+	botUser, _ := e.Client().Caches.SelfUser()
 	botIcon := ""
 	if botUser.AvatarURL() != nil {
 		botIcon = *botUser.AvatarURL()
@@ -62,13 +62,12 @@ func InfoHandler(e *handler.CommandEvent, b *mubot.Bot) error {
 		uptimeStr,
 	)
 
-	embed := discord.NewEmbedBuilder().
-		SetTitle("MangaUpdates Bot").
-		SetAuthor("MangaUpdates", "", botIcon).
-		SetColor(common.ColorPrimary).
-		SetDescription(description).
-		SetTimestamp(time.Now()).
-		Build()
+	embed := discord.NewEmbed().
+		WithTitle("MangaUpdates Bot").
+		WithAuthor("MangaUpdates", "", botIcon).
+		WithColor(common.ColorPrimary).
+		WithDescription(description).
+		WithTimestamp(time.Now())
 
 	actionRow := discord.NewActionRow(
 		discord.NewLinkButton("Support Server", "https://jackli.dev/discord"),
@@ -76,5 +75,5 @@ func InfoHandler(e *handler.CommandEvent, b *mubot.Bot) error {
 		discord.NewLinkButton("Invite Bot", "https://jackli.dev/mangaupdates"),
 	)
 
-	return responder.Respond(embed, []discord.ContainerComponent{actionRow})
+	return responder.Respond(embed, []discord.LayoutComponent{actionRow})
 }
