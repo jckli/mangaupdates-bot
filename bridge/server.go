@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/disgoorg/disgo/bot"
@@ -30,13 +31,14 @@ type Server struct {
 }
 
 type BroadcastPayload struct {
-	TargetID   string `json:"target_id"`
-	TargetType string `json:"target_type"`
-	Title      string `json:"title"`
-	Chapter    string `json:"chapter"`
-	Link       string `json:"link"`
-	ImageURL   string `json:"image_url"`
-	Groups     string `json:"groups"`
+	TargetID   string   `json:"target_id"`
+	TargetType string   `json:"target_type"`
+	Title      string   `json:"title"`
+	Chapter    string   `json:"chapter"`
+	Link       string   `json:"link"`
+	ImageURL   string   `json:"image_url"`
+	Groups     string   `json:"groups"`
+	RoleIDs    []string `json:"role_ids,omitempty"`
 }
 
 func (s *Server) logToOps(msg string) {
@@ -133,8 +135,18 @@ func (s *Server) sendToDiscord(payload BroadcastPayload) {
 		WithImage(payload.ImageURL).
 		WithTimestamp(time.Now())
 
+	var content string
+	if len(payload.RoleIDs) > 0 {
+		var pings []string
+		for _, rid := range payload.RoleIDs {
+			pings = append(pings, fmt.Sprintf("<@&%s>", rid))
+		}
+		content = strings.Join(pings, " ")
+	}
+
 	message, err := s.Client.Rest.CreateMessage(channelID, discord.MessageCreate{
-		Embeds: []discord.Embed{embed},
+		Content: content,
+		Embeds:  []discord.Embed{embed},
 	})
 
 	if err != nil {

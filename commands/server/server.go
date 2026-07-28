@@ -111,6 +111,10 @@ var ServerCommand = discord.SlashCommandCreate{
 									Name:  "Admin (Manage list settings)",
 									Value: "admin",
 								},
+								{
+									Name:  "Ping (On chapter releases)",
+									Value: "ping",
+								},
 							},
 						},
 					},
@@ -127,6 +131,10 @@ var ServerCommand = discord.SlashCommandCreate{
 								{
 									Name:  "Admin",
 									Value: "admin",
+								},
+								{
+									Name:  "Ping",
+									Value: "ping",
 								},
 							},
 						},
