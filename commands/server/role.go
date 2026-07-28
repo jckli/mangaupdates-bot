@@ -23,9 +23,14 @@ func RoleSetHandler(e *handler.CommandEvent, b *mubot.Bot) error {
 	role := data.Role("role")
 	roleType := data.String("type")
 
-	desc := fmt.Sprintf("Are you sure you want to set %s as the **%s** role?\n\nUsers with this role will be able to manage the bot.", role.Mention(), roleType)
-	if roleType != "admin" {
-		desc = fmt.Sprintf("Are you sure you want to set %s as the **%s** role?\n\nMembers with this role will be pinged when new chapters are released.", role.Mention(), roleType)
+	var desc string
+	switch roleType {
+	case "admin":
+		desc = fmt.Sprintf("Are you sure you want to set %s as the **admin** role?\n\nUsers with this role will be able to manage the bot.", role.Mention())
+	case "ping":
+		desc = fmt.Sprintf("Are you sure you want to set %s as the **ping** role?\n\nMembers with this role will be pinged when new chapters are released.", role.Mention())
+	default:
+		desc = fmt.Sprintf("Are you sure you want to set %s as the **%s** role?", role.Mention(), roleType)
 	}
 
 	embed := common.StandardEmbed("Confirm Role Update", desc)
@@ -102,9 +107,14 @@ func RoleRemoveHandler(e *handler.CommandEvent, b *mubot.Bot) error {
 
 	displayType := strings.ToUpper(roleType[:1]) + roleType[1:]
 
-	desc := fmt.Sprintf("Are you sure you want to remove the **%s** role configuration?\n\nThe bot will revert to default permissions for this setting.", displayType)
-	if roleType != "admin" {
-		desc = fmt.Sprintf("Are you sure you want to remove the **%s** role configuration?\n\nMembers will no longer be pinged when new chapters are released.", displayType)
+	var desc string
+	switch roleType {
+	case "admin":
+		desc = "Are you sure you want to remove the **Admin** role configuration?\n\nThe bot will revert to default permissions for this setting."
+	case "ping":
+		desc = "Are you sure you want to remove the **Ping** role configuration?\n\nMembers will no longer be pinged when new chapters are released."
+	default:
+		desc = fmt.Sprintf("Are you sure you want to remove the **%s** role configuration?", displayType)
 	}
 	embed := common.StandardEmbed("Confirm Role Removal", desc)
 	embed.Color = common.ColorError
