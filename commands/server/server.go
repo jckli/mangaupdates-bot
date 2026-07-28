@@ -97,11 +97,6 @@ var ServerCommand = discord.SlashCommandCreate{
 					Name:        "set",
 					Description: "Assign a role for the bot to use",
 					Options: []discord.ApplicationCommandOption{
-						discord.ApplicationCommandOptionRole{
-							Name:        "role",
-							Description: "The role to assign",
-							Required:    true,
-						},
 						discord.ApplicationCommandOptionString{
 							Name:        "type",
 							Description: "The role type",
@@ -116,6 +111,11 @@ var ServerCommand = discord.SlashCommandCreate{
 									Value: "ping",
 								},
 							},
+						},
+						discord.ApplicationCommandOptionRole{
+							Name:        "role",
+							Description: "The role to assign",
+							Required:    true,
 						},
 					},
 				},
