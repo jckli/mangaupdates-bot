@@ -4,6 +4,11 @@ metadata:
   name: tsuuchi-deployment
 spec:
   replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   selector:
     matchLabels:
       app: tsuuchi 
@@ -12,12 +17,25 @@ spec:
       labels:
         app: tsuuchi 
     spec:
+      terminationGracePeriodSeconds: 60
       containers:
       - name: tsuuchi 
         image: jckli/tsuuchi:latest 
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
+        readinessProbe:
+          httpGet:
+            path: /internal/status
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /internal/status
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 20
         env:
         - name: PORT
           value: "8080"
