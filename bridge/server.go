@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/disgoorg/disgo/bot"
@@ -28,6 +30,17 @@ type Server struct {
 	Port                string
 	updateChan          chan BroadcastPayload
 	GlobalFeedChannelID string
+	StartTime           time.Time
+	shardStats          sync.Map // map[int]ShardStat
+}
+
+type ShardStat struct {
+	Servers int
+	Users   int
+}
+
+func (s *Server) UpdateShardStat(shardID int, stat ShardStat) {
+	s.shardStats.Store(shardID, stat)
 }
 
 type BroadcastPayload struct {
@@ -52,6 +65,7 @@ func New(client *bot.Client, logger *slog.Logger, port string) *Server {
 		Port:                port,
 		updateChan:          make(chan BroadcastPayload, QueueSize),
 		GlobalFeedChannelID: os.Getenv("GLOBAL_FEED_CHANNEL_ID"),
+		StartTime:           time.Now(),
 	}
 }
 
@@ -70,6 +84,11 @@ func (s *Server) Start() {
 }
 
 func (s *Server) handleRequest(ctx *fasthttp.RequestCtx) {
+	if string(ctx.Path()) == "/internal/status" && ctx.IsGet() {
+		s.handleStatus(ctx)
+		return
+	}
+
 	if string(ctx.Path()) != "/internal/broadcast" {
 		ctx.Error("Not Found", fasthttp.StatusNotFound)
 		return
@@ -169,4 +188,87 @@ func (s *Server) sendToDiscord(payload BroadcastPayload) {
 		}
 		s.logToOps(fmt.Sprintf("**Sent**: `%s` Ch.%s -> %s (`%s`)", payload.Title, payload.Chapter, payload.TargetType, payload.TargetID))
 	}
+}
+
+type ShardInfo struct {
+	ID      int    `json:"id"`
+	Status  string `json:"status"`
+	Latency int    `json:"latency"`
+	Servers int    `json:"servers"`
+	Users   int    `json:"users"`
+}
+
+type StatusData struct {
+	Uptime        string      `json:"uptime"`
+	MemoryUsageMB float64     `json:"memory_usage_mb"`
+	TotalServers  int         `json:"total_servers"`
+	Shards        []ShardInfo `json:"shards"`
+}
+
+func (s *Server) handleStatus(ctx *fasthttp.RequestCtx) {
+	uptime := time.Since(s.StartTime).Round(time.Second)
+
+	var memStats runtime.MemStats
+	runtime.ReadMemStats(&memStats)
+	memMB := float64(memStats.Alloc) / 1024 / 1024
+
+	var totalServers int
+	if s.Client != nil && s.Client.Caches != nil {
+		totalServers = s.Client.Caches.GuildsLen()
+	}
+
+	shards := []ShardInfo{}
+	if s.Client != nil && s.Client.ShardManager != nil {
+		for shard := range s.Client.ShardManager.Shards() {
+			statusStr := ""
+			switch shard.Status() {
+			case 0:
+				statusStr = "Unconnected"
+			case 1:
+				statusStr = "Connecting"
+			case 2:
+				statusStr = "WaitingForHello"
+			case 3:
+				statusStr = "Identifying"
+			case 4:
+				statusStr = "Resuming"
+			case 5:
+				statusStr = "Ready"
+			case 6:
+				statusStr = "Disconnected"
+			case 7:
+				statusStr = "Fatal"
+			default:
+				statusStr = fmt.Sprintf("Unknown(%d)", shard.Status())
+			}
+
+			sCount, uCount := 0, 0
+			if val, ok := s.shardStats.Load(shard.ShardID()); ok {
+				if stat, ok := val.(ShardStat); ok {
+					sCount = stat.Servers
+					uCount = stat.Users
+				}
+			}
+			
+			shards = append(shards, ShardInfo{
+				ID:      shard.ShardID(),
+				Status:  statusStr,
+				Latency: int(shard.Latency().Milliseconds()),
+				Servers: sCount,
+				Users:   uCount,
+			})
+		}
+	}
+
+	data := StatusData{
+		Uptime:        uptime.String(),
+		MemoryUsageMB: float64(int(memMB*10)) / 10, // 1 decimal point
+		TotalServers:  totalServers,
+		Shards:        shards,
+	}
+
+	body, _ := json.Marshal(data)
+	ctx.SetContentType("application/json")
+	ctx.SetStatusCode(fasthttp.StatusOK)
+	ctx.SetBody(body)
 }

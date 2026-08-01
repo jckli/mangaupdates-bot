@@ -16,6 +16,7 @@ import (
 	"github.com/disgoorg/disgo/gateway"
 	"github.com/disgoorg/disgo/sharding"
 	"github.com/disgoorg/snowflake/v2"
+	"github.com/jckli/mangaupdates-bot/bridge"
 	"github.com/jckli/mangaupdates-bot/utils"
 )
 
@@ -28,12 +29,14 @@ type Config struct {
 type Bot struct {
 	Client       *bot.Client
 	ApiClient    *utils.Client
+	BridgeServer *bridge.Server
 	Logger       *slog.Logger
 	InternalPort string
 	Version      string
 	Config       Config
 	GuildCount   atomic.Int64
 	MemberCount  atomic.Int64
+	StartTime    time.Time
 }
 
 func New(version string) *Bot {
@@ -73,6 +76,7 @@ func New(version string) *Bot {
 			DevMode:     os.Getenv("DEV_MODE") == "true",
 			DevServerID: snowflake.ID(devServerID),
 		},
+		StartTime: time.Now(),
 	}
 }
 
@@ -151,13 +155,39 @@ func (b *Bot) OnGuildUpdate(e *events.GuildUpdate) {
 
 func (b *Bot) UpdateStats() {
 	var gCount, mCount int64
+	
+	shardCount := 1
+	if b.Client != nil && b.Client.ShardManager != nil {
+		c := 0
+		for range b.Client.ShardManager.Shards() {
+			c++
+		}
+		if c > 0 {
+			shardCount = c
+		}
+	}
+
+	shardStats := make(map[int]bridge.ShardStat)
+
 	for guild := range b.Client.Caches.Guilds() {
 		gCount++
 		mCount += int64(guild.MemberCount)
+		
+		sID := sharding.ShardIDByGuild(guild.ID, shardCount)
+		stat := shardStats[sID]
+		stat.Servers++
+		stat.Users += guild.MemberCount
+		shardStats[sID] = stat
 	}
 
 	b.GuildCount.Store(gCount)
 	b.MemberCount.Store(mCount)
+	
+	if b.BridgeServer != nil {
+		for sID, stat := range shardStats {
+			b.BridgeServer.UpdateShardStat(sID, stat)
+		}
+	}
 }
 
 func (b *Bot) StartStatsWorker() {
