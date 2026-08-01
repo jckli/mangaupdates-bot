@@ -33,6 +33,7 @@ func SetupHandler(e *handler.CommandEvent, b *mubot.Bot) error {
 	if err != nil {
 		return responder.Error("Failed to setup: " + err.Error())
 	}
+	b.ResetTarget(channel.ID.String(), "channel")
 
 	desc := fmt.Sprintf("Server **%s** has been successfully initialized.\nManga updates will be posted in <#%s>.", serverName, channel.ID.String())
 	return responder.Respond(common.StandardEmbed("Setup Complete", desc), nil)

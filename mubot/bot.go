@@ -39,6 +39,12 @@ type Bot struct {
 	StartTime    time.Time
 }
 
+func (b *Bot) ResetTarget(targetID string, targetType string) {
+	if b.BridgeServer != nil {
+		b.BridgeServer.ResetTarget(targetID, targetType)
+	}
+}
+
 func New(version string) *Bot {
 	devServerID, _ := strconv.Atoi(os.Getenv("DEV_SERVER_ID"))
 
@@ -192,7 +198,8 @@ func (b *Bot) UpdateStats() {
 
 func (b *Bot) StartStatsWorker() {
 	go func() {
-		ticker := time.NewTicker(10 * time.Minute)
+		b.UpdateStats()
+		ticker := time.NewTicker(2 * time.Minute)
 		for range ticker.C {
 			b.UpdateStats()
 		}

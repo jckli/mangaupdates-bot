@@ -20,16 +20,20 @@ import (
 var ColorPrimary = 0x3083e3
 
 const (
-	QueueSize   = 5000
-	WorkerCount = 5
+	QueueSize         = 5000
+	WorkerCount       = 5
+	MaxFailedAttempts = 3
 )
 
 type Server struct {
 	Client              *bot.Client
+	ApiClient           *utils.Client
 	Logger              *slog.Logger
 	Port                string
 	updateChan          chan BroadcastPayload
 	GlobalFeedChannelID string
+	failureCounts       sync.Map
+	disabledTargets     sync.Map
 	StartTime           time.Time
 	shardStats          sync.Map // map[int]ShardStat
 }
@@ -58,14 +62,28 @@ func (s *Server) logToOps(msg string) {
 	utils.SendLogMessage(s.Client.Rest, msg)
 }
 
-func New(client *bot.Client, logger *slog.Logger, port string) *Server {
+func New(client *bot.Client, apiClient *utils.Client, logger *slog.Logger, port string) *Server {
 	return &Server{
 		Client:              client,
+		ApiClient:           apiClient,
 		Logger:              logger,
 		Port:                port,
 		updateChan:          make(chan BroadcastPayload, QueueSize),
 		GlobalFeedChannelID: os.Getenv("GLOBAL_FEED_CHANNEL_ID"),
 		StartTime:           time.Now(),
+	}
+}
+
+func (s *Server) ResetTarget(targetID string, targetType string) {
+	if targetID == "" {
+		return
+	}
+	s.failureCounts.Delete(targetID)
+	if _, disabled := s.disabledTargets.LoadAndDelete(targetID); disabled {
+		if targetType == "" {
+			targetType = "target"
+		}
+		s.logToOps(fmt.Sprintf("**Delivery Re-Enabled**: %s (`%s`)", targetType, targetID))
 	}
 }
 
@@ -119,6 +137,11 @@ func (s *Server) processUpdates() {
 }
 
 func (s *Server) sendToDiscord(payload BroadcastPayload) {
+	if _, disabled := s.disabledTargets.Load(payload.TargetID); disabled {
+		s.Logger.Debug("Skipping broadcast to soft-disabled target", "target_id", payload.TargetID)
+		return
+	}
+
 	targetID, err := snowflake.Parse(payload.TargetID)
 	if err != nil {
 		s.Logger.Error("Invalid Snowflake ID", "id", payload.TargetID)
@@ -137,7 +160,7 @@ func (s *Server) sendToDiscord(payload BroadcastPayload) {
 		ch, err := s.Client.Rest.CreateDMChannel(targetID)
 		if err != nil {
 			s.Logger.Error("Failed to create DM", "user_id", targetID, "error", err)
-			s.logToOps(fmt.Sprintf("**DM Error**: Could not open DM with User `%s`\nError: `%v`", payload.TargetID, err))
+			s.handleDeliveryError(payload, err)
 			return
 		}
 		channelID = ch.ID()
@@ -170,14 +193,9 @@ func (s *Server) sendToDiscord(payload BroadcastPayload) {
 
 	if err != nil {
 		s.Logger.Error("Failed to send to Discord", "channel_id", channelID, "error", err)
-		s.logToOps(fmt.Sprintf("**Delivery Failed**: `%s` Ch.%s -> %s (`%s`)\nError: `%v`",
-			payload.Title,
-			payload.Chapter,
-			payload.TargetType,
-			payload.TargetID,
-			err,
-		))
+		s.handleDeliveryError(payload, err)
 	} else {
+		s.ResetTarget(payload.TargetID, payload.TargetType)
 		if !isDM && s.GlobalFeedChannelID != "" && payload.TargetID == s.GlobalFeedChannelID {
 			go func() {
 				_, err := s.Client.Rest.CrosspostMessage(channelID, message.ID)
@@ -190,6 +208,31 @@ func (s *Server) sendToDiscord(payload BroadcastPayload) {
 	}
 }
 
+func (s *Server) handleDeliveryError(payload BroadcastPayload, err error) {
+	currentVal, _ := s.failureCounts.LoadOrStore(payload.TargetID, 0)
+	count := currentVal.(int) + 1
+	s.failureCounts.Store(payload.TargetID, count)
+
+	if count >= MaxFailedAttempts {
+		s.disabledTargets.Store(payload.TargetID, true)
+		s.logToOps(fmt.Sprintf("**Delivery Disabled**: `%s` Ch.%s -> %s (`%s`) disabled after %d consecutive failures\nError: `%v`",
+			payload.Title,
+			payload.Chapter,
+			payload.TargetType,
+			payload.TargetID,
+			count,
+			err,
+		))
+	} else {
+		s.logToOps(fmt.Sprintf("**Delivery Failed**: `%s` Ch.%s -> %s (`%s`)\nError: `%v`",
+			payload.Title,
+			payload.Chapter,
+			payload.TargetType,
+			payload.TargetID,
+			err,
+		))
+	}
+}
 type ShardInfo struct {
 	ID      int    `json:"id"`
 	Status  string `json:"status"`
@@ -202,6 +245,7 @@ type StatusData struct {
 	Uptime        string      `json:"uptime"`
 	MemoryUsageMB float64     `json:"memory_usage_mb"`
 	TotalServers  int         `json:"total_servers"`
+	TotalUsers    int         `json:"total_users"`
 	Shards        []ShardInfo `json:"shards"`
 }
 
@@ -213,6 +257,7 @@ func (s *Server) handleStatus(ctx *fasthttp.RequestCtx) {
 	memMB := float64(memStats.Alloc) / 1024 / 1024
 
 	var totalServers int
+	var totalUsers int
 	if s.Client != nil && s.Client.Caches != nil {
 		totalServers = s.Client.Caches.GuildsLen()
 	}
@@ -220,27 +265,7 @@ func (s *Server) handleStatus(ctx *fasthttp.RequestCtx) {
 	shards := []ShardInfo{}
 	if s.Client != nil && s.Client.ShardManager != nil {
 		for shard := range s.Client.ShardManager.Shards() {
-			statusStr := ""
-			switch shard.Status() {
-			case 0:
-				statusStr = "Unconnected"
-			case 1:
-				statusStr = "Connecting"
-			case 2:
-				statusStr = "WaitingForHello"
-			case 3:
-				statusStr = "Identifying"
-			case 4:
-				statusStr = "Resuming"
-			case 5:
-				statusStr = "Ready"
-			case 6:
-				statusStr = "Disconnected"
-			case 7:
-				statusStr = "Fatal"
-			default:
-				statusStr = fmt.Sprintf("Unknown(%d)", shard.Status())
-			}
+			statusStr := shard.Status().String()
 
 			sCount, uCount := 0, 0
 			if val, ok := s.shardStats.Load(shard.ShardID()); ok {
@@ -249,6 +274,7 @@ func (s *Server) handleStatus(ctx *fasthttp.RequestCtx) {
 					uCount = stat.Users
 				}
 			}
+			totalUsers += uCount
 			
 			shards = append(shards, ShardInfo{
 				ID:      shard.ShardID(),
@@ -264,6 +290,7 @@ func (s *Server) handleStatus(ctx *fasthttp.RequestCtx) {
 		Uptime:        uptime.String(),
 		MemoryUsageMB: float64(int(memMB*10)) / 10, // 1 decimal point
 		TotalServers:  totalServers,
+		TotalUsers:    totalUsers,
 		Shards:        shards,
 	}
 

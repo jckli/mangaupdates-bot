@@ -52,7 +52,8 @@ func main() {
 		mu.Logger.Error(fmt.Sprintf("Failed to sync commands: %s", err))
 	}
 
-	bridgeServer := bridge.New(mu.Client, mu.Logger, mu.InternalPort)
+	bridgeServer := bridge.New(mu.Client, mu.ApiClient, mu.Logger, mu.InternalPort)
+	mu.BridgeServer = bridgeServer
 	bridgeServer.Start()
 
 	mu.StartStatsWorker()

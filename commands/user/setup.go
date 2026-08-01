@@ -16,6 +16,7 @@ func SetupHandler(e *handler.CommandEvent, b *mubot.Bot) error {
 	if err != nil {
 		return responder.Error("Failed to setup: " + err.Error())
 	}
+	b.ResetTarget(e.User().ID.String(), "user")
 
 	desc := "Your personal manga list has been created!\nYou will receive DM notifications for manga you add."
 	return responder.Respond(common.StandardEmbed("Setup Complete", desc), nil)

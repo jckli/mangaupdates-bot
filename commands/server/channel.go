@@ -63,6 +63,7 @@ func HandleChannelConfirmation(e *handler.ComponentEvent, b *mubot.Bot) error {
 			})
 		return err
 	}
+	b.ResetTarget(channelID, "channel")
 
 	_, err = e.Client().Rest.UpdateInteractionResponse(e.ApplicationID(), e.Token(),
 		discord.MessageUpdate{
