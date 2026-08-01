@@ -243,6 +243,7 @@ type ShardInfo struct {
 
 type StatusData struct {
 	Uptime        string      `json:"uptime"`
+	StartTime     int64       `json:"start_time"`
 	MemoryUsageMB float64     `json:"memory_usage_mb"`
 	TotalServers  int         `json:"total_servers"`
 	TotalUsers    int         `json:"total_users"`
@@ -288,7 +289,8 @@ func (s *Server) handleStatus(ctx *fasthttp.RequestCtx) {
 
 	data := StatusData{
 		Uptime:        uptime.String(),
-		MemoryUsageMB: float64(int(memMB*10)) / 10, // 1 decimal point
+		StartTime:     s.StartTime.Unix(),
+		MemoryUsageMB: float64(int(memMB*10)) / 10,
 		TotalServers:  totalServers,
 		TotalUsers:    totalUsers,
 		Shards:        shards,
