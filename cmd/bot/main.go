@@ -14,8 +14,10 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 )
 
+var Version = "dev"
+
 func main() {
-	mu := mubot.New(os.Getenv("VERSION"))
+	mu := mubot.New(Version)
 
 	h := commands.CommandHandlers(mu)
 

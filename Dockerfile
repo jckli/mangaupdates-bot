@@ -11,8 +11,9 @@ COPY . .
 
 ARG TARGETOS
 ARG TARGETARCH
+ARG VERSION=dev
 
-RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags="-s -w" -o bot cmd/bot/main.go
+RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags="-s -w -X main.Version=$VERSION" -o bot cmd/bot/main.go
 
 FROM alpine:latest
 
