@@ -29,7 +29,10 @@ func HandleAddAutocomplete(e *handler.AutocompleteEvent, b *mubot.Bot, queryName
 	}
 
 	for _, res := range results[0:max] {
-		label := fmt.Sprintf("%s (%s)", res.Title, res.Year)
+		label := res.Title
+		if res.Year != "" {
+			label += fmt.Sprintf(" (%s)", res.Year)
+		}
 
 		if len(label) > 100 {
 			label = label[:97] + "..."
