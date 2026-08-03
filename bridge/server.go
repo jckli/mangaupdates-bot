@@ -6,6 +6,8 @@ import (
 	"log/slog"
 	"os"
 	"runtime"
+	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -106,6 +108,9 @@ func (s *Server) handleRequest(ctx *fasthttp.RequestCtx) {
 		s.handleStatus(ctx)
 		return
 	}
+	if s.handleRoles(ctx) {
+		return
+	}
 
 	if string(ctx.Path()) != "/internal/broadcast" {
 		ctx.Error("Not Found", fasthttp.StatusNotFound)
@@ -128,6 +133,56 @@ func (s *Server) handleRequest(ctx *fasthttp.RequestCtx) {
 
 	s.updateChan <- payload
 	ctx.SetStatusCode(fasthttp.StatusOK)
+}
+
+type GuildRole struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Color       int    `json:"color"`
+	Position    int    `json:"position"`
+	Managed     bool   `json:"managed"`
+	Mentionable bool   `json:"mentionable"`
+}
+
+func (s *Server) handleRoles(ctx *fasthttp.RequestCtx) bool {
+	parts := strings.Split(strings.Trim(string(ctx.Path()), "/"), "/")
+	if len(parts) != 4 || parts[0] != "internal" || parts[1] != "guilds" || parts[3] != "roles" {
+		return false
+	}
+	if !ctx.IsGet() {
+		ctx.Error("Method not allowed", fasthttp.StatusMethodNotAllowed)
+		return true
+	}
+	secret := os.Getenv("INTERNAL_API_SECRET")
+	if secret == "" || string(ctx.Request.Header.Peek("x-internal-key")) != secret {
+		ctx.Error("Unauthorized", fasthttp.StatusUnauthorized)
+		return true
+	}
+	guildID, err := snowflake.Parse(parts[2])
+	if err != nil {
+		ctx.Error("Bad Request", fasthttp.StatusBadRequest)
+		return true
+	}
+	roles := make([]GuildRole, 0, s.Client.Caches.RolesLen(guildID))
+	for role := range s.Client.Caches.Roles(guildID) {
+		if role.ID != guildID {
+			roles = append(roles, GuildRole{strconv.FormatUint(uint64(role.ID), 10), role.Name, role.Color, role.Position, role.Managed, role.Mentionable})
+		}
+	}
+	if len(roles) == 0 {
+		ctx.Error("Roles unavailable", fasthttp.StatusNotFound)
+		return true
+	}
+	sort.Slice(roles, func(i, j int) bool {
+		if roles[i].Position == roles[j].Position {
+			return roles[i].Name < roles[j].Name
+		}
+		return roles[i].Position > roles[j].Position
+	})
+	body, _ := json.Marshal(roles)
+	ctx.SetContentType("application/json")
+	ctx.SetBody(body)
+	return true
 }
 
 func (s *Server) processUpdates() {

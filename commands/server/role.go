@@ -15,13 +15,12 @@ func RoleSetHandler(e *handler.CommandEvent, b *mubot.Bot) error {
 		return err
 	}
 	responder := &common.CommandResponder{Event: e}
-	if err := common.GuardServerAdmin(b, e.GuildID().String(), e.Member()); err != nil {
-		return responder.Error(err.Error())
-	}
-
 	data := e.SlashCommandInteractionData()
 	role := data.Role("role")
 	roleType := data.String("type")
+	if err := common.GuardServerRole(b, e.GuildID().String(), e.Member(), roleType); err != nil {
+		return responder.Error(err.Error())
+	}
 
 	var desc string
 	switch roleType {
@@ -46,13 +45,12 @@ func RoleSetHandler(e *handler.CommandEvent, b *mubot.Bot) error {
 func HandleRoleConfirmation(e *handler.ComponentEvent, b *mubot.Bot) error {
 	e.DeferUpdateMessage()
 
-	if err := common.GuardServerAdmin(b, e.GuildID().String(), e.Member()); err != nil {
-		return err
-	}
-
 	action := e.Vars["action"]
 	roleType := e.Vars["type"]
 	roleID := e.Vars["role_id"]
+	if err := common.GuardServerRole(b, e.GuildID().String(), e.Member(), roleType); err != nil {
+		return err
+	}
 
 	if action == "no" {
 		_, err := e.Client().Rest.UpdateInteractionResponse(e.ApplicationID(), e.Token(),
@@ -98,12 +96,11 @@ func RoleRemoveHandler(e *handler.CommandEvent, b *mubot.Bot) error {
 	}
 	responder := &common.CommandResponder{Event: e}
 
-	if err := common.GuardServerAdmin(b, e.GuildID().String(), e.Member()); err != nil {
-		return responder.Error(err.Error())
-	}
-
 	data := e.SlashCommandInteractionData()
 	roleType := data.String("type")
+	if err := common.GuardServerRole(b, e.GuildID().String(), e.Member(), roleType); err != nil {
+		return responder.Error(err.Error())
+	}
 
 	displayType := strings.ToUpper(roleType[:1]) + roleType[1:]
 
@@ -130,12 +127,11 @@ func RoleRemoveHandler(e *handler.CommandEvent, b *mubot.Bot) error {
 func HandleRoleRemoveConfirmation(e *handler.ComponentEvent, b *mubot.Bot) error {
 	e.DeferUpdateMessage()
 
-	if err := common.GuardServerAdmin(b, e.GuildID().String(), e.Member()); err != nil {
-		return err
-	}
-
 	action := e.Vars["action"]
 	roleType := e.Vars["type"]
+	if err := common.GuardServerRole(b, e.GuildID().String(), e.Member(), roleType); err != nil {
+		return err
+	}
 
 	if action == "no" {
 		_, err := e.Client().Rest.UpdateInteractionResponse(e.ApplicationID(), e.Token(),

@@ -4,13 +4,15 @@ import (
 	"fmt"
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/handler"
+	"github.com/disgoorg/snowflake/v2"
 	"github.com/jckli/mangaupdates-bot/mubot"
 )
 
 var (
 	ErrServerNotSetup = fmt.Errorf("This server is not set up.\nPlease run `/server setup` first.")
 	ErrUserNotSetup   = fmt.Errorf("Your user is not set up.\nPlease run `/user setup` first.")
-	ErrNotAdmin       = fmt.Errorf("You do not have permission.\nRequires `Manage Server` or the Configured Admin Role.")
+	ErrNotAdmin       = fmt.Errorf("You do not have permission.\nRequires Server Owner, `Administrator`, `Manage Server`, or the Configured Admin Role.")
+	ErrRoleAdmin      = fmt.Errorf("You do not have permission.\nRequires Server Owner, `Administrator`, or `Manage Server`.")
 )
 
 func GuardWidget(e *handler.ComponentEvent, b *mubot.Bot, requireAdmin bool) error {
@@ -39,7 +41,7 @@ func GuardServerExists(b *mubot.Bot, guildID string) error {
 }
 
 func GuardAdminOnly(b *mubot.Bot, guildID string, member *discord.ResolvedMember) error {
-	if member.Permissions.Has(discord.PermissionManageGuild) {
+	if hasGuildAuthority(b, guildID, member) {
 		return nil
 	}
 
@@ -53,17 +55,9 @@ func GuardAdminOnly(b *mubot.Bot, guildID string, member *discord.ResolvedMember
 		return ErrNotAdmin
 	}
 
-	if config.Roles.Admin == 0 {
-		return ErrNotAdmin
+	if hasConfiguredAdminRole(config.Roles.Admin, member) {
+		return nil
 	}
-
-	adminRoleID := fmt.Sprintf("%d", config.Roles.Admin)
-	for _, roleID := range member.RoleIDs {
-		if roleID.String() == adminRoleID {
-			return nil
-		}
-	}
-
 	return ErrNotAdmin
 }
 
@@ -77,22 +71,51 @@ func GuardServerAdmin(b *mubot.Bot, guildID string, member *discord.ResolvedMemb
 		return ErrServerNotSetup
 	}
 
-	if member.Permissions.Has(discord.PermissionManageGuild) {
+	if hasGuildAuthority(b, guildID, member) {
 		return nil
 	}
-
-	if config.Roles.Admin == 0 {
-		return ErrNotAdmin
+	if hasConfiguredAdminRole(config.Roles.Admin, member) {
+		return nil
 	}
+	return ErrNotAdmin
+}
 
-	adminRoleID := fmt.Sprintf("%d", config.Roles.Admin)
+func GuardServerRole(b *mubot.Bot, guildID string, member *discord.ResolvedMember, roleType string) error {
+	config, err := b.ApiClient.GetServerConfig(guildID)
+	if err != nil {
+		return fmt.Errorf("permission check failed: %w", err)
+	}
+	if config == nil {
+		return ErrServerNotSetup
+	}
+	if hasGuildAuthority(b, guildID, member) || (roleType == "ping" && hasConfiguredAdminRole(config.Roles.Admin, member)) {
+		return nil
+	}
+	if roleType == "admin" {
+		return ErrRoleAdmin
+	}
+	return ErrNotAdmin
+}
+
+func hasConfiguredAdminRole(adminRoleID int64, member *discord.ResolvedMember) bool {
 	for _, roleID := range member.RoleIDs {
-		if roleID.String() == adminRoleID {
-			return nil
+		if adminRoleID > 0 && roleID == snowflake.ID(adminRoleID) {
+			return true
 		}
 	}
+	return false
+}
 
-	return ErrNotAdmin
+func hasGuildAuthority(b *mubot.Bot, guildID string, member *discord.ResolvedMember) bool {
+	if member.Permissions.Has(discord.PermissionAdministrator) || member.Permissions.Has(discord.PermissionManageGuild) {
+		return true
+	}
+	id, err := snowflake.Parse(guildID)
+	if err != nil {
+		return false
+	}
+	guild, ok := b.Client.Caches.Guild(id)
+	return ok && guild.OwnerID == member.User.ID
 }
 
 func GuardUser(b *mubot.Bot, userID string) error {
