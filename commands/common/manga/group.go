@@ -114,7 +114,7 @@ func sendSetGroupConfirmation(
 	mangaID int64,
 	groupID int64,
 ) error {
-	mangaDetails, _ := b.ApiClient.GetMangaDetails(mangaID)
+	mangaDetails, _ := b.ApiClient.GetMangaMetadata(mangaID)
 	mangaTitle := "Unknown Manga"
 	if mangaDetails != nil {
 		mangaTitle = mangaDetails.Title
@@ -210,7 +210,7 @@ func HandleSetGroupGroupSelection(e *handler.ComponentEvent, b *mubot.Bot) error
 	}
 	groupID, _ := strconv.ParseInt(e.StringSelectMenuInteractionData().Values[0], 10, 64)
 
-	mangaDetails, _ := b.ApiClient.GetMangaDetails(mangaID)
+	mangaDetails, _ := b.ApiClient.GetMangaMetadata(mangaID)
 	mangaTitle := "Unknown Manga"
 	if mangaDetails != nil {
 		mangaTitle = mangaDetails.Title
@@ -410,7 +410,7 @@ func HandleGroupRemoveMangaSelection(e *handler.ComponentEvent, b *mubot.Bot) er
 	}
 	mangaID, _ := strconv.ParseInt(e.StringSelectMenuInteractionData().Values[0], 10, 64)
 
-	mangaDetails, _ := b.ApiClient.GetMangaDetails(mangaID)
+	mangaDetails, _ := b.ApiClient.GetMangaMetadata(mangaID)
 	mangaTitle := "Unknown Manga"
 	if mangaDetails != nil {
 		mangaTitle = mangaDetails.Title

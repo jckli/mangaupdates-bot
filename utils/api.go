@@ -89,7 +89,7 @@ func (c *Client) SearchManga(query string) ([]MangaSearchResult, error) {
 	return res, nil
 }
 
-func (c *Client) GetMangaDetails(mangaID int64) (*MangaDetails, error) {
+func (c *Client) GetMangaMetadata(mangaID int64) (*MangaMetadata, error) {
 	body, status, err := c.Get(fmt.Sprintf("/tsuuchi/manga/%d", mangaID))
 	if err != nil {
 		return nil, err
@@ -98,7 +98,7 @@ func (c *Client) GetMangaDetails(mangaID int64) (*MangaDetails, error) {
 		return nil, parseAPIError(status, body)
 	}
 
-	var res MangaDetails
+	var res MangaMetadata
 	if err := json.Unmarshal(body, &res); err != nil {
 		return nil, err
 	}

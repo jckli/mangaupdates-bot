@@ -13,18 +13,19 @@ type GroupSearchResult struct {
 	Name string `json:"name"`
 }
 
-type MangaDetails struct {
-	ID             int64         `json:"series_id"`
-	Title          string        `json:"title"`
-	URL            string        `json:"url"`
-	Description    string        `json:"description"`
-	Year           string        `json:"year"`
-	Type           string        `json:"type"`
-	LatestChapter  int64         `json:"latest_chapter"`
-	BayesianRating float64       `json:"bayesian_rating"`
-	Completed      bool          `json:"completed"`
-	Image          *MangaImage   `json:"image"`
-	Authors        []MangaAuthor `json:"authors"`
+type MangaMetadata struct {
+	ID            int64    `json:"id"`
+	Title         string   `json:"title"`
+	Description   string   `json:"description"`
+	Year          string   `json:"year"`
+	Rating        *float64 `json:"rating"`
+	Type          string   `json:"kind"`
+	Status        string   `json:"status"`
+	LatestChapter string   `json:"latest_chapter"`
+	FinalChapter  string   `json:"final_chapter"`
+	Authors       []string `json:"authors"`
+	Artists       []string `json:"artists"`
+	CoverURL      string   `json:"cover_url"`
 }
 
 type GroupDetails struct {
@@ -39,18 +40,6 @@ type GroupSocial struct {
 	Site    string `json:"site"`
 	Discord string `json:"discord"`
 	Twitter string `json:"twitter"`
-}
-
-type MangaImage struct {
-	URL struct {
-		Original string `json:"original"`
-		Thumb    string `json:"thumb"`
-	} `json:"url"`
-}
-
-type MangaAuthor struct {
-	Name string `json:"name"`
-	Type string `json:"type"`
 }
 
 type TrackedManga struct {

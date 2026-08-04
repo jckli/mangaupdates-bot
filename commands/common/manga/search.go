@@ -39,7 +39,7 @@ func HandleSearchSelection(e *handler.ComponentEvent, b *mubot.Bot) error {
 		}
 		mangaID, _ := strconv.ParseInt(e.StringSelectMenuInteractionData().Values[0], 10, 64)
 
-		details, err := b.ApiClient.GetMangaDetails(mangaID)
+		metadata, err := b.ApiClient.GetMangaMetadata(mangaID)
 		if err != nil {
 			common.SendInteractionError(e, err.Error())
 			return
@@ -50,7 +50,7 @@ func HandleSearchSelection(e *handler.ComponentEvent, b *mubot.Bot) error {
 			botIcon = self.EffectiveAvatarURL()
 		}
 
-		embed := common.GenerateDetailEmbed(*details, botIcon)
+		embed := common.GenerateDetailEmbed(*metadata, botIcon)
 
 		_, _ = e.Client().Rest.UpdateInteractionResponse(e.ApplicationID(), e.Token(),
 			discord.MessageUpdate{
@@ -63,7 +63,7 @@ func HandleSearchSelection(e *handler.ComponentEvent, b *mubot.Bot) error {
 }
 
 func sendMangaDetails(r common.Responder, b *mubot.Bot, mangaID int64) error {
-	details, err := b.ApiClient.GetMangaDetails(mangaID)
+	metadata, err := b.ApiClient.GetMangaMetadata(mangaID)
 	if err != nil {
 		return r.Error("Failed to fetch details.")
 	}
@@ -73,6 +73,6 @@ func sendMangaDetails(r common.Responder, b *mubot.Bot, mangaID int64) error {
 		botIcon = self.EffectiveAvatarURL()
 	}
 
-	embed := common.GenerateDetailEmbed(*details, botIcon)
+	embed := common.GenerateDetailEmbed(*metadata, botIcon)
 	return r.Respond(embed, nil)
 }

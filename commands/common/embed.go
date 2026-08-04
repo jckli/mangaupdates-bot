@@ -2,51 +2,16 @@ package common
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/disgoorg/disgo/discord"
 	"github.com/jckli/mangaupdates-bot/utils"
-	"strings"
 )
 
 const (
 	ColorPrimary = 0x3083e3
 	ColorError   = 0xff4f4f
 )
-
-// helper functions
-func formatAuthorsAndArtists(list []utils.MangaAuthor) (string, string) {
-	var authors []string
-	var artists []string
-
-	for _, person := range list {
-		switch person.Type {
-		case "Author":
-			authors = append(authors, person.Name)
-		case "Artist":
-			artists = append(artists, person.Name)
-		default:
-			authors = append(authors, person.Name)
-		}
-	}
-
-	aStr := "N/A"
-	if len(authors) > 0 {
-		aStr = strings.Join(authors, ", ")
-	}
-
-	artStr := "N/A"
-	if len(artists) > 0 {
-		artStr = strings.Join(artists, ", ")
-	}
-
-	return aStr, artStr
-}
-
-func formatStatus(completed bool) string {
-	if completed {
-		return "Completed"
-	}
-	return "Ongoing"
-}
 
 func formatActive(active bool) string {
 	if active {
@@ -89,25 +54,44 @@ func GenerateListEmbed(
 		WithFooterText(fmt.Sprintf("Total: %d", totalItems))
 }
 
-func GenerateConfirmationEmbed(details utils.MangaDetails) discord.Embed {
-	authorStr, artistStr := formatAuthorsAndArtists(details.Authors)
-
-	embed := discord.NewEmbed().
-		WithTitlef("Is `%s` correct?", details.Title).
-		WithDescription(details.Description).
-		WithColor(ColorPrimary).
-		AddField("Year", details.Year, true).
-		AddField("Type", details.Type, true).
-		AddField("Latest Chapter", fmt.Sprintf("%d", details.LatestChapter), true).
-		AddField("Authors", authorStr, true).
-		AddField("Artists", artistStr, true).
-		AddField("Rating", fmt.Sprintf("%.2f", details.BayesianRating), true)
-
-	if details.Image != nil {
-		embed = embed.WithImage(details.Image.URL.Original)
+func metadataEmbed(title string, metadata utils.MangaMetadata) discord.Embed {
+	embed := discord.NewEmbed().WithTitle(title).WithColor(ColorPrimary)
+	if metadata.Description != "" {
+		embed = embed.WithDescription(metadata.Description)
 	}
-
+	if metadata.Year != "" {
+		embed = embed.AddField("Year", metadata.Year, true)
+	}
+	if metadata.Type != "" {
+		embed = embed.AddField("Type", metadata.Type, true)
+	}
+	if metadata.Status != "" {
+		embed = embed.AddField("Status", metadata.Status, true)
+	}
+	if metadata.LatestChapter != "" {
+		chapterLabel := "Latest Chapter"
+		if strings.EqualFold(metadata.Status, "completed") {
+			chapterLabel = "Total Chapters"
+		}
+		embed = embed.AddField(chapterLabel, metadata.LatestChapter, true)
+	}
+	if len(metadata.Authors) > 0 {
+		embed = embed.AddField("Authors", strings.Join(metadata.Authors, ", "), true)
+	}
+	if len(metadata.Artists) > 0 {
+		embed = embed.AddField("Artists", strings.Join(metadata.Artists, ", "), true)
+	}
+	if metadata.Rating != nil {
+		embed = embed.AddField("Rating", fmt.Sprintf("%.2f", *metadata.Rating), true)
+	}
+	if metadata.CoverURL != "" {
+		embed = embed.WithImage(metadata.CoverURL)
+	}
 	return embed
+}
+
+func GenerateConfirmationEmbed(metadata utils.MangaMetadata) discord.Embed {
+	return metadataEmbed(fmt.Sprintf("Is `%s` correct?", metadata.Title), metadata)
 }
 
 func ErrorEmbed(content string) discord.Embed {
@@ -117,27 +101,8 @@ func ErrorEmbed(content string) discord.Embed {
 		WithColor(ColorError)
 }
 
-func GenerateDetailEmbed(details utils.MangaDetails, botIconURL string) discord.Embed {
-	authorStr, artistStr := formatAuthorsAndArtists(details.Authors)
-
-	embed := discord.NewEmbed().
-		WithAuthor("MangaUpdates", "", botIconURL).
-		WithTitlef("%s (%s)", details.Title, formatStatus(details.Completed)).
-		WithURL(details.URL).
-		WithDescription(details.Description).
-		WithColor(ColorPrimary).
-		AddField("Year", details.Year, true).
-		AddField("Type", details.Type, true).
-		AddField("Latest Chapter", fmt.Sprintf("%d", details.LatestChapter), true).
-		AddField("Authors", authorStr, true).
-		AddField("Artists", artistStr, true).
-		AddField("Rating", fmt.Sprintf("%.2f", details.BayesianRating), true)
-
-	if details.Image != nil {
-		embed = embed.WithImage(details.Image.URL.Original)
-	}
-
-	return embed
+func GenerateDetailEmbed(metadata utils.MangaMetadata, botIconURL string) discord.Embed {
+	return metadataEmbed(metadata.Title, metadata).WithAuthor("Manga", "", botIconURL)
 }
 
 func GenerateGroupConfirmationEmbed(group *utils.GroupDetails, mangaTitle string) discord.Embed {

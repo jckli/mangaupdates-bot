@@ -81,13 +81,13 @@ func HandleRemoveSelection(e *handler.ComponentEvent, b *mubot.Bot) error {
 		}
 		mangaID, _ := strconv.ParseInt(e.StringSelectMenuInteractionData().Values[0], 10, 64)
 
-		details, err := b.ApiClient.GetMangaDetails(mangaID)
+		metadata, err := b.ApiClient.GetMangaMetadata(mangaID)
 		if err != nil {
 			common.SendInteractionError(e, err.Error())
 			return
 		}
 
-		embed := common.GenerateConfirmationEmbed(*details)
+		embed := common.GenerateConfirmationEmbed(*metadata)
 		prefix := fmt.Sprintf("/manga_remove_confirm/%s/%d", endpoint, mangaID)
 		buttons := common.CreateConfirmButtons(prefix+"/yes", prefix+"/no")
 
@@ -153,12 +153,12 @@ func HandleRemoveConfirmation(e *handler.ComponentEvent, b *mubot.Bot) error {
 }
 
 func sendRemoveConfirmation(r common.Responder, b *mubot.Bot, endpoint string, mangaID int64) error {
-	details, err := b.ApiClient.GetMangaDetails(mangaID)
+	metadata, err := b.ApiClient.GetMangaMetadata(mangaID)
 	if err != nil {
 		return r.Error("Failed to fetch details.")
 	}
 
-	embed := common.GenerateConfirmationEmbed(*details)
+	embed := common.GenerateConfirmationEmbed(*metadata)
 	prefix := fmt.Sprintf("/manga_remove_confirm/%s/%d", endpoint, mangaID)
 	buttons := common.CreateConfirmButtons(prefix+"/yes", prefix+"/no")
 
