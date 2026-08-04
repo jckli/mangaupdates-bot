@@ -45,7 +45,7 @@ func GenerateGlobalSearchMenu(
 		description += line + "\n"
 	}
 
-	customID := cfg.SelectIDPrefix
+	customID := "/" + cfg.SelectIDPrefix
 	if cfg.EndpointSuffix != "" {
 		customID += "/" + cfg.EndpointSuffix
 	}
