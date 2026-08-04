@@ -4,6 +4,7 @@ type MangaSearchResult struct {
 	ID       int64   `json:"id"`
 	Base36ID string  `json:"base36_id"`
 	Title    string  `json:"title"`
+	Type     string  `json:"kind"`
 	Year     string  `json:"year"`
 	Rating   float64 `json:"rating"`
 }

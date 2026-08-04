@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/handler"
+	"github.com/jckli/mangaupdates-bot/commands/common"
 	"github.com/jckli/mangaupdates-bot/mubot"
 	"strconv"
 	"strings"
@@ -30,16 +31,12 @@ func HandleAddAutocomplete(e *handler.AutocompleteEvent, b *mubot.Bot, queryName
 
 	for _, res := range results[0:max] {
 		label := res.Title
-		if res.Year != "" {
-			label += fmt.Sprintf(" (%s)", res.Year)
-		}
-
-		if len(label) > 100 {
-			label = label[:97] + "..."
+		if summary := common.MangaSearchSummary(res); summary != "" {
+			label += " · " + summary
 		}
 
 		choices = append(choices, discord.AutocompleteChoiceString{
-			Name:  label,
+			Name:  common.TruncateText(label, 100),
 			Value: fmt.Sprintf("%d", res.ID),
 		})
 	}
