@@ -31,8 +31,8 @@ func HandleAddAutocomplete(e *handler.AutocompleteEvent, b *mubot.Bot, queryName
 
 	for _, res := range results[0:max] {
 		label := res.Title
-		if summary := common.MangaSearchSummary(res); summary != "" {
-			label += " · " + summary
+		if summary := common.MangaAutocompleteSummary(res); summary != "" {
+			label += " (" + summary + ")"
 		}
 
 		choices = append(choices, discord.AutocompleteChoiceString{

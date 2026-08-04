@@ -17,9 +17,20 @@ func MangaSearchSummary(result utils.MangaSearchResult) string {
 		parts = append(parts, result.Year)
 	}
 	if result.Rating > 0 {
-		parts = append(parts, fmt.Sprintf("Rating %.2f", result.Rating))
+		parts = append(parts, fmt.Sprintf("Rating: %.2f", result.Rating))
 	}
 	return strings.Join(parts, " · ")
+}
+
+func MangaAutocompleteSummary(result utils.MangaSearchResult) string {
+	parts := make([]string, 0, 2)
+	if result.Type != "" {
+		parts = append(parts, strings.ToUpper(result.Type[:1])+result.Type[1:])
+	}
+	if result.Year != "" {
+		parts = append(parts, result.Year)
+	}
+	return strings.Join(parts, ", ")
 }
 
 func TruncateText(text string, max int) string {

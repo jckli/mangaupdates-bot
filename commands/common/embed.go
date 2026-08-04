@@ -2,6 +2,7 @@ package common
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/disgoorg/disgo/discord"
@@ -63,10 +64,7 @@ func metadataEmbed(title string, metadata utils.MangaMetadata) discord.Embed {
 		embed = embed.AddField("Year", metadata.Year, true)
 	}
 	if metadata.Type != "" {
-		embed = embed.AddField("Type", metadata.Type, true)
-	}
-	if metadata.Status != "" {
-		embed = embed.AddField("Status", metadata.Status, true)
+		embed = embed.AddField("Type", displayName(metadata.Type), true)
 	}
 	if metadata.LatestChapter != "" {
 		chapterLabel := "Latest Chapter"
@@ -91,7 +89,7 @@ func metadataEmbed(title string, metadata utils.MangaMetadata) discord.Embed {
 }
 
 func GenerateConfirmationEmbed(metadata utils.MangaMetadata) discord.Embed {
-	return metadataEmbed(fmt.Sprintf("Is `%s` correct?", metadata.Title), metadata)
+	return metadataEmbed(fmt.Sprintf("Is `%s` correct?", mangaTitle(metadata)), metadata)
 }
 
 func ErrorEmbed(content string) discord.Embed {
@@ -102,7 +100,24 @@ func ErrorEmbed(content string) discord.Embed {
 }
 
 func GenerateDetailEmbed(metadata utils.MangaMetadata, botIconURL string) discord.Embed {
-	return metadataEmbed(metadata.Title, metadata).WithAuthor("Manga", "", botIconURL)
+	return metadataEmbed(mangaTitle(metadata), metadata).
+		WithURL("https://www.mangaupdates.com/series/"+strconv.FormatInt(metadata.ID, 36)).
+		WithAuthor("MangaUpdates", "", botIconURL)
+}
+
+func mangaTitle(metadata utils.MangaMetadata) string {
+	if metadata.Status == "" {
+		return metadata.Title
+	}
+	return fmt.Sprintf("%s (%s)", metadata.Title, displayName(metadata.Status))
+}
+
+func displayName(value string) string {
+	words := strings.Fields(strings.ReplaceAll(value, "_", " "))
+	for index, word := range words {
+		words[index] = strings.ToUpper(word[:1]) + strings.ToLower(word[1:])
+	}
+	return strings.Join(words, " ")
 }
 
 func GenerateGroupConfirmationEmbed(group *utils.GroupDetails, mangaTitle string) discord.Embed {
