@@ -42,8 +42,6 @@ jobs:
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
     steps:
       - name: Connect to Tailscale
         uses: tailscale/github-action@v4
