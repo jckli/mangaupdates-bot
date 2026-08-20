@@ -1,5 +1,23 @@
 # Changelog
 
+## [3.2.0](https://github.com/jckli/mangaupdates-bot/compare/v3.1.0...v3.2.0) (2026-08-20)
+
+
+### Features
+
+* identify manga search results ([792bf63](https://github.com/jckli/mangaupdates-bot/commit/792bf63e225e99d00c1e24a8e03b6d4a6118e2fe))
+* unify server management permissions ([35f6bee](https://github.com/jckli/mangaupdates-bot/commit/35f6beebeeb57c7bf1ab64a19306b4ac40ae977d))
+* use unified manga metadata ([f0b73c6](https://github.com/jckli/mangaupdates-bot/commit/f0b73c66aeb7c7c1df726855c67a2e2b58a55d9b))
+
+
+### Bug Fixes
+
+* handle missing manga search years ([9819e65](https://github.com/jckli/mangaupdates-bot/commit/9819e65eff33a18de1a6e8d6064ec969c5abf6a1))
+* refine manga result presentation ([bef9904](https://github.com/jckli/mangaupdates-bot/commit/bef9904351ce92e049765dc1af606e153f1de0bb))
+* remove unused deploy token permission ([8afb769](https://github.com/jckli/mangaupdates-bot/commit/8afb769d9b925ab3fa7e50cf018211506de4eb51))
+* remove unused deploy token permission ([2d4e806](https://github.com/jckli/mangaupdates-bot/commit/2d4e806aabc96d13aeafc5197dccdf573093474d))
+* route manga search selections ([c73a6ad](https://github.com/jckli/mangaupdates-bot/commit/c73a6ad49fecb8fa29dbb9e7edf3a941ef5182be))
+
 ## [3.1.0](https://github.com/jckli/mangaupdates-bot/compare/v3.0.0...v3.1.0) (2026-08-01)
 
 
